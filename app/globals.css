@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-bg text-slate-100;
+    font-feature-settings: "ss01", "cv11", "cv02";
+  }
+  .kpi-num,
+  [data-tabular] {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /* Card base — dark mode SM Hub */
+  .card {
+    @apply rounded-2xl shadow-soft border border-border bg-bg-surface
+      transition-shadow p-6;
+  }
+  .card-hover {
+    @apply hover:shadow-elevated;
+  }
+  .surface {
+    @apply rounded-xl border border-border bg-bg-elevated/60 px-4 py-3;
+  }
+
+  /* Inputs com look dark */
+  .input {
+    @apply w-full rounded-lg border border-border bg-bg-elevated/80 px-3 py-2.5
+      text-sm text-slate-100 placeholder:text-slate-500
+      transition-colors
+      focus:outline-none focus:ring-4 focus:ring-royal-500/20 focus:border-royal-500
+      disabled:opacity-50 disabled:bg-bg-muted;
+  }
+
+  .label {
+    @apply block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2
+      text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-gradient-to-r from-royal-500 to-royal-700 text-white
+      shadow-sm hover:from-royal-400 hover:to-royal-600 active:from-royal-700 active:to-royal-800;
+  }
+  .btn-secondary {
+    @apply btn bg-bg-elevated border border-border text-slate-200
+      hover:bg-bg-muted hover:border-border-muted;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+  .btn-ghost {
+    @apply btn text-slate-300 hover:bg-bg-elevated;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .skeleton {
+    @apply animate-pulse bg-bg-muted rounded-md;
+  }
+
+  /* Marquee infinito horizontal (usado na seção "Nosso Ecossistema" da LP) */
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  /* Focus ring global em dark */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-royal-500/50 ring-offset-2 ring-offset-bg;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
