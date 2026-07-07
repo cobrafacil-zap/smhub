@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { SITE } from "@/lib/site";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import "./globals.css";
 
 const inter = Inter({
@@ -95,6 +96,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={inter.variable}>
       <body className="font-sans antialiased min-h-screen bg-bg text-slate-100">
+        <ScrollToTop />
         {children}
         <Toaster
           position="top-right"
