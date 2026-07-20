@@ -70,7 +70,9 @@ export function Stat({
           </div>
         )}
       </div>
-      <div className={cn("text-2xl font-bold kpi-num", styles.text)}>{value}</div>
+      <div className={cn("text-xl sm:text-2xl font-bold kpi-num break-words leading-tight", styles.text)}>
+        {value}
+      </div>
       <div className="flex items-center gap-2 text-xs">
         {trend && (
           <span

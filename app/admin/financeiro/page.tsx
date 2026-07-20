@@ -273,26 +273,26 @@ export default async function FinanceiroPage({
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-400">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-slate-400 min-w-0">
               Receitas — {periodoLabel}
             </p>
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
+            <TrendingUp className="h-4 w-4 text-emerald-400 shrink-0" />
           </div>
-          <p className="text-2xl font-semibold text-emerald-400 mt-2">{formatBRL(kpiReceita)}</p>
+          <p className="text-xl sm:text-2xl font-semibold text-emerald-400 mt-2 break-words leading-tight">{formatBRL(kpiReceita)}</p>
           <p className="text-[11px] text-slate-500 mt-1">
             {modoLabel}
             {!realizado && " — todas as faturas (pagas + a receber)"}
           </p>
         </Card>
         <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-400">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-slate-400 min-w-0">
               Despesas — {periodoLabel}
             </p>
-            <TrendingDown className="h-4 w-4 text-rose-400" />
+            <TrendingDown className="h-4 w-4 text-rose-400 shrink-0" />
           </div>
-          <p className="text-2xl font-semibold text-rose-400 mt-2">{formatBRL(kpiDespesa)}</p>
+          <p className="text-xl sm:text-2xl font-semibold text-rose-400 mt-2 break-words leading-tight">{formatBRL(kpiDespesa)}</p>
           {custoEquipe > 0 && (
             <p className="text-[11px] text-slate-500 mt-1">
               {modoLabel} — inclui {formatBRL(folhaTotal)} de folha
@@ -301,13 +301,13 @@ export default async function FinanceiroPage({
           )}
         </Card>
         <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-400">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-slate-400 min-w-0">
               Saldo — {periodoLabel}
             </p>
-            <Wallet className="h-4 w-4 text-royal-300" />
+            <Wallet className="h-4 w-4 text-royal-300 shrink-0" />
           </div>
-          <p className={`text-2xl font-semibold mt-2 ${kpiSaldo >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+          <p className={`text-xl sm:text-2xl font-semibold mt-2 break-words leading-tight ${kpiSaldo >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
             {formatBRL(kpiSaldo)}
           </p>
           <p className="text-[11px] text-slate-500 mt-1">{modoLabel}</p>
@@ -346,7 +346,52 @@ export default async function FinanceiroPage({
             <span className="text-slate-600">Use “Gerar mensais” pra emitir as do mês.</span>
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Mobile: cada fatura vira um cartão empilhado (sem scroll horizontal). */}
+            <ul className="sm:hidden divide-y divide-border/50">
+              {faturas.map((f) => {
+                const st = FATURA_STATUS[f.status as keyof typeof FATURA_STATUS] ?? {
+                  label: f.status ?? "—",
+                  color: "default" as const,
+                };
+                return (
+                  <li key={f.id} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-100 truncate">
+                          {f.cliente?.nome_empresa ?? "—"}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          <span className="font-mono">{f.numero ?? "—"}</span>
+                          {" · venc. "}
+                          {f.data_vencimento ? formatDate(f.data_vencimento) : "—"}
+                        </p>
+                      </div>
+                      <Badge variant={st.color}>{st.label}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-lg font-semibold text-slate-100 break-words leading-tight">
+                        {formatBRL(Number(f.valor) || 0)}
+                      </p>
+                      {f.status !== "pago" && <MarcarFaturaPagaButton id={f.id} />}
+                    </div>
+                  </li>
+                );
+              })}
+              <li className="p-4 flex flex-col gap-1 border-t border-border bg-bg-elevated/30 text-xs">
+                <span className="text-slate-400">
+                  Já pago · <span className="text-emerald-400 font-semibold">{formatBRL(totalFaturasPago)}</span>
+                </span>
+                <span className="text-slate-400">
+                  A receber (previsão) · <span className="text-royal-300 font-semibold">{formatBRL(totalFaturasReceber)}</span>
+                </span>
+                <span className="text-slate-500">
+                  Total previsto · <span className="text-slate-200 font-semibold">{formatBRL(totalFaturasPago + totalFaturasReceber)}</span>
+                </span>
+              </li>
+            </ul>
+            {/* Desktop: tabela (sm+). */}
+            <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-slate-400 border-b border-border">
@@ -400,7 +445,8 @@ export default async function FinanceiroPage({
                 </tr>
               </tfoot>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </Card>
 
@@ -434,7 +480,34 @@ export default async function FinanceiroPage({
             </Link>
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Mobile: cada membro vira um cartão empilhado. */}
+            <ul className="sm:hidden divide-y divide-border/50">
+              {membrosComCusto.map((m) => (
+                <li key={m.id} className="p-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="h-7 w-7 rounded-full bg-gradient-to-br from-royal-500 to-navy-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                      {(m.nome ?? m.email ?? "?").slice(0, 1).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-slate-100 truncate">{m.nome ?? m.email ?? "—"}</p>
+                      <p className="text-xs text-slate-500">
+                        {m.cargo?.trim() ? m.cargo : <span className="italic">Sem função</span>}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold text-rose-400 shrink-0">
+                    {formatBRL(m.custo_mensal!)}
+                  </p>
+                </li>
+              ))}
+              <li className="p-4 flex items-center justify-between border-t border-border bg-bg-elevated/30">
+                <span className="text-xs text-slate-400">Total da folha</span>
+                <span className="font-semibold text-rose-400">{formatBRL(custoEquipe)}</span>
+              </li>
+            </ul>
+            {/* Desktop: tabela (sm+). */}
+            <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-slate-400 border-b border-border">
@@ -478,7 +551,8 @@ export default async function FinanceiroPage({
                 </tr>
               </tfoot>
             </table>
-          </div>
+            </div>
+          </>
         )}
         <div className="p-3 border-t border-border text-[11px] text-slate-500 flex items-center gap-1.5">
           <UserCog className="h-3.5 w-3.5 text-slate-600 shrink-0" />
@@ -494,7 +568,59 @@ export default async function FinanceiroPage({
         {lancamentosFiltrados.length === 0 ? (
           <p className="p-6 text-sm text-slate-500 text-center">Nenhum lançamento em {periodoLabel}.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Mobile: cada lançamento vira um cartão empilhado. */}
+            <ul className="sm:hidden divide-y divide-border/50">
+              {lancamentosFiltrados.map((t) => (
+                <li key={t.id} className="p-4 space-y-2.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm text-slate-200 truncate">{t.descricao}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {t.data_vencimento ? formatDate(t.data_vencimento) : "—"}
+                        {t.categoria ? ` · ${t.categoria}` : ""}
+                      </p>
+                    </div>
+                    <p className={`text-sm font-semibold shrink-0 ${t.tipo === "receita" ? "text-emerald-400" : "text-rose-400"}`}>
+                      {t.tipo === "despesa" ? "-" : "+"} {formatBRL(Number(t.valor) || 0)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant={t.tipo === "receita" ? "success" : "danger"}>
+                        {t.tipo}
+                      </Badge>
+                      {t.natureza === "fixa" ? (
+                        <Badge variant="brand">Fixa</Badge>
+                      ) : (
+                        <Badge variant="default">Variável</Badge>
+                      )}
+                    </div>
+                    <div className="inline-flex items-center gap-0.5">
+                      <EditarTransacaoButton
+                        id={t.id}
+                        tipo={t.tipo}
+                        status={t.status}
+                        dataVencimento={t.data_vencimento}
+                        valor={Number(t.valor) || 0}
+                        descricao={t.descricao}
+                        categoria={t.categoria}
+                        natureza={t.natureza}
+                      />
+                      <ExcluirTransacaoButton id={t.id} descricao={t.descricao} />
+                    </div>
+                  </div>
+                </li>
+              ))}
+              <li className="p-4 flex items-center justify-between border-t border-border bg-bg-elevated/30">
+                <span className="text-xs text-slate-400">Saldo dos lançamentos</span>
+                <span className={`font-semibold ${saldoExib >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                  {formatBRL(saldoExib)}
+                </span>
+              </li>
+            </ul>
+            {/* Desktop: tabela (sm+). */}
+            <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-slate-400 border-b border-border">
@@ -560,7 +686,8 @@ export default async function FinanceiroPage({
                 </tr>
               </tfoot>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </Card>
     </div>

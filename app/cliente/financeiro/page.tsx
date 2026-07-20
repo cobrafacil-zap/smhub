@@ -38,19 +38,19 @@ export default async function ClienteFinanceiroPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card>
           <p className="text-xs text-slate-400 uppercase tracking-wider">Total pago</p>
-          <p className="text-2xl font-bold kpi-num text-success-400 mt-1">
+          <p className="text-xl sm:text-2xl font-bold kpi-num text-success-400 mt-1 break-words leading-tight">
             {formatBRL(totalPago)}
           </p>
         </Card>
         <Card>
           <p className="text-xs text-slate-400 uppercase tracking-wider">Pendente</p>
-          <p className="text-2xl font-bold kpi-num text-warning-400 mt-1">
+          <p className="text-xl sm:text-2xl font-bold kpi-num text-warning-400 mt-1 break-words leading-tight">
             {formatBRL(totalPendente)}
           </p>
         </Card>
         <Card>
           <p className="text-xs text-slate-400 uppercase tracking-wider">Faturas</p>
-          <p className="text-2xl font-bold kpi-num text-slate-100 mt-1">{list.length}</p>
+          <p className="text-xl sm:text-2xl font-bold kpi-num text-slate-100 mt-1 break-words leading-tight">{list.length}</p>
         </Card>
       </div>
 
@@ -64,7 +64,32 @@ export default async function ClienteFinanceiroPage() {
         </Card>
       ) : (
         <Card className="!p-0">
-          <div className="overflow-x-auto">
+          {/* Mobile: cada fatura vira um cartão empilhado. */}
+          <ul className="sm:hidden divide-y divide-border/50">
+            {list.map((f) => {
+              const st = FATURA_STATUS[f.status];
+              return (
+                <li key={f.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-100 font-mono">
+                        {f.numero ?? "—"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Comp. {formatDate(f.competencia)} · Venc. {formatDate(f.data_vencimento)}
+                      </p>
+                    </div>
+                    <Badge variant={st.color}>{st.label}</Badge>
+                  </div>
+                  <p className="text-lg font-semibold text-slate-100 break-words leading-tight">
+                    {formatBRL(f.valor)}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+          {/* Desktop: tabela (sm+). */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-slate-400 border-b border-border">
