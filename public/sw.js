@@ -23,13 +23,11 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
-      // /offline é essencial — sempre tenta precachear.
+      // Só /offline é essencial no install. Antes pré-cacheávamos
+      // /, /login e /checkout aqui também — cada um era um fetch frio
+      // competindo com o boot da função no primeiro acesso pós-deploy.
+      // As páginas públicas são cacheadas sob demanda quando visitadas.
       await cache.add(OFFLINE_URL).catch(() => {});
-      // Páginas públicas prováveis (próximo destino do visitante): aquece
-      // agora para funcionar offline imediatamente, sem esperar a 1ª visita.
-      await Promise.all(
-        SHELL_CACHEABLE.map((u) => cache.add(u).catch(() => {}))
-      );
     })()
   );
   self.skipWaiting();

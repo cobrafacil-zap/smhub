@@ -4,7 +4,6 @@ import { SITE } from "@/lib/site";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { ThemeToaster } from "@/components/ui/ThemeToaster";
-import { GlobalLoader } from "@/components/ui/GlobalLoader";
 import { RegisterSW } from "@/components/pwa/RegisterSW";
 import "./globals.css";
 
@@ -112,7 +111,6 @@ export default function RootLayout({
         >
           <ScrollToTop />
           {children}
-          <GlobalLoader />
           <RegisterSW />
           <ThemeToaster />
         </ThemeProvider>
