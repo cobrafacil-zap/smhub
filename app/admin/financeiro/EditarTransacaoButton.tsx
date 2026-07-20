@@ -95,7 +95,7 @@ export function EditarTransacaoButton({
                 {error}
               </p>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="label">Tipo</label>
                 <select name="tipo" className="input" defaultValue={tipo} required>

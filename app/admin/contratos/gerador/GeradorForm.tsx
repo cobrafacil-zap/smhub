@@ -96,7 +96,7 @@ export function GeradorForm({
               placeholder="Ex: Contrato Mensal — Cliente X (2026)"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="label">Valor mensal (R$) *</label>
               <Input

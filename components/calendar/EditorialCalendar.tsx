@@ -103,22 +103,28 @@ export function EditorialCalendar({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-1">
-        {WEEKDAYS_PT.map((w, i) => (
-          <div
-            key={w}
-            className={cn(
-              "text-center text-[10px] font-semibold uppercase tracking-wider py-1",
-              diasSet.has(i) ? "text-royal-300" : "text-slate-500"
-            )}
-          >
-            {w}
+      {/* Em telas estreitas (celular), 7 colunas ficam minúsculas e as
+          entradas truncam pra nada. Wrap em scroll horizontal com largura
+          mínima legível; em telas grandes o min-w é menor que o container
+          e o calendário se comporta como antes (sem scroll). */}
+      <div className="overflow-x-auto -mx-3 px-3 lg:mx-0 lg:px-0 pb-1">
+        <div className="min-w-[640px]">
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {WEEKDAYS_PT.map((w, i) => (
+              <div
+                key={w}
+                className={cn(
+                  "text-center text-[10px] font-semibold uppercase tracking-wider py-1",
+                  diasSet.has(i) ? "text-royal-300" : "text-slate-500"
+                )}
+              >
+                {w}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((cell) => (
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((cell) => (
           <button
             type="button"
             key={cell.date}
@@ -172,6 +178,8 @@ export function EditorialCalendar({
             </div>
           </button>
         ))}
+          </div>
+        </div>
       </div>
     </div>
   );
