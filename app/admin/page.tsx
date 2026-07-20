@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/Stat";
@@ -21,6 +22,8 @@ import {
 import { formatBRL, formatDate } from "@/lib/utils";
 import { CLIENTE_STATUS, CONTRATO_STATUS } from "@/lib/constants";
 import { SITE } from "@/lib/site";
+import { calcularResumoMes } from "@/lib/finance";
+import { AddToHomeScreen } from "@/components/pwa/AddToHomeScreen";
 import type { Cliente, Contrato } from "@/types/database";
 
 export const metadata = { title: "Dashboard" };
@@ -55,7 +58,10 @@ function mensagemDoDia(): string {
 
 export default async function AdminDashboardPage() {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  // Leituras service-role (bypassa RLS). Todas as queries filtram por
+  // .eq("agencia_id", aid); calcularResumoMes também (lib/finance). Sem RLS
+  // por linha fica rápido.
+  const supabase = createAdminClient();
   const aid = session.profile.agencia_id!;
 
   // Período do mês atual (início e fim)
@@ -66,7 +72,7 @@ export default async function AdminDashboardPage() {
   // KPIs
   const [
     { count: clientesAtivos },
-    { data: recTransacoes },
+    resumo,
     { count: contratosFechadosMes },
     { data: ultimosClientes },
   ] = await Promise.all([
@@ -75,11 +81,9 @@ export default async function AdminDashboardPage() {
       .select("id", { count: "exact", head: true })
       .eq("agencia_id", aid)
       .eq("status", "ativo"),
-    supabase
-      .from("transacoes")
-      .select("valor, tipo, data_vencimento, data_pagamento, status")
-      .eq("agencia_id", aid)
-      .gte("data_vencimento", new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)),
+    // Receita do mês = mesma conta do Financeiro (transações receita no mês
+    // + faturas PAGAS no mês) — assim atualiza ao marcar fatura como paga.
+    calcularResumoMes(supabase, aid, hoje),
     // Contratos fechados no mês atual = status assinado/ativo com link_gerado_em ou created_at dentro do mês
     supabase
       .from("contratos")
@@ -96,15 +100,7 @@ export default async function AdminDashboardPage() {
       .limit(5),
   ]);
 
-  const transacoes = (recTransacoes as Array<{
-    valor: number;
-    tipo: string;
-    data_pagamento: string | null;
-    status: string;
-  }> | null) ?? [];
-  const receitaMes = transacoes
-    .filter((t) => t.tipo === "receita" && t.status === "pago")
-    .reduce((s, t) => s + t.valor, 0);
+  const receitaMes = resumo.receitas;
 
   const recentes = (ultimosClientes as Pick<Cliente, "id" | "nome_empresa" | "status" | "valor_mensal" | "created_at">[] | null) ?? [];
 
@@ -185,7 +181,9 @@ export default async function AdminDashboardPage() {
               Ver todos <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <ContratosRecentes agenciaId={aid} />
+          <Suspense fallback={<p className="text-sm text-slate-500">Carregando contratos…</p>}>
+            <ContratosRecentes agenciaId={aid} />
+          </Suspense>
         </Card>
 
         <Card>
@@ -259,13 +257,15 @@ export default async function AdminDashboardPage() {
           ))}
         </div>
       </Card>
+
+      <AddToHomeScreen />
     </div>
   );
 }
 
 // Sub-componente server: lista os contratos fechados mais recentes (assinado/ativo) do mês
 async function ContratosRecentes({ agenciaId }: { agenciaId: string }) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const hoje = new Date();
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString();
   const { data: rels } = await supabase

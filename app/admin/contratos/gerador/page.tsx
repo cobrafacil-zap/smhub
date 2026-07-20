@@ -1,5 +1,5 @@
 import { requireAgenciaAdmin } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { GeradorForm } from "./GeradorForm";
 import type { Cliente, ContratoTemplate } from "@/types/database";
@@ -12,7 +12,7 @@ export default async function GeradorPage({
   searchParams: { template?: string };
 }) {
   const session = await requireAgenciaAdmin();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const [{ data: clientes }, { data: templates }] = await Promise.all([
     supabase
       .from("clientes")

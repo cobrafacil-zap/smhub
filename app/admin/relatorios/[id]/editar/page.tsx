@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft } from "lucide-react";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { atualizarRelatorioAction } from "@/lib/actions/agencia-actions";
 import { RelatorioForm } from "../../RelatorioForm";
 import type { Cliente, Relatorio } from "@/types/database";
@@ -27,7 +27,7 @@ export default async function EditarRelatorioPage({
   params: { id: string };
 }) {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const aid = session.profile.agencia_id!;
 
   const [{ data: rel }, { data: clientes }] = await Promise.all([

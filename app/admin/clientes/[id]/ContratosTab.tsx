@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CONTRATO_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { Plus, FileText, ExternalLink, PenLine, AlertCircle, Clock, AlertTriangle } from "lucide-react";
@@ -18,12 +18,14 @@ function diasParaVencer(dataFim?: string | null): number | null {
 }
 
 export async function ContratosTab({ cliente }: { cliente: Cliente }) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: contratos } = await supabase
     .from("contratos")
-    .select("*")
+    // Só colunas da listagem — sem `conteudo` (texto grande do contrato).
+    .select("id, titulo, status, valor_mensal, data_inicio, data_fim, duracao_meses, created_at")
     .eq("cliente_id", cliente.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
   const list = (contratos as Contrato[] | null) ?? [];
 
   const ativos = list.filter((c) => c.status === "ativo" || c.status === "assinado").length;

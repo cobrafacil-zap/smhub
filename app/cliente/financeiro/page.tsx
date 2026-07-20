@@ -1,5 +1,5 @@
 import { requireCliente } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -13,12 +13,13 @@ export const metadata = { title: "Financeiro" };
 
 export default async function ClienteFinanceiroPage() {
   const session = await requireCliente();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: faturas } = await supabase
     .from("faturas")
     .select("*")
     .eq("cliente_id", session.profile.cliente_id!)
-    .order("data_vencimento", { ascending: false });
+    .order("data_vencimento", { ascending: false })
+    .limit(200);
   const list = (faturas as Fatura[] | null) ?? [];
 
   const totalPago = list.filter((f) => f.status === "pago").reduce((s, f) => s + f.valor, 0);

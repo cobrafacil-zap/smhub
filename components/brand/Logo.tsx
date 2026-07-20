@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { getPlatformConfig, logoVersion } from "@/lib/platform";
 
 interface LogoProps {
   variant?: "full" | "mark";
@@ -9,10 +10,15 @@ interface LogoProps {
 
 /**
  * Logo SM Hub.
- *   - `full`   → carrega /logo-full.svg (símbolo + texto). Editável trocando o arquivo.
- *   - `mark`   → SVG inline (ícone compacto p/ favicon, sidebar pequena).
+ *   - `full`   → logo da plataforma configurável pelo super-admin (variantes
+ *                claro/escuro). Faz fetch de `platform_config` (server). Renderiza
+ *                dois <img> alternados por tema via classes Tailwind (SSR, sem JS).
+ *                Fallback: `/logo-full.svg` quando nada está configurado.
+ *   - `mark`   → SVG inline (ícone compacto p/ favicon, sidebar pequena, print).
+ *
+ * Server component assíncrono — todos os consumers atuais são server components.
  */
-export function Logo({
+export async function Logo({
   variant = "full",
   className,
   textColor,
@@ -50,14 +56,37 @@ export function Logo({
     );
   }
 
-  // full → usa arquivo SVG (editável em /public/logo-full.svg)
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
+  const config = await getPlatformConfig();
+  const v = logoVersion(config.updated_at);
+  const light = config.logo_url_light
+    ? `${config.logo_url_light}${config.logo_url_light.includes("?") ? "&" : "?"}v=${v}`
+    : "/logo-full.svg";
+  const dark = config.logo_url_dark
+    ? `${config.logo_url_dark}${config.logo_url_dark.includes("?") ? "&" : "?"}v=${v}`
+    : "/logo-full.svg";
+
+  // eslint-disable-next-line @next/next/no-img-element
+  const LightImg = (
     <img
-      src="/logo-full.svg"
+      src={light}
       alt="SM Hub"
-      className={cn("h-10 w-auto", className)}
+      className={cn("h-10 w-auto block dark:hidden", className)}
+    />
+  );
+  // eslint-disable-next-line @next/next/no-img-element
+  const DarkImg = (
+    <img
+      src={dark}
+      alt="SM Hub"
+      className={cn("h-10 w-auto hidden dark:block", className)}
       style={textColor ? { filter: undefined } : undefined}
     />
+  );
+
+  return (
+    <>
+      {LightImg}
+      {DarkImg}
+    </>
   );
 }

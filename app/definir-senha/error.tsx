@@ -1,0 +1,5 @@
+"use client";
+import { RouteError } from "@/components/ui/RouteError";
+export default function Error(props: { error: Error & { digest?: string }; reset: () => void }) {
+  return <RouteError {...props} titulo="a definição de senha" escopo="definir-senha" />;
+}

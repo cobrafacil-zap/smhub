@@ -1,5 +1,5 @@
 import { requireCliente } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -13,12 +13,13 @@ export const metadata = { title: "Relatórios" };
 
 export default async function ClienteRelatoriosPage() {
   const session = await requireCliente();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: rels } = await supabase
     .from("relatorios")
     .select("*")
     .eq("cliente_id", session.profile.cliente_id!)
-    .order("mes_referencia", { ascending: false });
+    .order("mes_referencia", { ascending: false })
+    .limit(60);
   const list = (rels as Relatorio[] | null) ?? [];
 
   // Agrupa por mês

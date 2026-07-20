@@ -15,9 +15,10 @@ import {
 import { getSessionUser } from "@/lib/auth/session";
 import { getAssinaturaStatus, trialMaxClientes, trialDias } from "@/lib/assinatura";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPlanos } from "@/lib/planos";
 import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
 import { formatBRL, formatDate } from "@/lib/utils";
-import type { Plano, PlanoConfig } from "@/types/database";
+import type { Plano } from "@/types/database";
 
 export const metadata = { title: "Assinatura" };
 
@@ -35,13 +36,12 @@ export default async function AssinaturaPage({
   if (!agenciaId) redirect("/login");
 
   const admin = createAdminClient();
-  const [{ data: ag }, { data: planos }, status] = await Promise.all([
+  const [{ data: ag }, planosList, status] = await Promise.all([
     admin.from("agencias").select("id, nome_fantasia, plano, status").eq("id", agenciaId).maybeSingle(),
-    admin.from("planos").select("*").order("valor_mensal"),
+    getPlanos(),
     getAssinaturaStatus(agenciaId),
   ]);
 
-  const planosList = (planos as PlanoConfig[] | null) ?? [];
   const valorAtual = planosList.find((p) => p.id === (ag?.plano ?? "basico"))?.valor_mensal ?? 0;
   const motivo = searchParams.motivo as "vencida" | "cancelada" | undefined;
 

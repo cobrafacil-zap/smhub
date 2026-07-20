@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -16,10 +16,10 @@ export const metadata = { title: "Equipe" };
 
 export default async function EquipePage() {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: usuarios } = await supabase
     .from("usuarios")
-    .select("*")
+    .select("id, nome, email, role, ativo, cargo, custo_mensal, created_at, user_id")
     .eq("agencia_id", session.profile.agencia_id!)
     .order("created_at", { ascending: false });
   const list = (usuarios as Usuario[] | null) ?? [];

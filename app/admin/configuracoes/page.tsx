@@ -1,5 +1,5 @@
 import { requireAgenciaAdmin } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +12,7 @@ export const metadata = { title: "Configurações" };
 
 export default async function ConfiguracoesPage() {
   const session = await requireAgenciaAdmin();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: agencia } = await supabase
     .from("agencias")
     .select("*")

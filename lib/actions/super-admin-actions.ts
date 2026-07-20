@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -85,6 +85,48 @@ export async function atualizarPlanoValorAction(
     .eq("id", parsed.data.id);
   if (error) return { error: error.message };
   revalidatePath("/super-admin/financeiro");
+  revalidateTag("planos");
+  return { ok: true };
+}
+
+// ============================================================================
+// PLATFORM CONFIG — logos da plataforma (claro/escuro)
+// ============================================================================
+
+const salvarLogoPlataformaSchema = z.object({
+  logo_url_light: z.string().url().nullable().or(z.literal("")),
+  logo_url_dark: z.string().url().nullable().or(z.literal("")),
+});
+
+export type SalvarLogoPlataformaState = { error?: string; ok?: boolean } | undefined;
+
+export async function salvarLogoPlataformaAction(
+  _prev: SalvarLogoPlataformaState,
+  formData: FormData
+): Promise<SalvarLogoPlataformaState> {
+  await requireSuperAdmin();
+  const parsed = salvarLogoPlataformaSchema.safeParse({
+    logo_url_light: formData.get("logo_url_light") || null,
+    logo_url_dark: formData.get("logo_url_dark") || null,
+  });
+  if (!parsed.success) return { error: "URLs de logo inválidas." };
+
+  // "" vira null (logo removida).
+  const logo_url_light = parsed.data.logo_url_light || null;
+  const logo_url_dark = parsed.data.logo_url_dark || null;
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("platform_config")
+    .upsert(
+      { id: "singleton", logo_url_light, logo_url_dark },
+      { onConflict: "id" }
+    );
+  if (error) return { error: error.message };
+
+  // Revalida tudo: a logo aparece em landing, login, checkout, painel etc.
+  revalidatePath("/", "layout");
+  revalidatePath("/super-admin/configuracoes");
   return { ok: true };
 }
 
@@ -252,14 +294,16 @@ export async function criarAgenciaAction(
   }
 
   // 3) Cria agencia
+  // Campos opcionais vazios viram NULL (importante p/ cnpj, que tem constraint
+  // UNIQUE: "" colidiria com outra agência em branco; NULL não colide).
   const { data: ag, error: agErr } = await admin
     .from("agencias")
     .insert({
       nome_fantasia: parsed.data.nome_fantasia,
-      razao_social: parsed.data.razao_social ?? null,
-      cnpj: parsed.data.cnpj ?? null,
+      razao_social: parsed.data.razao_social?.trim() || null,
+      cnpj: parsed.data.cnpj?.trim() || null,
       email_contato: parsed.data.email_contato,
-      telefone: parsed.data.telefone ?? null,
+      telefone: parsed.data.telefone?.trim() || null,
       status: "ativa",
       plano: parsed.data.plano,
     })
@@ -267,7 +311,18 @@ export async function criarAgenciaAction(
     .single();
   if (agErr || !ag) {
     await admin.auth.admin.deleteUser(signData.user.id).catch(() => {});
-    return { ok: false, error: agErr?.message ?? "Erro ao criar agência." };
+    const msg = agErr?.message ?? "Erro ao criar agência.";
+    // Mensagem amigável para duplicidade de CNPJ (constraint agencias_cnpj_key).
+    if (msg.includes("agencias_cnpj_key")) {
+      return {
+        ok: false,
+        error:
+          parsed.data.cnpj?.trim()
+            ? "CNPJ já cadastrado em outra agência."
+            : "CNPJ em branco conflita com outra agência (limpe os CNPJs em branco ou informe um CNPJ).",
+      };
+    }
+    return { ok: false, error: msg };
   }
 
   // 4) Cria usuario
@@ -305,4 +360,103 @@ export async function criarAgenciaAction(
     agencia: parsed.data.nome_fantasia,
     admin: parsed.data.admin_nome,
   };
+}
+
+// ============================================================================
+// AGÊNCIA: excluir (remove auth users, storage e a agência em cascata)
+// ============================================================================
+//
+// O `agencias(id) on delete cascade` derruba todas as tabelas públicas
+// (usuarios, clientes, planejamentos, contratos, faturas, briefings,
+// assinatura_ativa, etc.). Mas as contas em `auth.users` (admin da agência +
+// logins dos clientes) NÃO são removidas pelo cascade — ficariam órfãs.
+// Por isso coletamos os user_ids ANTES de excluir e os removemos do Auth.
+// Também limpamos (best-effort) os arquivos do Storage sob o prefixo da agência.
+
+const BUCKETS_PARA_LIMPAR = [
+  "agency-assets",
+  "client-assets",
+  "contracts",
+  "briefings",
+  "reports",
+  "invoices",
+  "content-plans",
+];
+
+async function limparStorageAgencia(admin: ReturnType<typeof createAdminClient>, agenciaId: string) {
+  for (const bucket of BUCKETS_PARA_LIMPAR) {
+    try {
+      // Lista recursiva sob o prefixo "agenciaId/".
+      const { data: objs, error } = await admin.storage.from(bucket).list(agenciaId, {
+        limit: 1000,
+        offset: 0,
+      });
+      if (error || !objs || objs.length === 0) continue;
+      // O list de um nível não é recursivo; coletamos caminhos dos objetos
+      // (prefixo = subpasta). Para simplicidade, removemos por subpasta.
+      const paths: string[] = [];
+      for (const obj of objs) {
+        if (!obj.id) {
+          // É uma "pasta" (prefixo) — lista dentro dela.
+          const { data: sub } = await admin.storage
+            .from(bucket)
+            .list(`${agenciaId}/${obj.name}`, { limit: 1000, offset: 0 });
+          for (const s of sub ?? []) {
+            if (s.id) paths.push(`${agenciaId}/${obj.name}/${s.name}`);
+          }
+        } else {
+          paths.push(`${agenciaId}/${obj.name}`);
+        }
+      }
+      if (paths.length > 0) {
+        // remove aceita no máx 1000 paths por chamada.
+        for (let i = 0; i < paths.length; i += 1000) {
+          await admin.storage.from(bucket).remove(paths.slice(i, i + 1000));
+        }
+      }
+    } catch {
+      // Storage é best-effort: não bloqueia a exclusão da agência.
+    }
+  }
+}
+
+export async function deletarAgenciaAction(agenciaId: string) {
+  await requireSuperAdmin();
+  const admin = createAdminClient();
+
+  // 1) Coleta user_ids (staff da agência + logins de clientes) ANTES de excluir,
+  //    pois o cascade apagará as linhas de usuarios/clientes.
+  const { data: staff } = await admin
+    .from("usuarios")
+    .select("user_id")
+    .eq("agencia_id", agenciaId);
+  const { data: clientesUsers } = await admin
+    .from("clientes")
+    .select("user_id")
+    .eq("agencia_id", agenciaId);
+
+  const userIds = new Set<string>();
+  for (const u of staff ?? []) if (u.user_id) userIds.add(u.user_id);
+  for (const c of clientesUsers ?? []) if (c.user_id) userIds.add(c.user_id);
+
+  // 2) Limpa storage (best-effort) sob o prefixo da agência.
+  await limparStorageAgencia(admin, agenciaId);
+
+  // 3) Exclui a agência — cascade derruba todas as tabelas públicas.
+  const { error } = await admin.from("agencias").delete().eq("id", agenciaId);
+  if (error) return { ok: false, error: error.message };
+
+  // 4) Remove as contas do Auth (admin da agência + clientes).
+  for (const uid of userIds) {
+    try {
+      await admin.auth.admin.deleteUser(uid);
+    } catch {
+      // ignora se já não existir
+    }
+  }
+
+  revalidatePath("/super-admin/agencias");
+  revalidatePath("/super-admin");
+  revalidatePath("/super-admin/financeiro");
+  return { ok: true };
 }

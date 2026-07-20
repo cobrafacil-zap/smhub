@@ -90,7 +90,9 @@ export default function NovoEquipePage() {
             <label className="label">Custo mensal (R$)</label>
             <BRLInput name="custo_mensal" defaultValue={0} />
             <p className="text-[10px] text-slate-500 mt-1">
-              Será contabilizado no financeiro (DRE / custos fixos). Pode editar depois.
+              É somado às despesas do mês no Financeiro (folha fixa da equipe).
+              Pode editar depois. Se lançar a folha como transação, zere este
+              campo do membro para não dobrar.
             </p>
           </div>
           <div>

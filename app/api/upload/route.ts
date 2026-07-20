@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadFileServer } from "@/lib/storage";
-import { requireAgenciaMember } from "@/lib/auth/session";
+import { requireAgenciaMember, requireSuperAdmin } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { STORAGE_BUCKETS } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
-  const session = await requireAgenciaMember();
   const form = await req.formData();
   const file = form.get("file");
   const bucket = String(form.get("bucket") ?? "");
@@ -21,6 +20,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Bucket inválido" }, { status: 400 });
   }
 
+  // Assets da plataforma (logos claro/escuro etc.) são gerenciados pelo
+  // super-admin: não há agencia_id para prefixar o path.
+  if (bucket === STORAGE_BUCKETS.platform) {
+    await requireSuperAdmin();
+    try {
+      const data = await uploadFileServer({
+        bucket: bucket as never,
+        path: subPath,
+        file,
+        contentType: file.type,
+        token: "", // service-role client no storage server? usa token abaixo
+      });
+      return NextResponse.json({ ok: true, data });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Erro no upload" },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Demais buckets: agência autenticada, path prefixado por agencia_id.
+  const session = await requireAgenciaMember();
   const path = `${session.profile.agencia_id}/${subPath}`;
   const supabase = createClient();
   const token = (await supabase.auth.getSession()).data.session?.access_token ?? "";

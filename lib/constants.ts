@@ -58,6 +58,30 @@ export const ENTRY_TIPO_LABEL: Record<string, string> = Object.fromEntries(
   ENTRY_TIPOS.map((t) => [t.value, t.label])
 );
 
+/**
+ * Cor FIXA por tipo de post — não é escolhida pelo usuário. Cada tipo tem
+ * sempre a mesma cor no calendário/lista (padrão visual).
+ *   post_feed  = verde   (success)
+ *   story      = azul    (royal)
+ *   reels      = vermelho (danger)
+ *   carrossel  = âmbar   (amber)
+ *   video      = rosa    (pink)
+ *   artigo     = cinza   (slate)
+ * `chip` = classes p/ o bloco do calendário; `dot` = classe de cor sólida p/ bolinhas.
+ */
+export const ENTRY_TIPO_COR: Record<
+  string,
+  { chip: string; dot: string }
+> = {
+  // Chip: texto legível nos dois temas — base (claro) mais escuro, dark: mais claro.
+  post_feed: { chip: "bg-success-500/20 text-success-600 dark:text-success-400 border-success-500/30", dot: "bg-success-500" },
+  story: { chip: "bg-royal-500/20 text-royal-700 dark:text-royal-200 border-royal-500/30", dot: "bg-royal-500" },
+  reels: { chip: "bg-danger-500/20 text-danger-600 dark:text-danger-400 border-danger-500/30", dot: "bg-danger-500" },
+  carrossel: { chip: "bg-amber-500/20 text-amber-700 dark:text-amber-200 border-amber-500/30", dot: "bg-amber-500" },
+  video: { chip: "bg-pink-500/20 text-pink-700 dark:text-pink-200 border-pink-500/30", dot: "bg-pink-500" },
+  artigo: { chip: "bg-slate-500/20 text-slate-700 dark:text-slate-200 border-slate-500/30", dot: "bg-slate-500" },
+};
+
 export const ENTRY_STATUS = {
   pendente: { label: "Pendente", color: "warning" as const },
   aprovado: { label: "Aprovado", color: "info" as const },
@@ -175,4 +199,5 @@ export const STORAGE_BUCKETS = {
   briefings: "briefings",
   reports: "reports",
   invoices: "invoices",
+  platform: "platform-assets",
 } as const;

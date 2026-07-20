@@ -237,25 +237,23 @@ export async function criarContratoAction(
 export async function enviarContratoAction(contratoId: string) {
   const session = await requireAgenciaAdmin();
   const supabase = createClient();
+  // Resource embedding: update retorna contrato + cliente em 1 round-trip
+  // (antes eram 2 sequenciais).
   const { data: contrato, error } = await supabase
     .from("contratos")
     .update({ status: "enviado" })
     .eq("id", contratoId)
     .eq("agencia_id", session.profile.agencia_id!)
-    .select("id, titulo, cliente_id")
+    .select("id, titulo, cliente:clientes(nome_responsavel, email)")
     .single();
   if (error || !contrato) return { error: "Erro ao enviar contrato." };
 
   // Notifica o cliente por e-mail (se houver)
-  const { data: cliente } = await supabase
-    .from("clientes")
-    .select("nome_responsavel, email")
-    .eq("id", contrato.cliente_id)
-    .single();
+  const cliente = (contrato as unknown as { cliente: { nome_responsavel: string | null; email: string | null } | null }).cliente;
   if (cliente?.email) {
     const link = `${process.env.NEXT_PUBLIC_APP_URL}/cliente/contratos/${contrato.id}`;
     const tpl = emailContrato({
-      clienteNome: cliente.nome_responsavel,
+      clienteNome: cliente.nome_responsavel ?? "cliente",
       titulo: contrato.titulo,
       link,
     });
@@ -290,21 +288,16 @@ export async function gerarLinkAssinaturaAction(
     const contratoId = String(formData.get("contrato_id") ?? "");
     if (!contratoId) return { error: "Contrato inválido." };
 
-    // Garante que o contrato é da agência
+    // Garante que o contrato é da agência + já traz o cliente (resource
+    // embedding) em 1 round-trip (antes: 2 sequenciais).
     const { data: contrato, error: cErr } = await supabase
       .from("contratos")
-      .select("id, titulo, status, cliente_id")
+      .select("id, titulo, status, cliente:clientes(nome_responsavel, email)")
       .eq("id", contratoId)
       .eq("agencia_id", session.profile.agencia_id!)
       .single();
     if (cErr || !contrato) return { error: "Contrato não encontrado." };
-
-    // Pega o nome do cliente (pra personalizar o retorno)
-    const { data: cliente } = await supabase
-      .from("clientes")
-      .select("nome_responsavel, email")
-      .eq("id", contrato.cliente_id)
-      .single();
+    const cliente = (contrato as unknown as { cliente: { nome_responsavel: string | null; email: string | null } | null }).cliente;
 
     // Gera token novo + expira em 7 dias
     const token = gerarToken();

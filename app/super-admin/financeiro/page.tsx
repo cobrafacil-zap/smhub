@@ -1,5 +1,6 @@
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPlanos } from "@/lib/planos";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/Stat";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Wallet, TrendingUp, Building2, CreditCard } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { PlanoValorCard } from "./PlanoValorCard";
-import type { Agencia, PlanoConfig } from "@/types/database";
+import type { Agencia } from "@/types/database";
 
 export const metadata = { title: "Financeiro" };
 
@@ -15,17 +16,12 @@ export default async function FinanceiroPage() {
   await requireSuperAdmin();
   const supabase = createAdminClient();
 
-  const [
-    { data: planos },
-    { data: ag },
-    { data: agAtivas },
-  ] = await Promise.all([
-    supabase.from("planos").select("*").order("valor_mensal"),
+  const [planosList, { data: ag }, { data: agAtivas }] = await Promise.all([
+    getPlanos(),
     supabase.from("agencias").select("id, plano, status"),
     supabase.from("agencias").select("id, plano").eq("status", "ativa"),
   ]);
 
-  const planosList = (planos as PlanoConfig[] | null) ?? [];
   const agList = (ag as Pick<Agencia, "id" | "plano" | "status">[] | null) ?? [];
   const agAtivasList = (agAtivas as Pick<Agencia, "id" | "plano">[] | null) ?? [];
 

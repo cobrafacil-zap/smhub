@@ -6,6 +6,8 @@ import {
   atualizarFaturaStatusAction,
   deletarFaturaAction,
 } from "@/lib/actions/fatura-briefing-actions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { toast } from "sonner";
 import type { FaturaStatus } from "@/types/database";
 
 export function FaturaActions({
@@ -22,19 +24,11 @@ export function FaturaActions({
     setError(null);
     startTransition(async () => {
       const res = await atualizarFaturaStatusAction(id, "pago");
-      if (res && "error" in res && res.error) setError(res.error);
-    });
-  }
-
-  function handleDeletar() {
-    setError(null);
-    if (!confirm("Excluir esta fatura? Esta ação não pode ser desfeita.")) return;
-    startTransition(async () => {
-      try {
-        await deletarFaturaAction(id);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "Erro ao excluir.";
-        if (!msg.includes("NEXT_REDIRECT")) setError(msg);
+      if (res && "error" in res && res.error) {
+        setError(res.error);
+        toast.error(res.error);
+      } else {
+        toast.success("Fatura marcada como paga.");
       }
     });
   }
@@ -53,15 +47,35 @@ export function FaturaActions({
           <Check className="h-3 w-3" /> Marcar paga
         </button>
       )}
-      <button
-        type="button"
-        onClick={handleDeletar}
-        disabled={pending}
-        className="text-xs text-danger-300 hover:text-danger-200 inline-flex items-center gap-1 disabled:opacity-50"
-        title="Excluir"
-      >
-        <Trash2 className="h-3 w-3" />
-      </button>
+      <ConfirmDialog
+        title="Excluir fatura?"
+        description="Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        variant="danger"
+        trigger={
+          <button
+            type="button"
+            disabled={pending}
+            className="text-xs text-danger-300 hover:text-danger-200 inline-flex items-center gap-1 disabled:opacity-50"
+            title="Excluir"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        }
+        onConfirm={async () => {
+          try {
+            await deletarFaturaAction(id);
+            toast.success("Fatura excluída.");
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : "Erro ao excluir.";
+            if (!msg.includes("NEXT_REDIRECT")) {
+              setError(msg);
+              toast.error(msg);
+            }
+            throw e;
+          }
+        }}
+      />
     </div>
   );
 }

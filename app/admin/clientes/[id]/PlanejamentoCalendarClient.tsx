@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { EditorialCalendar } from "@/components/calendar/EditorialCalendar";
 import { EntryEditor, type EntryFormData } from "@/components/calendar/EntryEditor";
@@ -22,9 +22,10 @@ import {
   deletarEntradaAction,
   criarPlanejamentoAction,
   atualizarEntradaStatusAction,
+  atualizarDiasPostagemAction,
 } from "@/lib/actions/agencia-actions";
-import { ENTRY_STATUS, ENTRY_TIPO_LABEL } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
+import { ENTRY_STATUS, ENTRY_TIPO_LABEL, ENTRY_TIPO_COR } from "@/lib/constants";
+import { formatDate, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { EntradaStatus, EntradaTipo, PlanejamentoEntrada } from "@/types/database";
 
@@ -34,8 +35,21 @@ interface Props {
   mesReferencia: string; // YYYY-MM-DD
   mesLabel: string;
   entradas: PlanejamentoEntrada[];
+  /** Dias da semana marcados como dia de postagem (0=Dom..6=Sáb). */
+  diasPostagem: number[] | null;
   canEdit: boolean;
 }
+
+// Ordem de exibição (Seg..Dom). O índice interno é getDay (0=Dom..6=Sáb).
+const DIAS_SEMANA: { d: number; l: string }[] = [
+  { d: 1, l: "Seg" },
+  { d: 2, l: "Ter" },
+  { d: 3, l: "Qua" },
+  { d: 4, l: "Qui" },
+  { d: 5, l: "Sex" },
+  { d: 6, l: "Sáb" },
+  { d: 0, l: "Dom" },
+];
 
 export function PlanejamentoCalendarClient({
   clienteId,
@@ -43,17 +57,53 @@ export function PlanejamentoCalendarClient({
   mesReferencia,
   mesLabel,
   entradas,
+  diasPostagem,
   canEdit,
 }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState<PlanejamentoEntrada | "new" | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>(undefined);
+  const [diaSelecionado, setDiaSelecionado] = useState<string | undefined>(undefined);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<PlanejamentoEntrada | null>(null);
 
+  // Estado local das entradas — evita recarregar a página inteira a cada ação.
+  // Sincroniza com a prop `entradas` quando ela muda (ex.: troca de mês no server).
+  const [lista, setLista] = useState<PlanejamentoEntrada[]>(entradas);
+  useEffect(() => {
+    setLista(entradas);
+  }, [entradas]);
+
+  // Estado local dos dias de postagem (sincroniza com a prop quando troca o mês).
+  const [dias, setDias] = useState<number[]>((diasPostagem ?? []).map(Number));
+  useEffect(() => {
+    setDias((diasPostagem ?? []).map(Number));
+  }, [diasPostagem]);
+
+  function handleToggleDia(d: number) {
+    if (!planejamentoId || !canEdit) return;
+    const atual = new Set(dias);
+    if (atual.has(d)) atual.delete(d);
+    else atual.add(d);
+    const prox = Array.from(atual).sort((a, b) => a - b);
+    const anterior = dias;
+    setDias(prox); // otimista — tinta atualiza na hora
+    startTransition(async () => {
+      const res = await atualizarDiasPostagemAction(planejamentoId, prox);
+      if (res && "error" in res) {
+        setDias(anterior); // reverte
+        toast.error(res.error);
+      } else if (res && "ok" in res && res.ok) {
+        setDias(res.dias_postagem ?? []);
+        toast.success("Dias de postagem atualizados");
+      }
+    });
+  }
+
   function handleCellClick(date: string) {
     if (!canEdit) return;
+    setDiaSelecionado(date);
     if (!planejamentoId) {
       setDefaultDate(date);
       // sem planejamento: sugere iniciar primeiro
@@ -65,13 +115,28 @@ export function PlanejamentoCalendarClient({
 
   function handleEntryClick(entry: PlanejamentoEntrada) {
     if (!canEdit) return;
+    setDiaSelecionado(entry.data);
     setEditing(entry);
     setDefaultDate(entry.data);
   }
 
   function handleAdminStatus(entry: PlanejamentoEntrada, novo: EntradaStatus) {
     startTransition(async () => {
-      await atualizarEntradaStatusAction(entry.id, novo);
+      const res = await atualizarEntradaStatusAction(entry.id, novo);
+      if (res && "ok" in res && res.ok) {
+        // Atualiza o status (e comentário) localmente — sem recarregar a página.
+        setLista((prev) =>
+          prev.map((it) =>
+            it.id === res.entradaId
+              ? {
+                  ...it,
+                  status: res.status as EntradaStatus,
+                  aprovacao_comentario: res.comentario ?? it.aprovacao_comentario,
+                }
+              : it
+          )
+        );
+      }
       toast.success(
         novo === "aprovado"
           ? "Entrada aprovada"
@@ -81,7 +146,6 @@ export function PlanejamentoCalendarClient({
           ? "Mudança solicitada ao cliente"
           : "Status atualizado"
       );
-      router.refresh();
     });
   }
 
@@ -97,16 +161,18 @@ export function PlanejamentoCalendarClient({
       fd.set("copy", data.copy ?? "");
       fd.set("hashtags", data.hashtags.join(" "));
       fd.set("status", data.status);
-      fd.set("cor", data.cor ?? "");
       fd.set("estilo", data.estilo ?? "");
       startTransition(async () => {
         const res = await criarEntradaAction(fd);
         if (res && "error" in res && res.error) {
           setError(res.error);
-        } else {
+        } else if (res && "ok" in res && res.ok && res.entrada) {
+          // Insere a nova entrada no estado local — sem recarregar.
+          setLista((prev) => [...prev, res.entrada as PlanejamentoEntrada]);
+          setDiaSelecionado(res.entrada.data);
           setEditing(null);
           setError(null);
-          router.refresh();
+          toast.success("Entrada criada");
         }
       });
     } else {
@@ -119,16 +185,19 @@ export function PlanejamentoCalendarClient({
       fd.set("copy", data.copy ?? "");
       fd.set("hashtags", data.hashtags.join(" "));
       fd.set("status", data.status);
-      fd.set("cor", data.cor ?? "");
       fd.set("estilo", data.estilo ?? "");
+      const editId = editing.id;
       startTransition(async () => {
-        const res = await atualizarEntradaAction(editing.id, fd);
+        const res = await atualizarEntradaAction(editId, fd);
         if (res && "error" in res && res.error) {
           setError(res.error);
-        } else {
+        } else if (res && "ok" in res && res.ok && res.entrada) {
+          // Substitui a entrada editada no estado local — sem recarregar.
+          setLista((prev) => prev.map((it) => (it.id === editId ? (res.entrada as PlanejamentoEntrada) : it)));
+          setDiaSelecionado(res.entrada.data);
           setEditing(null);
           setError(null);
-          router.refresh();
+          toast.success("Entrada atualizada");
         }
       });
     }
@@ -139,9 +208,11 @@ export function PlanejamentoCalendarClient({
     const id = confirmDelete.id;
     startTransition(async () => {
       await deletarEntradaAction(id);
+      // Remove localmente — sem recarregar.
+      setLista((prev) => prev.filter((it) => it.id !== id));
       setConfirmDelete(null);
       setEditing(null);
-      router.refresh();
+      toast.success("Entrada excluída");
     });
   }
 
@@ -159,11 +230,11 @@ export function PlanejamentoCalendarClient({
     <>
       <div className="flex items-center justify-between gap-3 mb-3">
         <p className="text-sm text-slate-400">
-          {entradas.length === 0
+          {lista.length === 0
             ? canEdit
               ? "Clique em uma data para criar a primeira entrada."
               : "Sem entradas neste mês."
-            : `${entradas.length} entrada(s) programada(s).`}
+            : `${lista.length} entrada(s) programada(s).`}
         </p>
         {canEdit && planejamentoId && (
           <Button
@@ -171,7 +242,7 @@ export function PlanejamentoCalendarClient({
             size="sm"
             onClick={() => {
               setEditing("new");
-              setDefaultDate(mesReferencia);
+              setDefaultDate(diaSelecionado ?? mesReferencia);
             }}
             iconLeft={<CalendarPlus className="h-4 w-4" />}
           >
@@ -191,36 +262,77 @@ export function PlanejamentoCalendarClient({
           </Button>
         </Card>
       ) : (
-        <EditorialCalendar
-          entries={entradas}
-          initialDate={mesReferencia}
-          onCellClick={handleCellClick}
-          onEntryClick={handleEntryClick}
-        />
+        <>
+          {canEdit && planejamentoId && (
+            <div className="mb-3 rounded-lg border border-border bg-bg-surface px-3 py-2.5">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Dias de postagem
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {DIAS_SEMANA.map(({ d, l }) => {
+                    const ativo = dias.includes(d);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => handleToggleDia(d)}
+                        disabled={pending}
+                        aria-pressed={ativo}
+                        className={cn(
+                          "text-xs font-medium px-2.5 py-1 rounded-md border transition disabled:opacity-50",
+                          ativo
+                            ? "bg-royal-500/15 border-royal-500/40 text-royal-200"
+                            : "bg-bg-elevated border-border text-slate-400 hover:text-slate-200 hover:border-royal-500/30"
+                        )}
+                        title={ativo ? "Remover dia de postagem" : "Marcar como dia de postagem"}
+                      >
+                        {l}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="text-[11px] text-slate-500">
+                  Os dias marcados ficam levemente coloridos no calendário.
+                </span>
+              </div>
+            </div>
+          )}
+
+          <EditorialCalendar
+            entries={lista}
+            initialDate={mesReferencia}
+            onCellClick={handleCellClick}
+            onEntryClick={handleEntryClick}
+            selectedDate={diaSelecionado}
+            diasPostagem={dias}
+          />
+        </>
       )}
 
       {/* Lista detalhada (todas entradas do mês) */}
-      {planejamentoId && entradas.length > 0 && (
+      {planejamentoId && lista.length > 0 && (
         <Card>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-slate-300">Todas as entradas de {mesLabel}</h3>
-            <Badge variant="default">{entradas.length}</Badge>
+            <Badge variant="default">{lista.length}</Badge>
           </div>
           <ul className="divide-y divide-border">
-            {entradas.map((e) => {
+            {lista.map((e) => {
               const st = ENTRY_STATUS[e.status];
+              const corTipo = ENTRY_TIPO_COR[e.tipo as EntradaTipo] ?? ENTRY_TIPO_COR.post_feed;
               return (
                 <li key={e.id} className="py-3 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        {e.cor && (
-                          <span
-                            className="inline-block h-3 w-3 rounded-full border border-border shrink-0"
-                            style={{ backgroundColor: e.cor }}
-                            title={`Cor: ${e.cor}`}
-                          />
-                        )}
+                        <span
+                          className={cn(
+                            "inline-block h-3 w-3 rounded-full border border-white/20 shrink-0",
+                            corTipo.dot
+                          )}
+                          title={`${ENTRY_TIPO_LABEL[e.tipo as EntradaTipo] ?? e.tipo}`}
+                        />
                         <p className="font-medium text-slate-100">{e.titulo}</p>
                         <Badge variant="brand">{ENTRY_TIPO_LABEL[e.tipo as EntradaTipo] ?? e.tipo}</Badge>
                         {e.estilo && (
@@ -352,6 +464,7 @@ export function PlanejamentoCalendarClient({
               </p>
             )}
             <EntryEditor
+              key={editing === "new" ? "new" : editing.id}
               initial={editing === "new" ? undefined : editing}
               defaultDate={defaultDate}
               onSave={handleSave}

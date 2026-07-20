@@ -81,6 +81,16 @@ export function NovaTransacaoForm() {
               placeholder="Ex: Facebook Ads, Salário, Mensalidade cliente..."
             />
           </div>
+          <div className="sm:col-span-2">
+            <label className="label">Natureza *</label>
+            <select name="natureza" className="input" required defaultValue="variavel">
+              <option value="variavel">Variável — muda mês a mês (ex: anúncios, material)</option>
+              <option value="fixa">Fixa — recorrente/estável (ex: aluguel, salário, mensalidade)</option>
+            </select>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Ajuda a separar custos previsíveis dos variáveis nos relatórios.
+            </p>
+          </div>
         </div>
         <div className="pt-3 border-t border-border flex justify-end gap-2">
           <SubmitButton />

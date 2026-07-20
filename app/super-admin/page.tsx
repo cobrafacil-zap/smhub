@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Building2, Users, Wallet, FileText } from "lucide-react";
 import { formatBRL, formatDate } from "@/lib/utils";
+import { AddToHomeScreen } from "@/components/pwa/AddToHomeScreen";
 import type { Agencia, Contrato } from "@/types/database";
 
 export const metadata = { title: "Super Admin" };
@@ -21,22 +22,31 @@ export default async function SuperAdminHomePage() {
     { data: ag },
     { count: totalClientes },
     { data: ct },
+    { data: clAtivos },
   ] = await Promise.all([
     supabase.from("agencias").select("id", { count: "exact", head: true }),
-    supabase.from("agencias").select("*").order("created_at", { ascending: false }).limit(5),
+    // Só colunas renderizadas — antes era select("*"), puxando logo_url etc.
+    supabase
+      .from("agencias")
+      .select("id, nome_fantasia, email_contato, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5),
     supabase.from("clientes").select("id", { count: "exact", head: true }),
-    supabase.from("contratos").select("*").order("created_at", { ascending: false }).limit(5),
+    // contratos: NUNCA select("*") — puxa `conteudo` (HTML grande) + jsonb.
+    // A lista só renderiza titulo, valor_mensal, status, created_at.
+    supabase
+      .from("contratos")
+      .select("id, titulo, valor_mensal, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5),
+    // MRR: soma valor_mensal de clientes ativos (varre a tabela; super-admin,
+    // baixo tráfego). Independente das outras → entra no paralelo.
+    supabase.from("clientes").select("valor_mensal").eq("status", "ativo"),
   ]);
 
   const agList = (ag as Agencia[] | null) ?? [];
   const ctList = (ct as Contrato[] | null) ?? [];
-
-  // MRR estimado: soma valor_mensal de clientes ativos
-  const { data: clAtivos } = await supabase
-    .from("clientes")
-    .select("valor_mensal")
-    .eq("status", "ativo");
-  const mrr = (clAtivos ?? []).reduce((s, c) => s + Number(c.valor_mensal ?? 0), 0);
+  const mrr = (clAtivos ?? []).reduce((s, c) => s + Number((c as { valor_mensal?: number | null }).valor_mensal ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -129,6 +139,8 @@ export default async function SuperAdminHomePage() {
           )}
         </Card>
       </div>
+
+      <AddToHomeScreen />
     </div>
   );
 }

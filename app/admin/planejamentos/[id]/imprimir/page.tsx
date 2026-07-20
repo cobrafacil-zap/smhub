@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAgenciaMember } from "@/lib/auth/session";
 import { PrintPlanejamento } from "@/components/calendar/PrintPlanejamento";
@@ -16,31 +15,29 @@ export default async function ImprimirPlanejamentoPage({
   params: { id: string };
 }) {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const aid = session.profile.agencia_id!;
+  const admin = createAdminClient();
 
-  // Carrega o planejamento (RLS já filtra por agencia_id).
-  const { data: plan } = await supabase
+  // Carrega o planejamento escopado por agencia_id (admin client bypassa
+  // RLS — a cláusula .eq("agencia_id") é o que impede vazamento entre
+  // agências).
+  const { data: plan } = await admin
     .from("planejamentos")
     .select("*")
     .eq("id", params.id)
+    .eq("agencia_id", aid)
     .maybeSingle();
   const planejamento = plan as Planejamento | null;
   if (!planejamento) notFound();
 
-  // Posse: precisa pertencer à agência do usuário.
-  if (planejamento.agencia_id !== session.profile.agencia_id) notFound();
-
-  // Entradas do mês.
-  const { data: entRows } = await supabase
-    .from("planejamento_entradas")
-    .select("*")
-    .eq("planejamento_id", planejamento.id)
-    .order("data", { ascending: true });
-  const entradas = (entRows as PlanejamentoEntrada[] | null) ?? [];
-
-  // Cliente + agência (admin client pra evitar fricção de RLS no join).
-  const admin = createAdminClient();
-  const [{ data: cliente }, { data: agencia }] = await Promise.all([
+  // Entradas + cliente + agência são independentes entre si (todas só
+  // precisam de planejamento já resolvido) → rodam juntas em paralelo.
+  const [{ data: entRows }, { data: cliente }, { data: agencia }] = await Promise.all([
+    admin
+      .from("planejamento_entradas")
+      .select("*")
+      .eq("planejamento_id", planejamento.id)
+      .order("data", { ascending: true }),
     admin
       .from("clientes")
       .select("nome_empresa")
@@ -52,6 +49,7 @@ export default async function ImprimirPlanejamentoPage({
       .eq("id", planejamento.agencia_id)
       .maybeSingle(),
   ]);
+  const entradas = (entRows as PlanejamentoEntrada[] | null) ?? [];
 
   const mesRef = new Date(planejamento.mes_referencia);
   const mesLabel = `${MONTHS_PT[mesRef.getMonth()]} ${mesRef.getFullYear()}`;

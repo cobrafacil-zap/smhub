@@ -1,5 +1,5 @@
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ClipboardList } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { NovoBriefingButton } from "./NovoBriefingButton";
+import { EditarBriefingButton } from "@/app/admin/clientes/[id]/EditarBriefingButton";
 import type { Briefing, Cliente, Json } from "@/types/database";
 
 export const metadata = { title: "Briefings" };
@@ -29,15 +30,40 @@ function extrairPares(respostas: Json): ParItem[] {
     .slice(0, 3);
 }
 
+/** Extrai o título + TODOS os pares (para pré-preencher o formulário de edição). */
+function extrairParaEdicao(respostas: Json): { titulo: string; pares: ParItem[] } {
+  if (!Array.isArray(respostas)) return { titulo: "Briefing", pares: [] };
+  let titulo = "Briefing";
+  const pares: ParItem[] = [];
+  for (const item of respostas as unknown[]) {
+    if (
+      !!item &&
+      typeof item === "object" &&
+      !Array.isArray(item) &&
+      "pergunta" in (item as Record<string, unknown>) &&
+      "resposta" in (item as Record<string, unknown>)
+    ) {
+      const par = item as ParItem;
+      if (par.pergunta.startsWith("__titulo__:")) {
+        titulo = par.pergunta.replace("__titulo__:", "") || "Briefing";
+      } else {
+        pares.push({ pergunta: par.pergunta, resposta: par.resposta });
+      }
+    }
+  }
+  return { titulo, pares };
+}
+
 export default async function BriefingsPage() {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const [{ data: briefings }, { data: clientesAtivos }] = await Promise.all([
     supabase
       .from("briefings")
       .select("*, cliente:clientes(nome_empresa)")
       .eq("agencia_id", session.profile.agencia_id!)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(100),
     supabase
       .from("clientes")
       .select("id, nome_empresa")
@@ -76,6 +102,7 @@ export default async function BriefingsPage() {
         <div className="space-y-3">
           {list.map((b) => {
             const pares = extrairPares(b.respostas);
+            const paraEdicao = extrairParaEdicao(b.respostas);
             return (
               <Card key={b.id}>
                 <div className="flex items-center justify-between mb-2 gap-2">
@@ -89,7 +116,14 @@ export default async function BriefingsPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 shrink-0">{formatDate(b.created_at)}</p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <EditarBriefingButton
+                      briefingId={b.id}
+                      tituloInicial={paraEdicao.titulo}
+                      paresIniciais={paraEdicao.pares}
+                    />
+                    <p className="text-xs text-slate-500">{formatDate(b.created_at)}</p>
+                  </div>
                 </div>
                 {pares.length === 0 ? (
                   <p className="text-sm text-slate-500 italic">Sem respostas.</p>

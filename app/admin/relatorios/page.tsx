@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -16,12 +16,13 @@ export const metadata = { title: "Relatórios" };
 
 export default async function RelatoriosPage() {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: rels } = await supabase
     .from("relatorios")
     .select("*, cliente:clientes(nome_empresa)")
     .eq("agencia_id", session.profile.agencia_id!)
-    .order("mes_referencia", { ascending: false });
+    .order("mes_referencia", { ascending: false })
+    .limit(200);
   const list = (rels ?? []) as (Relatorio & { cliente: Pick<Cliente, "nome_empresa"> | null })[];
 
   return (

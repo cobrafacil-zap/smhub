@@ -1,5 +1,5 @@
 import { requireCliente } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardEmpty } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -15,12 +15,14 @@ export const metadata = { title: "Meus contratos" };
 
 export default async function ClienteContratosPage() {
   const session = await requireCliente();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: contratos } = await supabase
     .from("contratos")
-    .select("*")
+    // Só colunas da listagem — sem `conteudo` (texto grande do contrato).
+    .select("id, titulo, status, valor_mensal, data_inicio, data_fim, created_at")
     .eq("cliente_id", session.profile.cliente_id!)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
   const list = (contratos as Contrato[] | null) ?? [];
 
   return (

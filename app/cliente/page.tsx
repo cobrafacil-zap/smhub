@@ -1,5 +1,5 @@
 import { requireCliente } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/Stat";
 import { BarChart3, CalendarDays, FileText, Wallet, ArrowRight } from "lucide-react";
@@ -7,14 +7,20 @@ import Link from "next/link";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { CONTRATO_STATUS, FATURA_STATUS } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
+import { AddToHomeScreen } from "@/components/pwa/AddToHomeScreen";
 import type { Contrato, Fatura, PlanejamentoEntrada } from "@/types/database";
 
 export default async function ClienteDashboardPage() {
   const session = await requireCliente();
-  const supabase = createClient();
+  // Leituras service-role (bypassa RLS). Todas as queries escopam por
+  // cliente_id do session. A query "próximas" usa inner join em planejamento
+  // para filtrar por cliente_id (antes dependia do RLS — com admin client
+  // precisava do filtro explícito, senão vaza entrada de outras agências).
+  const supabase = createAdminClient();
   const clienteId = session.profile.cliente_id!;
+  const todayStr = new Date().toISOString().slice(0, 10);
 
-  const [contratosRes, faturasRes, proximasRes] = await Promise.all([
+  const [contratosRes, faturasRes, proximasRes, postsCountRes] = await Promise.all([
     supabase
       .from("contratos")
       .select("id, titulo, status, valor_mensal, data_fim")
@@ -29,22 +35,23 @@ export default async function ClienteDashboardPage() {
       .limit(5),
     supabase
       .from("planejamento_entradas")
-      .select("id, data, titulo, tipo, status, planejamento_id")
-      .gte("data", new Date().toISOString().slice(0, 10))
+      .select("id, data, titulo, tipo, status, planejamento_id, planejamento!inner(cliente_id)")
+      .eq("planejamento.cliente_id", clienteId)
+      .gte("data", todayStr)
       .order("data", { ascending: true })
       .limit(10),
+    // Posts publicados do cliente (count) — independente dos outros 3.
+    supabase
+      .from("planejamento_entradas")
+      .select("id, planejamento!inner(cliente_id)", { count: "exact", head: true })
+      .eq("planejamento.cliente_id", clienteId)
+      .eq("status", "publicado"),
   ]);
 
   const contratos = (contratosRes.data as Contrato[] | null) ?? [];
   const faturas = (faturasRes.data as Fatura[] | null) ?? [];
   const proximas = (proximasRes.data as PlanejamentoEntrada[] | null) ?? [];
-
-  // Próximos posts do mês (entradas do mês atual)
-  const { count: postsCount } = await supabase
-    .from("planejamento_entradas")
-    .select("id, planejamento!inner(cliente_id)", { count: "exact", head: true })
-    .eq("planejamento.cliente_id", clienteId)
-    .eq("status", "publicado");
+  const postsCount = postsCountRes.count ?? 0;
 
   return (
     <div className="space-y-6">
@@ -168,6 +175,8 @@ export default async function ClienteDashboardPage() {
           ))}
         </div>
       </Card>
+
+      <AddToHomeScreen />
     </div>
   );
 }

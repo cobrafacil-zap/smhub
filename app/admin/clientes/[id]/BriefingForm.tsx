@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import { Plus, X, Save, ChevronDown, ChevronUp } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { criarBriefingAction } from "@/lib/actions/fatura-briefing-actions";
+import {
+  criarBriefingAction,
+  atualizarBriefingAction,
+} from "@/lib/actions/fatura-briefing-actions";
 import type { Cliente } from "@/types/database";
 
 const TEMPLATE_PERGUNTAS = [
@@ -29,6 +32,10 @@ export function BriefingForm({
   defaultOpen = false,
   clientes,
   onCreated,
+  briefingId,
+  tituloInicial,
+  paresIniciais,
+  onSaved,
 }: {
   clienteId: string;
   defaultOpen?: boolean;
@@ -36,12 +43,21 @@ export function BriefingForm({
   clientes?: Pick<Cliente, "id" | "nome_empresa">[];
   /** Callback após criar com sucesso (ex.: fechar modal). */
   onCreated?: () => void;
+  /** Modo edição: ID do briefing a atualizar. */
+  briefingId?: string;
+  tituloInicial?: string;
+  paresIniciais?: { pergunta: string; resposta: string }[];
+  /** Callback após salvar edição com sucesso (ex.: fechar modal + refresh). */
+  onSaved?: () => void;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const editando = !!briefingId;
+  const [open, setOpen] = useState(editando || defaultOpen);
   const [clienteSel, setClienteSel] = useState(clienteId);
-  const [titulo, setTitulo] = useState("Briefing de onboarding");
+  const [titulo, setTitulo] = useState(tituloInicial ?? "Briefing de onboarding");
   const [pares, setPares] = useState<Par[]>(
-    TEMPLATE_PERGUNTAS.map((p) => ({ id: novoId(), pergunta: p, resposta: "" }))
+    editando && paresIniciais && paresIniciais.length > 0
+      ? paresIniciais.map((p) => ({ id: novoId(), pergunta: p.pergunta, resposta: p.resposta }))
+      : TEMPLATE_PERGUNTAS.map((p) => ({ id: novoId(), pergunta: p, resposta: "" }))
   );
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -76,9 +92,22 @@ export function BriefingForm({
       return;
     }
     const fd = new FormData();
-    fd.set("cliente_id", clienteFinal);
     // Formato salvo: array de { pergunta, resposta }. O titulo vai como primeiro item com prefixo __titulo__:
     fd.set("respostas", JSON.stringify([{ pergunta: `__titulo__:${titulo}`, resposta: "" }, ...respostas]));
+    if (editando) {
+      startTransition(async () => {
+        const res = await atualizarBriefingAction(briefingId!, fd);
+        if (res && "error" in res && res.error) {
+          setError(res.error);
+        } else {
+          setSuccess(true);
+          onSaved?.();
+          setTimeout(() => setSuccess(false), 3000);
+        }
+      });
+      return;
+    }
+    fd.set("cliente_id", clienteFinal);
     startTransition(async () => {
       const res = await criarBriefingAction(fd);
       if (res && "error" in res && res.error) {
@@ -96,7 +125,7 @@ export function BriefingForm({
 
   return (
     <Card>
-      {!clientes && (
+      {!clientes && !editando && (
         <button
           type="button"
           onClick={() => setOpen(!open)}
@@ -121,7 +150,7 @@ export function BriefingForm({
         </button>
       )}
 
-      {(open || clientes) && (
+      {(open || clientes || editando) && (
         <form onSubmit={handleSubmit} className={`${clientes ? "" : "mt-4 pt-4 border-t border-border"} space-y-3`}>
           {clientes && (
             <div>
@@ -197,13 +226,13 @@ export function BriefingForm({
 
           {success && (
             <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
-              Briefing criado com sucesso.
+              {editando ? "Briefing atualizado com sucesso." : "Briefing criado com sucesso."}
             </p>
           )}
 
           <div className="flex justify-end gap-2">
             <Button type="submit" loading={pending} iconLeft={<Save className="h-4 w-4" />}>
-              Salvar briefing
+              {editando ? "Salvar alterações" : "Salvar briefing"}
             </Button>
           </div>
         </form>

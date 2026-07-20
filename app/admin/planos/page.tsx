@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAgenciaMember } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPlanos } from "@/lib/planos";
 import { getAssinaturaStatus, trialMaxClientes, trialDias } from "@/lib/assinatura";
 import type { AssinaturaStatusInfo } from "@/lib/assinatura";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
 import { formatBRL, formatDate } from "@/lib/utils";
-import type { Plano, PlanoConfig } from "@/types/database";
+import type { Plano } from "@/types/database";
 
 export const metadata = { title: "Planos" };
 
@@ -58,13 +59,11 @@ export default async function PlanosPage() {
   const admin = createAdminClient();
   const aid = session.profile.agencia_id!;
 
-  const [{ data: ag }, { data: planos }, status] = await Promise.all([
+  const [{ data: ag }, planosList, status] = await Promise.all([
     admin.from("agencias").select("id, nome_fantasia, plano, status").eq("id", aid).maybeSingle(),
-    admin.from("planos").select("*").order("valor_mensal"),
+    getPlanos(),
     getAssinaturaStatus(aid),
   ]);
-
-  const planosList = (planos as PlanoConfig[] | null) ?? [];
   const planoAtualId = (ag?.plano ?? status.plano ?? "basico") as Plano;
   const planoAtual = planosList.find((p) => p.id === planoAtualId);
   const ass = status.assinatura;

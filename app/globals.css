@@ -2,7 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===========================================================================
+  Tokens de tema — definidos como canais RGB (espaço-separados) para que os
+  modificadores de opacidade do Tailwind (bg-bg/80, border-border/40 etc.)
+  funcionem via rgb(var(--token) / <alpha-value>).
+  - :root  = modo CLARO (default CSS)
+  - .dark  = modo ESCURO (classe aplicada no <html> pelo next-themes)
+  =========================================================================== */
 @layer base {
+  :root {
+    /* Fundos / bordas */
+    --bg: 248 250 252;          /* #F8FAFC — page */
+    --bg-surface: 255 255 255;   /* #FFFFFF — cards */
+    --bg-elevated: 255 255 255;  /* #FFFFFF — inputs/overlays */
+    --bg-muted: 241 245 249;    /* #F1F5F9 — hover/disabled */
+    --border: 226 232 240;      /* #E2E8F0 */
+    --border-muted: 238 242 247; /* #EEF2F7 */
+
+    /* Texto — escala slate flipada (100..500 viram cinzas escuros no claro) */
+    --slate-100: 15 23 42;      /* #0F172A — primário */
+    --slate-200: 30 41 59;      /* #1E293B */
+    --slate-300: 51 65 85;      /* #334155 */
+    --slate-400: 71 85 105;     /* #475569 */
+    --slate-500: 100 116 139;   /* #64748B */
+
+    /* Acentos royal usados como TEXTO/ícones (eyebrows, badges, links).
+       No claro viram azuis sólidos legíveis. royal-500+ permanecem fixos
+       (usados como fundo de botões/gradientes) — definidos no tailwind.config. */
+    --royal-200: 61 90 254;     /* #3D5AFE — badge */
+    --royal-300: 45 68 214;     /* #2D44D6 — eyebrows/ícones */
+    --royal-400: 31 48 173;     /* #1F30AD — links */
+
+    /* Sombras mais leves no claro */
+    --shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.08);
+    --shadow-card: 0 4px 12px rgba(15, 23, 42, 0.08);
+    --shadow-elevated: 0 10px 25px rgba(15, 23, 42, 0.10);
+  }
+
+  .dark {
+    /* Fundos / bordas — valores atuais do dark mode */
+    --bg: 10 26 64;             /* #0A1A40 */
+    --bg-surface: 15 23 42;     /* #0F172A */
+    --bg-elevated: 19 28 54;    /* #131C36 */
+    --bg-muted: 26 37 71;       /* #1A2547 */
+    --border: 30 42 82;         /* #1E2A52 */
+    --border-muted: 21 35 74;   /* #15234A */
+
+    /* Texto — slate 100..500 = cinzas claros sobre fundo escuro */
+    --slate-100: 241 245 249;   /* #F1F5F9 */
+    --slate-200: 226 232 240;   /* #E2E8F0 */
+    --slate-300: 203 213 225;   /* #CBD5E1 */
+    --slate-400: 148 163 184;   /* #94A3B8 */
+    --slate-500: 100 116 139;   /* #64748B */
+
+    /* Acentos royal de texto — roxos claros sobre fundo escuro (originais) */
+    --royal-200: 176 187 255;   /* #B0BBFF */
+    --royal-300: 135 151 255;   /* #8797FF */
+    --royal-400: 94 116 255;    /* #5E74FF */
+
+    /* Sombras (originais) */
+    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.25);
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.30);
+    --shadow-elevated: 0 8px 30px rgba(0, 0, 0, 0.45);
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -20,7 +83,7 @@
 }
 
 @layer components {
-  /* Card base — dark mode SM Hub */
+  /* Card base — SM Hub (funciona em claro e escuro via tokens) */
   .card {
     @apply rounded-2xl shadow-soft border border-border bg-bg-surface
       transition-shadow p-6;
@@ -32,7 +95,7 @@
     @apply rounded-xl border border-border bg-bg-elevated/60 px-4 py-3;
   }
 
-  /* Inputs com look dark */
+  /* Inputs */
   .input {
     @apply w-full rounded-lg border border-border bg-bg-elevated/80 px-3 py-2.5
       text-sm text-slate-100 placeholder:text-slate-500
@@ -77,7 +140,7 @@
     animation: marquee 30s linear infinite;
   }
 
-  /* Focus ring global em dark */
+  /* Focus ring global */
   *:focus-visible {
     @apply outline-none ring-2 ring-royal-500/50 ring-offset-2 ring-offset-bg;
   }

@@ -13,9 +13,9 @@ const config: Config = {
         royal: {
           50: "#EEF1FF",
           100: "#D9DEFF",
-          200: "#B0BBFF",
-          300: "#8797FF",
-          400: "#5E74FF",
+          200: "rgb(var(--royal-200) / <alpha-value>)",
+          300: "rgb(var(--royal-300) / <alpha-value>)",
+          400: "rgb(var(--royal-400) / <alpha-value>)",
           500: "#3D5AFE", // primária
           600: "#2D44D6",
           700: "#1F30AD",
@@ -37,16 +37,27 @@ const config: Config = {
           900: "#03060D",
           950: "#0A1A40",
         },
-        // Backgrounds semânticos
+        // Backgrounds semânticos — flipam com o tema via CSS vars (canais RGB).
+        // rgb(var(--token) / <alpha-value>) permite bg-bg/80, bg-bg-elevated/60 etc.
         bg: {
-          DEFAULT: "#0A1A40",
-          surface: "#0F172A",
-          elevated: "#131C36",
-          muted: "#1A2547",
+          DEFAULT: "rgb(var(--bg) / <alpha-value>)",
+          surface: "rgb(var(--bg-surface) / <alpha-value>)",
+          elevated: "rgb(var(--bg-elevated) / <alpha-value>)",
+          muted: "rgb(var(--bg-muted) / <alpha-value>)",
         },
         border: {
-          DEFAULT: "#1E2A52",
-          muted: "#15234A",
+          DEFAULT: "rgb(var(--border) / <alpha-value>)",
+          muted: "rgb(var(--border-muted) / <alpha-value>)",
+        },
+        // slate 100..500 flipam com o tema (text principal).
+        // 50 e 600..950 permanecem os defaults do Tailwind (usados em superfícies
+        // explicitamente claras: print views, cards brancos).
+        slate: {
+          100: "rgb(var(--slate-100) / <alpha-value>)",
+          200: "rgb(var(--slate-200) / <alpha-value>)",
+          300: "rgb(var(--slate-300) / <alpha-value>)",
+          400: "rgb(var(--slate-400) / <alpha-value>)",
+          500: "rgb(var(--slate-500) / <alpha-value>)",
         },
         // Acentos semânticos (mantidos para badges, status etc.)
         accent: {
@@ -81,9 +92,9 @@ const config: Config = {
           "radial-gradient(circle at top left, rgba(61,90,254,0.18), transparent 50%)",
       },
       boxShadow: {
-        soft: "0 2px 10px rgba(0, 0, 0, 0.25)",
-        card: "0 4px 20px rgba(0, 0, 0, 0.30)",
-        elevated: "0 8px 30px rgba(0, 0, 0, 0.45)",
+        soft: "var(--shadow-soft)",
+        card: "var(--shadow-card)",
+        elevated: "var(--shadow-elevated)",
         glow: "0 0 0 4px rgba(61, 90, 254, 0.18)",
         ring: "0 0 0 1px rgba(61, 90, 254, 0.35)",
       },
@@ -104,12 +115,23 @@ const config: Config = {
           "0%": { backgroundPosition: "-1000px 0" },
           "100%": { backgroundPosition: "1000px 0" },
         },
+        "logo-in": {
+          "0%": { opacity: "0", transform: "scale(0.7) translateY(10px)" },
+          "60%": { opacity: "1", transform: "scale(1.04) translateY(0)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        "logo-float": {
+          "0%,100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 200ms ease-out both",
         "slide-up": "slide-up 240ms ease-out both",
         "scale-in": "scale-in 180ms ease-out both",
         "shimmer": "shimmer 2s linear infinite",
+        "logo-in": "logo-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "logo-float": "logo-float 4s ease-in-out infinite",
       },
     },
   },

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft } from "lucide-react";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { criarRelatorioAction } from "@/lib/actions/agencia-actions";
 import { RelatorioForm } from "../RelatorioForm";
 import type { Cliente } from "@/types/database";
@@ -18,7 +18,7 @@ export default async function NovoRelatorioPage({
   searchParams: { cliente?: string };
 }) {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: clientes } = await supabase
     .from("clientes")
     .select("id, nome_empresa")

@@ -65,6 +65,11 @@ export async function middleware(request: NextRequest) {
       }
     );
 
+    // getUser() valida o token no servidor do Supabase E renova o access_token
+    // quando expira (o setAll abaixo grava o cookie novo no response — é assim
+    // que o refresh happens no Next, já que Server Components não gravam cookie).
+    // Não trocar por getSession(): getSession só lê o cookie localmente e NÃO
+    // renova o token → o usuário cairia da sessão depois de ~1h.
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -80,8 +85,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // 2) Busca o profile — primeiro em `super_admins`, depois em `usuarios`.
-    //    Usa service-role (bypassa RLS) para evitar inconsistências no Edge.
+    // 2) Busca o profile — super_admins e usuarios EM PARALELO (antes eram
+    //    sequenciais: esperava super_admins p/ só então buscar usuarios).
+    //    Service-role (bypassa RLS) pra evitar inconsistências no Edge.
     const admin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -92,22 +98,26 @@ export async function middleware(request: NextRequest) {
     let agenciaId: string | null = null;
     let ativo = true;
 
-    const { data: superAdm } = await admin
-      .from("super_admins")
-      .select("ativo")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const [
+      { data: superAdm },
+      { data: usuario },
+    ] = await Promise.all([
+      admin
+        .from("super_admins")
+        .select("ativo")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      admin
+        .from("usuarios")
+        .select("role, agencia_id, ativo")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
 
     if (superAdm) {
       role = "super_admin";
       ativo = superAdm.ativo ?? true;
     } else {
-      const { data: usuario } = await admin
-        .from("usuarios")
-        .select("role, agencia_id, ativo")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
       if (!usuario) {
         // Sem profile → força logout via /auth/signout
         if (pathname === "/auth/signout") return response;

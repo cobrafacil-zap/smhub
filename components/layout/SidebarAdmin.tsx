@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "@/app/login/actions";
@@ -66,13 +67,14 @@ export function SidebarAdmin({
     <aside className="hidden lg:flex lg:flex-col w-64 bg-bg-surface border-r border-border min-h-screen">
       <div className="px-5 py-5 border-b border-border">
         <Link href="/admin" className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white font-bold text-sm shadow-glow overflow-hidden shrink-0">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white font-bold text-sm shadow-glow overflow-hidden shrink-0 relative">
             {agencyLogoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={agencyLogoUrl}
                 alt={agencyName ?? "Logo"}
-                className="h-full w-full object-contain"
+                fill
+                sizes="36px"
+                className="object-contain"
               />
             ) : (
               "SM"

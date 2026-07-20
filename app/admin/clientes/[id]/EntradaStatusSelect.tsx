@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { ENTRY_STATUS } from "@/lib/constants";
 import { atualizarEntradaStatusAction } from "@/lib/actions/agencia-actions";
+import { toast } from "@/components/ui/Toast";
 import type { EntradaStatus } from "@/types/database";
 
 const variants: Record<EntradaStatus, string> = {
@@ -25,7 +26,13 @@ export function EntradaStatusSelect({
   function handleChange(novo: EntradaStatus) {
     if (novo === status) return;
     startTransition(async () => {
-      await atualizarEntradaStatusAction(id, novo);
+      try {
+        await atualizarEntradaStatusAction(id, novo);
+        toast.success(`Status: ${ENTRY_STATUS[novo].label}`);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Erro ao atualizar status.";
+        if (!msg.includes("NEXT_REDIRECT")) toast.error(msg);
+      }
     });
   }
 

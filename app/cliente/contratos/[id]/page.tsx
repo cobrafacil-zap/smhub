@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireCliente } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -20,7 +20,7 @@ export default async function ClienteContratoDetalhePage({
   params: { id: string };
 }) {
   const session = await requireCliente();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: contrato, error } = await supabase
     .from("contratos")
     .select("*")

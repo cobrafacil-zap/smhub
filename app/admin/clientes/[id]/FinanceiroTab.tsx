@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Wallet, CheckCircle2, Zap, Paperclip } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { FATURA_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { MiniStat } from "@/components/admin/MiniStat";
@@ -13,21 +13,28 @@ import { GerarMensalidadeForm } from "./GerarMensalidadeForm";
 import type { Cliente, Fatura, FaturaArquivo } from "@/types/database";
 
 export async function FinanceiroTab({ cliente }: { cliente: Cliente }) {
-  const supabase = createClient();
-  const [{ data: faturas }, { data: arquivos }] = await Promise.all([
-    supabase
-      .from("faturas")
-      .select("*")
-      .eq("cliente_id", cliente.id)
-      .order("data_vencimento", { ascending: false }),
-    supabase
-      .from("fatura_arquivos")
-      .select("*")
-      .eq("agencia_id", cliente.agencia_id),
-  ]);
+  const supabase = createAdminClient();
+  const { data: faturas } = await supabase
+    .from("faturas")
+    .select("*")
+    .eq("cliente_id", cliente.id)
+    .order("data_vencimento", { ascending: false })
+    .limit(200);
   const list = (faturas as Fatura[] | null) ?? [];
+
+  // Arquivos só das faturas DESTE cliente (antes filtrava só por agencia_id,
+  // trazendo arquivos de todas as faturas da agência). Se não há faturas,
+  // nem consulta.
+  const faturaIds = list.map((f) => f.id);
+  const arquivos =
+    faturaIds.length > 0
+      ? ((await supabase
+          .from("fatura_arquivos")
+          .select("*")
+          .in("fatura_id", faturaIds)).data as FaturaArquivo[] | null) ?? []
+      : [];
   const arqsPorFatura = new Map<string, FaturaArquivo[]>();
-  for (const a of (arquivos as FaturaArquivo[] | null) ?? []) {
+  for (const a of arquivos) {
     const arr = arqsPorFatura.get(a.fatura_id) ?? [];
     arr.push(a);
     arqsPorFatura.set(a.fatura_id, arr);

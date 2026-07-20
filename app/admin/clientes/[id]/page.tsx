@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
+import { FormSkeleton } from "@/components/ui/PageSkeleton";
 import { TabsLink } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -39,7 +41,10 @@ export default async function ClienteDetalhePage({
   searchParams: { tab?: string; mes?: string; meta?: string; meta_error?: string };
 }) {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  // Leituras service-role (bypassa RLS). O cliente é validado por agência no
+  // select abaixo (.eq("agencia_id") + notFound), e as 9 queries do Promise.all
+  // filtram por .eq("cliente_id", c.id) — sem RLS por linha, fica rápido.
+  const supabase = createAdminClient();
   const { data: cliente, error } = await supabase
     .from("clientes")
     .select("*")
@@ -49,7 +54,9 @@ export default async function ClienteDetalhePage({
   if (error || !cliente) notFound();
   const c = cliente as Cliente;
 
-  // Carrega contagens + dados resumidos para mini-stats
+  // Carrega contagens + dados resumidos para mini-stats + conexões OAuth.
+  // OAuth é independente das contagens (só precisa de c.id) → entra no mesmo
+  // Promise.all em vez de rodar sequencial depois.
   const [
     { count: countPlan },
     { count: countRel },
@@ -59,6 +66,7 @@ export default async function ClienteDetalhePage({
     { data: faturasData },
     { data: contratosData },
     { data: relatoriosData },
+    { data: oauthRows },
   ] = await Promise.all([
     supabase.from("planejamentos").select("id", { count: "exact", head: true }).eq("cliente_id", c.id),
     supabase.from("relatorios").select("id", { count: "exact", head: true }).eq("cliente_id", c.id),
@@ -68,6 +76,10 @@ export default async function ClienteDetalhePage({
     supabase.from("faturas").select("status, valor, data_vencimento").eq("cliente_id", c.id),
     supabase.from("contratos").select("status").eq("cliente_id", c.id),
     supabase.from("relatorios").select("alcance_total, leads_validados, receita_gerada").eq("cliente_id", c.id),
+    supabase
+      .from("cliente_oauth_contas")
+      .select("provider, account_handle, account_name, connected_at")
+      .eq("cliente_id", c.id),
   ]);
 
   const tabs = TABS.map((t) => {
@@ -83,10 +95,6 @@ export default async function ClienteDetalhePage({
   const st = CLIENTE_STATUS[c.status];
 
   // Conexões OAuth (Instagram/Facebook) — só colunas não-sensíveis.
-  const { data: oauthRows } = await supabase
-    .from("cliente_oauth_contas")
-    .select("provider, account_handle, account_name, connected_at")
-    .eq("cliente_id", c.id);
   const conexoes = (oauthRows as ConexaoRede[] | null) ?? [];
 
   const metaStatus = searchParams.meta
@@ -189,11 +197,31 @@ export default async function ClienteDetalhePage({
       {tab === "info" && (
         <InfoTab cliente={c} conexoes={conexoes} metaStatus={metaStatus} />
       )}
-      {tab === "contratos" && <ContratosTab cliente={c} />}
-      {tab === "financeiro" && <FinanceiroTab cliente={c} />}
-      {tab === "planejamento" && <PlanejamentoTab cliente={c} searchParams={{ mes: searchParams.mes }} />}
-      {tab === "relatorios" && <RelatoriosTab cliente={c} searchParams={{ mes: searchParams.mes }} />}
-      {tab === "briefing" && <BriefingTab cliente={c} />}
+      {tab === "contratos" && (
+        <Suspense fallback={<FormSkeleton />}>
+          <ContratosTab cliente={c} />
+        </Suspense>
+      )}
+      {tab === "financeiro" && (
+        <Suspense fallback={<FormSkeleton />}>
+          <FinanceiroTab cliente={c} />
+        </Suspense>
+      )}
+      {tab === "planejamento" && (
+        <Suspense fallback={<FormSkeleton />}>
+          <PlanejamentoTab cliente={c} searchParams={{ mes: searchParams.mes }} />
+        </Suspense>
+      )}
+      {tab === "relatorios" && (
+        <Suspense fallback={<FormSkeleton />}>
+          <RelatoriosTab cliente={c} searchParams={{ mes: searchParams.mes }} />
+        </Suspense>
+      )}
+      {tab === "briefing" && (
+        <Suspense fallback={<FormSkeleton />}>
+          <BriefingTab cliente={c} />
+        </Suspense>
+      )}
       {tab === "arquivos" && (
         <Card>
           <p className="text-sm text-slate-500 text-center py-8">

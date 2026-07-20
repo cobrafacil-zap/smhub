@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TRIAL_DIAS, TRIAL_MAX_CLIENTES } from "@/lib/mercadopago";
 import type { AssinaturaAtiva, Plano } from "@/types/database";
@@ -37,24 +38,24 @@ function diffDias(iso: string): number {
   return Math.ceil((alvo - hoje) / MS_DIA);
 }
 
-export async function getAssinaturaStatus(
-  agenciaId: string
-): Promise<AssinaturaStatusInfo> {
-  const admin = createAdminClient();
-  const { data: ag } = await admin
-    .from("agencias")
-    .select("plano")
-    .eq("id", agenciaId)
-    .maybeSingle();
-  const plano = (ag?.plano ?? "basico") as Plano;
-
-  const { data: ass } = await admin
-    .from("assinatura_ativa")
-    .select("*")
-    .eq("agencia_id", agenciaId)
-    .order("periodo_fim", { ascending: false })
-    .limit(1)
-    .maybeSingle<AssinaturaAtiva>();
+// cache() do React: dedupa chamadas com o mesmo agenciaId DENTRO do mesmo
+// request (a layout e páginas filhas podem chamar juntas). Sem cache
+// cross-request — status de assinatura é gate de cobrança, staleness
+// poderia deixar acessar/bloquear errado. Paraleliza as 2 queries.
+export const getAssinaturaStatus = cache(
+  async (agenciaId: string): Promise<AssinaturaStatusInfo> => {
+    const admin = createAdminClient();
+    const [{ data: ag }, { data: ass }] = await Promise.all([
+      admin.from("agencias").select("plano").eq("id", agenciaId).maybeSingle(),
+      admin
+        .from("assinatura_ativa")
+        .select("*")
+        .eq("agencia_id", agenciaId)
+        .order("periodo_fim", { ascending: false })
+        .limit(1)
+        .maybeSingle<AssinaturaAtiva>(),
+    ]);
+    const plano = (ag?.plano ?? "basico") as Plano;
 
   if (!ass) {
     return {
@@ -102,7 +103,8 @@ export async function getAssinaturaStatus(
     emTrial: ass.is_trial && ass.status === "trial" && diasParaVencer >= 0,
     plano,
   };
-}
+  }
+);
 
 /** Limite de clientes durante o trial (10). Pós-trial: sem limite. */
 export function trialMaxClientes(): number {
@@ -151,12 +153,15 @@ export async function criarAssinaturaTrial(agenciaId: string, plano: Plano = "ba
 
 /**
  * Conta clientes ativos da agência. Usado para checar o limite de 10 do trial.
+ * Dedupa dentro do mesmo request (cache do React).
  */
-export async function countClientesAgencia(agenciaId: string): Promise<number> {
-  const admin = createAdminClient();
-  const { count } = await admin
-    .from("clientes")
-    .select("id", { count: "exact", head: true })
-    .eq("agencia_id", agenciaId);
-  return count ?? 0;
-}
+export const countClientesAgencia = cache(
+  async (agenciaId: string): Promise<number> => {
+    const admin = createAdminClient();
+    const { count } = await admin
+      .from("clientes")
+      .select("id", { count: "exact", head: true })
+      .eq("agencia_id", agenciaId);
+    return count ?? 0;
+  }
+);

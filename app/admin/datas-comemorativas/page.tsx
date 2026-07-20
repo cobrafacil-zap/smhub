@@ -1,5 +1,5 @@
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -16,7 +16,7 @@ export const metadata = { title: "Datas comemorativas" };
 
 export default async function DatasComemorativasPage() {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const aid = session.profile.agencia_id!;
   // Mostra globals (agencia_id null) + as da agência. Antes filtrava só por
   // agencia_id, mas a coluna não existia → lista sempre vazia.
@@ -24,7 +24,8 @@ export default async function DatasComemorativasPage() {
     .from("datas_comemorativas")
     .select("*")
     .or(`agencia_id.is.null,agencia_id.eq.${aid}`)
-    .order("data");
+    .order("data")
+    .limit(500);
   const list = (datas as DataComemorativa[] | null) ?? [];
 
   async function criar(formData: FormData) {

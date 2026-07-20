@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ClipboardList, Plus, Trash2, FileText } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate } from "@/lib/utils";
 import { BriefingForm } from "./BriefingForm";
 import { DeletarBriefingButton } from "./DeletarBriefingButton";
+import { EditarBriefingButton } from "./EditarBriefingButton";
 import type { Briefing, Cliente } from "@/types/database";
 import type { Json } from "@/types/database";
 
@@ -41,13 +42,34 @@ function normalizarRespostas(json: Json): BriefingRenderItem[] {
 }
 
 export async function BriefingTab({ cliente }: { cliente: Cliente }) {
-  const supabase = createClient();
-  const { data: briefings } = await supabase
+  const supabase = createAdminClient();
+  // Importante: NÃO usar resource embedding com `preenchido_por` — essa FK
+  // aponta para `auth.users(id)` (schema não exposto pelo PostgREST, e sem
+  // coluna `nome`). O join fazia a query inteira falhar e, como o erro era
+  // ignorado, a lista ficava sempre vazia. Buscamos os autores separadamente
+  // em `public.usuarios` (onde `nome` existe, ligado por `user_id`).
+  const { data: briefings, error } = await supabase
     .from("briefings")
-    .select("*, usuarios:preenchido_por(nome)")
+    .select("*")
     .eq("cliente_id", cliente.id)
-    .order("created_at", { ascending: false });
-  const list = (briefings as (Briefing & { usuarios?: { nome: string } | null })[] | null) ?? [];
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) console.error("[BriefingTab] erro ao listar briefings:", error.message);
+  const list = (briefings as Briefing[] | null) ?? [];
+
+  // Mapa user_id -> nome dos preenchedores (de public.usuarios).
+  const autores = new Map<string, string>();
+  const userIds = list.map((b) => b.preenchido_por).filter((u): u is string => !!u);
+  if (userIds.length > 0) {
+    const { data: usuarios, error: usrErr } = await supabase
+      .from("usuarios")
+      .select("user_id, nome")
+      .in("user_id", userIds);
+    if (usrErr) console.error("[BriefingTab] erro ao buscar autores:", usrErr.message);
+    for (const u of (usuarios as { user_id: string; nome: string }[] | null) ?? []) {
+      autores.set(u.user_id, u.nome);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -84,12 +106,19 @@ export async function BriefingTab({ cliente }: { cliente: Cliente }) {
                     </div>
                     <p className="text-xs text-slate-500">
                       Preenchido em {formatDate(b.created_at)}
-                      {b.usuarios?.nome && (
-                        <> por <span className="text-slate-300">{b.usuarios.nome}</span></>
+                      {b.preenchido_por && autores.has(b.preenchido_por) && (
+                        <> por <span className="text-slate-300">{autores.get(b.preenchido_por)}</span></>
                       )}
                     </p>
                   </div>
-                  <DeletarBriefingButton id={b.id} />
+                  <div className="flex items-center gap-1">
+                    <EditarBriefingButton
+                      briefingId={b.id}
+                      tituloInicial={titulo}
+                      paresIniciais={pares.map((p) => ({ pergunta: p.pergunta, resposta: p.resposta }))}
+                    />
+                    <DeletarBriefingButton id={b.id} />
+                  </div>
                 </div>
                 {pares.length === 0 ? (
                   <p className="text-sm text-slate-500 italic">Sem respostas.</p>

@@ -1,24 +1,36 @@
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card } from "@/components/ui/Card";
-import { Settings } from "lucide-react";
+import { getPlatformConfig } from "@/lib/platform";
+import { salvarLogoPlataformaAction } from "@/lib/actions/super-admin-actions";
+import { PlatformLogoForm } from "./PlatformLogoForm";
 
 export const metadata = { title: "Configurações globais" };
 
 export default async function SuperAdminConfiguracoesPage() {
   await requireSuperAdmin();
+  const config = await getPlatformConfig();
+
+  async function action(formData: FormData) {
+    "use server";
+    return salvarLogoPlataformaAction(undefined, formData);
+  }
+
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-3xl">
       <PageHeader
         title="Configurações globais"
-        breadcrumbs={[{ href: "/super-admin", label: "Início" }, { label: "Configurações" }]}
+        description="Identidade visual da plataforma (logos claro/escuro)."
+        breadcrumbs={[
+          { href: "/super-admin", label: "Início" },
+          { label: "Configurações" },
+        ]}
       />
-      <Card>
-        <div className="flex items-center gap-3 text-slate-300">
-          <Settings className="h-5 w-5 text-royal-300" />
-          <p>Configurações globais em construção (taxas, defaults, chaves de API).</p>
-        </div>
-      </Card>
+
+      <PlatformLogoForm
+        action={action}
+        initialLight={config.logo_url_light}
+        initialDark={config.logo_url_dark}
+      />
     </div>
   );
 }

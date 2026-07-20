@@ -2,6 +2,7 @@ export type {
   Database,
   Json,
   Agencia,
+  PlatformConfig,
   Usuario,
   Cliente,
   Planejamento,
@@ -29,6 +30,7 @@ export type {
   Plataforma,
   TransacaoTipo,
   TransacaoStatus,
+  TransacaoNatureza,
   FaturaStatus,
   ContratoStatus,
 } from "@/types/database";

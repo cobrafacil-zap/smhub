@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { MONTHS_PT } from "@/lib/constants";
 import { CalendarDays, FileText, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -42,22 +42,49 @@ export async function PlanejamentoTab({
   cliente: Cliente;
   searchParams: { mes?: string };
 }) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const hoje = new Date();
   const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
   const mesAtivo = searchParams.mes ?? mesAtual;
   const mesReferencia = primeiroDiaDoMes(mesAtivo);
   const { ano, mes } = parseMesYm(mesAtivo);
 
-  // 1) Planejamento do mês
-  const { data: plan } = await supabase
-    .from("planejamentos")
-    .select("*")
-    .eq("cliente_id", cliente.id)
-    .eq("mes_referencia", mesReferencia)
-    .maybeSingle();
+  // 4) Datas comemorativas do mês (entre dia 1 e último dia do mês)
+  const ultimoDia = new Date(ano, mes, 0).getDate();
+  const inicioMes = `${mesAtivo}-01`;
+  const fimMes = `${mesAtivo}-${String(ultimoDia).padStart(2, "0")}`;
 
-  // 2) Entradas
+  // Queries 1, 3, 4 e 5 são independentes → rodam em paralelo. A 2 (entradas)
+  // depende de plan.id, então roda depois, só se houver plan.
+  const [{ data: plan }, { data: todosPlanejamentos }, { data: datas }, { data: briefings }] =
+    await Promise.all([
+      supabase
+        .from("planejamentos")
+        .select("*")
+        .eq("cliente_id", cliente.id)
+        .eq("mes_referencia", mesReferencia)
+        .maybeSingle(),
+      supabase
+        .from("planejamentos")
+        .select("id, mes_referencia")
+        .eq("cliente_id", cliente.id)
+        .order("mes_referencia", { ascending: false })
+        .limit(12),
+      supabase
+        .from("datas_comemorativas")
+        .select("*")
+        .gte("data", inicioMes)
+        .lte("data", fimMes)
+        .order("data"),
+      supabase
+        .from("briefings")
+        .select("id, created_at, respostas")
+        .eq("cliente_id", cliente.id)
+        .order("created_at", { ascending: false })
+        .limit(1),
+    ]);
+
+  // 2) Entradas (depende de plan)
   let entradas: PlanejamentoEntrada[] = [];
   if (plan) {
     const { data } = await supabase
@@ -68,35 +95,9 @@ export async function PlanejamentoTab({
     entradas = (data as PlanejamentoEntrada[] | null) ?? [];
   }
 
-  // 3) Meses com planejamentos existentes (histórico)
-  const { data: todosPlanejamentos } = await supabase
-    .from("planejamentos")
-    .select("id, mes_referencia")
-    .eq("cliente_id", cliente.id)
-    .order("mes_referencia", { ascending: false })
-    .limit(12);
   const mesesDisponiveis = ((todosPlanejamentos as { mes_referencia: string }[] | null) ?? [])
     .map((p) => mesKey(p.mes_referencia));
-
-  // 4) Datas comemorativas do mês (entre dia 1 e último dia do mês)
-  const ultimoDia = new Date(ano, mes, 0).getDate();
-  const inicioMes = `${mesAtivo}-01`;
-  const fimMes = `${mesAtivo}-${String(ultimoDia).padStart(2, "0")}`;
-  const { data: datas } = await supabase
-    .from("datas_comemorativas")
-    .select("*")
-    .gte("data", inicioMes)
-    .lte("data", fimMes)
-    .order("data");
   const datasComem = (datas as DataComemorativa[] | null) ?? [];
-
-  // 5) Briefings do cliente (resumo)
-  const { data: briefings } = await supabase
-    .from("briefings")
-    .select("id, created_at, respostas")
-    .eq("cliente_id", cliente.id)
-    .order("created_at", { ascending: false })
-    .limit(1);
   const briefingRecente = (briefings as Pick<Briefing, "id" | "created_at">[] | null)?.[0];
 
   return (
@@ -194,6 +195,7 @@ export async function PlanejamentoTab({
         mesReferencia={mesReferencia}
         mesLabel={labelDoMes(mesAtivo)}
         entradas={entradas}
+        diasPostagem={(plan as Planejamento | null)?.dias_postagem ?? null}
         canEdit
       />
     </div>

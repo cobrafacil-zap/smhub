@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardEmpty } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -15,12 +15,15 @@ export const metadata = { title: "Contratos" };
 
 export default async function ContratosPage() {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: contratos } = await supabase
     .from("contratos")
-    .select("*")
+    // Só colunas usadas pela listagem — NÃO traz `conteudo` (texto grande
+    // do contrato), que é o campo que mais pesa num select("*").
+    .select("id, titulo, status, valor_mensal, data_inicio, duracao_meses, created_at, cliente_id")
     .eq("agencia_id", session.profile.agencia_id!)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   const list = (contratos as Contrato[] | null) ?? [];
 

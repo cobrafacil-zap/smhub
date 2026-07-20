@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Loader2 } from "lucide-react";
+import { iniciarTrialGratisAction } from "@/lib/actions/assinatura-actions";
 import type { Plano } from "@/types/database";
 
 export function CheckoutForm({
@@ -26,24 +26,33 @@ export function CheckoutForm({
     e.preventDefault();
     setError(null);
     const fd = new FormData(e.currentTarget);
-    const payload: {
-      plano: Plano;
-      dados?: { nome: string; email: string; telefone?: string; nomeAgencia: string };
-    } = { plano };
+
     if (!isRenovacao) {
-      payload.dados = {
+      // NOVO cadastro → "Começar grátis": cria a conta + trial de 7 dias SEM
+      // pagamento. Redireciona para /ativar pra definir a senha.
+      const dados = {
         nome: String(fd.get("nome") ?? ""),
         email: String(fd.get("email") ?? ""),
         telefone: String(fd.get("telefone") ?? "") || undefined,
         nomeAgencia: String(fd.get("nomeAgencia") ?? ""),
       };
+      startTransition(async () => {
+        const res = await iniciarTrialGratisAction({ plano, dados });
+        if (!res.ok) {
+          setError(res.error);
+          return;
+        }
+        router.push(`/ativar?token=${res.token}`);
+      });
+      return;
     }
 
+    // RENOVAÇÃO (logado) → Mercado Pago.
     startTransition(async () => {
       const res = await fetch("/api/mp/create-preference", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ plano }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -126,10 +135,11 @@ export function CheckoutForm({
         </p>
       )}
       <Button type="submit" size="lg" loading={pending} className="w-full">
-        {pending ? "Redirecionando..." : "Continuar para pagamento"}
+        {pending ? "Criando sua conta..." : "Começar grátis"}
       </Button>
       <p className="text-xs text-slate-500 text-center">
-        Ao continuar, você concorda com nossos termos de uso.
+        7 dias grátis, sem cobrança. Depois desse período, você escolhe um plano
+        e paga só então para continuar.
       </p>
     </form>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { ImagePlus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
@@ -9,12 +10,40 @@ import { STORAGE_BUCKETS } from "@/lib/constants";
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
 
+interface LogoUploadProps {
+  initialUrl?: string | null;
+  /** Bucket de destino (default: agency-assets). */
+  bucket?: (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS];
+  /** Prefixo do path dentro do bucket (default: "logos"). */
+  pathPrefix?: string;
+  /** Nome do hidden input que viaja no form pai (default: "logo_url"). */
+  name?: string;
+  /** Texto de ajuda exibido abaixo do botão. */
+  hint?: string;
+  /** Label curta exibida acima da ajuda (default: "Logo"). */
+  label?: string;
+  /** Classe de fundo do preview (ex.: "bg-white" p/ simular fundo claro). */
+  previewClassName?: string;
+}
+
 /**
- * Upload do logo da agência para o bucket público `agency-assets`.
- * Mantém um hidden input `logo_url` sincronizado, então o form pai (server
- * action) salva a URL final junto com os demais campos.
+ * Upload de logo para um bucket público. Mantém um hidden input (default
+ * `logo_url`) sincronizado, então o form pai (server action) recebe a URL
+ * final junto com os demais campos.
+ *
+ * Por padrão usa o bucket `agency-assets` (path prefixado por agencia_id na
+ * rota de upload). Para a logo da plataforma, passe `bucket={STORAGE_BUCKETS.platform}`
+ * — a rota trata esse bucket sem prefixo de agencia_id.
  */
-export function LogoUpload({ initialUrl }: { initialUrl?: string | null }) {
+export function LogoUpload({
+  initialUrl,
+  bucket = STORAGE_BUCKETS.agency,
+  pathPrefix = "logos",
+  name = "logo_url",
+  hint = "PNG, JPG, WebP ou SVG — máx 2 MB.",
+  label = "Logo",
+  previewClassName = "bg-bg-elevated",
+}: LogoUploadProps) {
   const [logoUrl, setLogoUrl] = useState<string>(initialUrl ?? "");
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,25 +61,21 @@ export function LogoUpload({ initialUrl }: { initialUrl?: string | null }) {
     try {
       const fd = new FormData();
       fd.set("file", file);
-      fd.set("bucket", STORAGE_BUCKETS.agency);
-      // path dentro do bucket — a rota prefixa com o agencia_id.
+      fd.set("bucket", bucket);
       const ext = file.name.split(".").pop() ?? "png";
-      fd.set("path", `logos/logo-${Date.now()}.${ext}`);
+      fd.set("path", `${pathPrefix}/logo-${Date.now()}.${ext}`);
 
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok || !json.ok) {
         throw new Error(json.error ?? "Erro no upload");
       }
-      // json.data.path é o caminho relativo ao bucket (agenciaId/logos/...).
       const path = (json.data?.path as string) ?? "";
       const supabase = createClient();
-      const { data } = supabase.storage
-        .from(STORAGE_BUCKETS.agency)
-        .getPublicUrl(path);
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
       const url = `${data.publicUrl}?t=${Date.now()}`; // cache-bust no preview
       setLogoUrl(url);
-      toast.success("Logo enviada. Salve as configurações para confirmar.");
+      toast.success("Logo enviada. Salve para confirmar.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro no upload");
     } finally {
@@ -66,18 +91,19 @@ export function LogoUpload({ initialUrl }: { initialUrl?: string | null }) {
 
   return (
     <div className="space-y-3">
-      {/* hidden input que viaja no form pai */}
-      <input type="hidden" name="logo_url" value={logoUrl} />
+      <input type="hidden" name={name} value={logoUrl} />
 
       <div className="flex items-center gap-4">
-        {/* Preview / placeholder */}
-        <div className="h-20 w-20 rounded-lg border border-border bg-bg-elevated flex items-center justify-center overflow-hidden shrink-0">
+        <div
+          className={`h-20 w-20 rounded-lg border border-border flex items-center justify-center overflow-hidden shrink-0 relative ${previewClassName}`}
+        >
           {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={logoUrl}
-              alt="Logo da agência"
-              className="h-full w-full object-contain"
+              alt={label}
+              fill
+              sizes="80px"
+              className="object-contain"
             />
           ) : (
             <ImagePlus className="h-6 w-6 text-slate-500" />
@@ -85,9 +111,7 @@ export function LogoUpload({ initialUrl }: { initialUrl?: string | null }) {
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-xs text-slate-400">
-            Logo da agência. Aparece no menu lateral e no portal do cliente.
-          </p>
+          <p className="text-xs text-slate-400">{label}</p>
           <div className="flex items-center gap-2">
             <input
               ref={inputRef}
@@ -110,7 +134,7 @@ export function LogoUpload({ initialUrl }: { initialUrl?: string | null }) {
               ) : (
                 <ImagePlus className="h-3.5 w-3.5" />
               )}
-              {uploading ? "Enviando..." : logoUrl ? "Trocar logo" : "Enviar logo"}
+              {uploading ? "Enviando..." : logoUrl ? "Trocar" : "Enviar"}
             </button>
             {logoUrl && (
               <button
@@ -123,7 +147,7 @@ export function LogoUpload({ initialUrl }: { initialUrl?: string | null }) {
               </button>
             )}
           </div>
-          <p className="text-[11px] text-slate-500">PNG, JPG, WebP ou SVG — máx 2 MB.</p>
+          <p className="text-[11px] text-slate-500">{hint}</p>
         </div>
       </div>
     </div>

@@ -31,8 +31,24 @@ export function formatPercent(n: number) {
   return `${n.toFixed(1).replace(".", ",")}%`;
 }
 
-export function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR");
+/**
+ * Formata uma data/timestamp em pt-BR (DD/MM/AAAA).
+ *
+ * Colunas `date` do Postgres chegam como "YYYY-MM-DD" (sem hora). Se montarmos
+ * com `new Date("2026-07-20")` o JS interpreta como UTC meia-noite — e no
+ * Brasil (UTC−3) isso vira o DIA ANTERIOR no display, descompassando o rótulo
+ * do dia em que o registro realmente cai. Por isso, para date-only montamos
+ * direto das partes (sem fuso). Timestamps (com hora) seguem pelo fuso do
+ * usuário, que é o correto.
+ */
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+  }
+  const dt = new Date(iso);
+  return Number.isNaN(dt.getTime()) ? "—" : dt.toLocaleDateString("pt-BR");
 }
 
 export function formatBytes(bytes: number) {

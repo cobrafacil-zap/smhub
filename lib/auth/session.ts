@@ -1,4 +1,7 @@
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
+import { jwtVerify } from "jose";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Cliente, SessionProfile, UserRole } from "@/types/database";
@@ -17,17 +20,119 @@ export type SessionUser = {
  *
  * Super-admins ficam APENAS em `super_admins` (não em `usuarios`).
  * Demais roles ficam em `usuarios`.
+ *
+ * Envolvida em React `cache()`: o layout e a page de cada rota chamam
+ * `requireAgenciaMember`/`requireUser` independentemente — sem cache, isso
+ * roda a cadeia de auth 2x por request (6-8 round-trips sequenciais). Com
+ * cache, a primeira chamada resolve e as demais reusam o resultado na mesma
+ * requisição. Além disso, `super_admins` e `usuarios` rodam EM PARALELO
+ * (antes eram sequenciais: esperava o super_admins p/ só então buscar
+ * usuarios). Isso corta a maior parte do tempo de carga percebido.
  */
-export async function getSessionUser(): Promise<SessionUser | null> {
+// PERF: o profile (super_admins/usuarios) e o registro do cliente mudam raramente.
+// Buscar em TODO request de página somava 2-3 round-trips ao DB por navegação.
+// unstable_cache guarda o resultado em memória (next start) por 30s, chaveado
+// pelo user.id — que já foi verificado por getUser() em getSessionUser, então a
+// chave é confiável (não há risco de vazar perfil entre usuários). A verificação
+// de sessão (getUser, rede) continua autoritativa; só o PROFILE é cacheado.
+// Para invalidar antes dos 30s (mudança de role/ativo), chame
+// revalidateTag("session-profile") na server action que editar usuarios.
+const loadProfile = unstable_cache(
+  async (userId: string) => {
+    const admin = createAdminClient();
+    const [{ data: superAdm }, { data: usuario, error }] = await Promise.all([
+      admin
+        .from("super_admins")
+        .select("id, user_id, nome, email, ativo")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      admin
+        .from("usuarios")
+        .select("id, user_id, nome, email, role, agencia_id, ativo")
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
+    // Serializa o erro (unstable_cache exige retorno JSON-serializável).
+    return { superAdm, usuario, errorMessage: error?.message ?? null };
+  },
+  ["session-profile-v1"],
+  { revalidate: 30, tags: ["session-profile"] }
+);
+
+const loadCliente = unstable_cache(
+  async (userId: string) => {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("clientes")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+    return (data as Cliente | null) ?? null;
+  },
+  ["session-cliente-v1"],
+  { revalidate: 30, tags: ["session-profile"] }
+);
+
+// PERF/JWT: em vez de chamar supabase.auth.getUser() (round-trip à API de
+// Auth a cada navegação), verificamos o JWT do cookie LOCALMENTE com a lib
+// `jose` usando o JWT secret do Supabase (HS256). Isso é criptográfico: um
+// token forjado/tampered FALHA na verificação de assinatura — então o user.id
+// que vem daqui é confiável pra escopar as queries do admin client (bypassa
+// RLS). Só caímos em getUser() (rede, que também renova o token) quando o
+// token expirou/inválido — caso normal a cada ~1h.
+//
+// Requer a env SUPABASE_JWT_SECRET (painel do Supabase → Settings → API →
+// JWT Secret). Sem ela, cai pro caminho antigo (getUser sempre).
+let _jwtKey: Uint8Array | null | undefined;
+function jwtKey(): Uint8Array | null {
+  if (_jwtKey !== undefined) return _jwtKey;
+  const secret = process.env.SUPABASE_JWT_SECRET;
+  _jwtKey = secret ? new TextEncoder().encode(secret) : null;
+  return _jwtKey;
+}
+
+type VerifiedUser = { id: string; email: string | null };
+
+async function getVerifiedUser(supabase: ReturnType<typeof createClient>): Promise<VerifiedUser | null> {
+  // getSession() lê/decodifica o cookie localmente (sem rede).
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token || !session.user) return null;
+  const key = jwtKey();
+  if (!key) return null; // sem secret configurado → não verifica localmente
+  try {
+    await jwtVerify(session.access_token, key, {
+      algorithms: ["HS256"],
+      clockTolerance: 60, // tolera 60s de skew de relógio
+    });
+    return { id: session.user.id, email: session.user.email ?? null };
+  } catch {
+    // expirado/inválido → deixa o chamador cair em getUser() (renova).
+    return null;
+  }
+}
+
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   try {
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return null;
+    // Caminho feliz (token válido): verificação local, SEM rede.
+    let user: VerifiedUser | null = await getVerifiedUser(supabase);
+    if (!user) {
+      // Fallback: token expirado/ausente ou JWT secret não config. getUser()
+      // valida no servidor do Supabase E renova o token (o middleware grava
+      // o cookie novo). Custo de rede só aqui — ~1x por hora por sessão.
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser();
+      if (!u) return null;
+      user = { id: u.id, email: u.email ?? null };
+    }
 
-    // 1) Primeiro checa se é super-admin (tabela dedicada, bypassa RLS
-    //    via service-role para não cair em loop de policy).
+    // Profile cacheado (30s) — depois do primeiro acesso sai da memória em
+    // vez de 2 round-trips ao DB. user.id é o verificado por getUser().
+    const { superAdm, usuario, errorMessage } = await loadProfile(user.id);
+
     let role: UserRole | null = null;
     let profileData: {
       id: string;
@@ -37,13 +142,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       agencia_id: string | null;
       ativo: boolean;
     } | null = null;
-
-    const admin = createAdminClient();
-    const { data: superAdm } = await admin
-      .from("super_admins")
-      .select("id, user_id, nome, email, ativo")
-      .eq("user_id", user.id)
-      .maybeSingle();
 
     if (superAdm) {
       role = "super_admin";
@@ -56,16 +154,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
         ativo: superAdm.ativo ?? true,
       };
     } else {
-      // 2) Senão, busca em `usuarios`. Usa admin client (service-role) para
-      //    evitar inconsistências de RLS no Edge (loop em policies ou subquery lenta).
-      const { data: usuario, error } = await admin
-        .from("usuarios")
-        .select("id, user_id, nome, email, role, agencia_id, ativo")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error("[getSessionUser] erro ao buscar usuario:", error.message);
+      if (errorMessage) {
+        console.error("[getSessionUser] erro ao buscar usuario:", errorMessage);
         return null;
       }
       if (!usuario) return null;
@@ -84,15 +174,10 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
     if (!role || !profileData) return null;
 
-    // Se for cliente, busca o registro na tabela clientes
+    // Cliente também cacheado (30s) — só busca pra role=cliente.
     let cliente: Cliente | null = null;
     if (role === "cliente") {
-      const { data } = await supabase
-        .from("clientes")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      cliente = (data as Cliente | null) ?? null;
+      cliente = await loadCliente(user.id);
     }
 
     const profile: SessionProfile = {
@@ -116,7 +201,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     console.error("[getSessionUser] exception:", err);
     return null;
   }
-}
+});
 
 /** Exige usuário logado. Redireciona para a LP de vendas ("/") caso contrário. */
 export async function requireUser(): Promise<SessionUser> {

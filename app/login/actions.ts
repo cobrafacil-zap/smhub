@@ -3,8 +3,41 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { UserRole } from "@/types/database";
 
 export type ActionState = { error?: string; ok?: boolean } | undefined;
+
+/**
+ * Descobre o painel certo para o usuário recém-logado, pela role.
+ * Replica a lógica do middleware (super_admins → /super-admin,
+ * admin_agencia/membro_equipe → /admin, demais → /cliente).
+ */
+async function painelPorRole(userId: string): Promise<string> {
+  const admin = createAdminClient();
+
+  const { data: superAdm } = await admin
+    .from("super_admins")
+    .select("id, ativo")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  let role: UserRole | null = null;
+  if (superAdm) {
+    role = "super_admin";
+  } else {
+    const { data: usuario } = await admin
+      .from("usuarios")
+      .select("role, ativo")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (usuario) role = usuario.role as UserRole;
+  }
+
+  if (role === "super_admin") return "/super-admin";
+  if (role === "admin_agencia" || role === "membro_equipe") return "/admin";
+  return "/cliente";
+}
 
 export async function loginAction(
   _prev: ActionState,
@@ -20,7 +53,7 @@ export async function loginAction(
 
   try {
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       console.error("[loginAction] supabase auth error:", error);
@@ -34,12 +67,14 @@ export async function loginAction(
       if (msg.includes("rate limit")) {
         return { error: "Muitas tentativas. Aguarde alguns instantes." };
       }
-      return { error: `Auth: ${error.message || error.code || "erro desconhecido"}` };
+      return { error: "Não foi possível entrar agora. Tente novamente em instantes." };
     }
 
     revalidatePath("/", "layout");
+    // Deep-link explícito (ex.: volta de OAuth Meta) mantém o destino.
     if (next && next.startsWith("/")) redirect(next);
-    redirect("/");
+    // Sem `next`: vai direto ao painel conforme a role do usuário.
+    redirect(await painelPorRole(data.user.id));
   } catch (err: unknown) {
     // redirect() joga um erro interno com digest NEXT_REDIRECT — não é um erro real.
     if (err instanceof Error && "digest" in err && typeof (err as { digest?: unknown }).digest === "string") {
@@ -49,8 +84,8 @@ export async function loginAction(
     const detail = err instanceof Error
       ? `${err.name}: ${err.message}`
       : String(err);
-    console.error("[loginAction] exception:", err);
-    return { error: `Debug: ${detail}` };
+    console.error("[loginAction] exception:", detail);
+    return { error: "Não foi possível concluir o login. Tente novamente." };
   }
 }
 

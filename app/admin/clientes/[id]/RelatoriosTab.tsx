@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { BarChart3 } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PLATAFORMA_LABELS } from "@/lib/constants";
 import { formatNumber } from "@/lib/utils";
 import { RelatorioForm } from "./RelatorioForm";
@@ -17,12 +17,13 @@ export async function RelatoriosTab({
   cliente: Cliente;
   searchParams: { mes?: string };
 }) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   let query = supabase
     .from("relatorios")
     .select("*")
     .eq("cliente_id", cliente.id)
-    .order("mes_referencia", { ascending: false });
+    .order("mes_referencia", { ascending: false })
+    .limit(60);
 
   if (searchParams.mes) {
     // YYYY-MM
@@ -30,14 +31,15 @@ export async function RelatoriosTab({
       .gte("mes_referencia", `${searchParams.mes}-01`)
       .lt("mes_referencia", `${searchParams.mes}-32`);
   }
-  const { data: rels } = await query;
+  // relatorios e conexões OAuth são independentes → paralelo.
+  const [{ data: rels }, { data: oauthRows }] = await Promise.all([
+    query,
+    supabase
+      .from("cliente_oauth_contas")
+      .select("provider, account_handle, account_name, connected_at")
+      .eq("cliente_id", cliente.id),
+  ]);
   const list = (rels as Relatorio[] | null) ?? [];
-
-  // Conexões OAuth (Instagram/Facebook) — só colunas não-sensíveis.
-  const { data: oauthRows } = await supabase
-    .from("cliente_oauth_contas")
-    .select("provider, account_handle, account_name, connected_at")
-    .eq("cliente_id", cliente.id);
   const conexoes = (oauthRows as ConexaoRede[] | null) ?? [];
 
   return (

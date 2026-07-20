@@ -23,6 +23,14 @@ export interface PlanoConfig {
   ativo: boolean;
   updated_at: string;
 }
+
+/** Configuração global da plataforma (singleton id='singleton'). */
+export interface PlatformConfig {
+  id: string;
+  logo_url_light: string | null;
+  logo_url_dark: string | null;
+  updated_at: string;
+}
 export type AgenciaStatus = "ativa" | "suspensa" | "cancelada";
 export type UserRole = "super_admin" | "admin_agencia" | "membro_equipe" | "cliente";
 export type ClienteStatus = "ativo" | "inativo" | "pausado";
@@ -43,6 +51,7 @@ export type Plataforma =
   | "twitter";
 export type TransacaoTipo = "receita" | "despesa";
 export type TransacaoStatus = "pendente" | "pago" | "atrasado" | "cancelado";
+export type TransacaoNatureza = "fixa" | "variavel";
 export type FaturaStatus = "pendente" | "pago" | "atrasado";
 export type ContratoStatus =
   | "rascunho"
@@ -213,6 +222,8 @@ export interface Database {
           status: PlanejamentoStatus;
           objetivo_geral: string | null;
           observacoes: string | null;
+          /** Dias da semana marcados como dias de postagem (0=Dom..6=Sáb). NULL = nenhum. */
+          dias_postagem: number[] | null;
           created_at: string;
         };
         Insert: {
@@ -223,6 +234,7 @@ export interface Database {
           status?: PlanejamentoStatus;
           objetivo_geral?: string | null;
           observacoes?: string | null;
+          dias_postagem?: number[] | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["planejamentos"]["Insert"]>;
@@ -383,6 +395,7 @@ export interface Database {
           status: TransacaoStatus;
           comprovante_url: string | null;
           recorrente: boolean;
+          natureza: TransacaoNatureza | null;
           created_at: string;
         };
         Insert: {
@@ -398,6 +411,7 @@ export interface Database {
           status?: TransacaoStatus;
           comprovante_url?: string | null;
           recorrente?: boolean;
+          natureza?: TransacaoNatureza | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["transacoes"]["Insert"]>;

@@ -2,6 +2,7 @@ import { LogOut, Bell } from "lucide-react";
 import Link from "next/link";
 import { initials } from "@/lib/utils";
 import { signOutAction } from "@/app/login/actions";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export interface TopbarProps {
   userName: string;
@@ -21,6 +22,7 @@ export function Topbar({ userName, contextLabel, homeHref }: TopbarProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {homeHref && (
             <Link
               href={homeHref}

@@ -5,23 +5,11 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { ENTRY_TIPOS, ENTRY_STATUS } from "@/lib/constants";
+import { ENTRY_TIPOS, ENTRY_STATUS, ENTRY_TIPO_COR, ENTRY_TIPO_LABEL } from "@/lib/constants";
+import { formatDate } from "@/lib/calendar";
 import type { EntradaStatus, EntradaTipo, PlanejamentoEntrada } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { Save, X } from "lucide-react";
-
-// Cores predefinidas pra diferenciar os posts no calendário. O usuário escolhe
-// uma dessas (em vez de digitar hex / usar color picker livre).
-const CORES: { nome: string; value: string }[] = [
-  { nome: "Azul", value: "#3B82F6" },
-  { nome: "Roxo", value: "#8B5CF6" },
-  { nome: "Verde", value: "#22C55E" },
-  { nome: "Vermelho", value: "#EF4444" },
-  { nome: "Laranja", value: "#F97316" },
-  { nome: "Amarelo", value: "#EAB308" },
-  { nome: "Rosa", value: "#EC4899" },
-  { nome: "Ciano", value: "#06B6D4" },
-];
 
 interface EntryEditorProps {
   initial?: Partial<PlanejamentoEntrada>;
@@ -42,7 +30,6 @@ export interface EntryFormData {
   copy: string;
   hashtags: string[];
   status: EntradaStatus;
-  cor: string;
   estilo: string;
 }
 
@@ -54,14 +41,14 @@ export function EntryEditor({
   onCancel,
   onDelete,
 }: EntryEditorProps) {
-  const [data, setData] = useState(initial?.data ?? defaultDate ?? new Date().toISOString().slice(0, 10));
+  // Hoje em fuso LOCAL (não UTC) — new Date().toISOString() pula o dia à noite no BR.
+  const [data, setData] = useState(initial?.data ?? defaultDate ?? formatDate(new Date()));
   const [tipo, setTipo] = useState<EntradaTipo>((initial?.tipo as EntradaTipo) ?? "post_feed");
   const [titulo, setTitulo] = useState(initial?.titulo ?? "");
   const [descricao, setDescricao] = useState(initial?.descricao ?? "");
   const [copy, setCopy] = useState(initial?.copy ?? "");
   const [hashtagsText, setHashtagsText] = useState((initial?.hashtags ?? []).join(" "));
   const [status, setStatus] = useState<EntradaStatus>((initial?.status as EntradaStatus) ?? "pendente");
-  const [cor, setCor] = useState(initial?.cor ?? "");
   const [estilo, setEstilo] = useState(initial?.estilo ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -81,7 +68,6 @@ export function EntryEditor({
           .filter(Boolean)
           .map((h) => (h.startsWith("#") ? h : `#${h}`)),
         status,
-        cor,
         estilo: estilo.trim(),
       });
     } finally {
@@ -154,53 +140,25 @@ export function EntryEditor({
           placeholder="#marketing #socialmedia"
         />
       </div>
-      {/* Cor + estilo: ajudam a diferenciar os conteúdos no calendário */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="label">Cor do post</label>
-          <div className="flex flex-wrap items-center gap-2">
-            {CORES.map((c) => {
-              const sel = cor.toLowerCase() === c.value.toLowerCase();
-              return (
-                <button
-                  key={c.value}
-                  type="button"
-                  disabled={readOnly}
-                  onClick={() => setCor(sel ? "" : c.value)}
-                  title={c.nome}
-                  aria-label={c.nome}
-                  aria-pressed={sel}
-                  className={cn(
-                    "h-8 w-8 rounded-full border-2 transition disabled:opacity-50",
-                    sel
-                      ? "border-white ring-2 ring-white/40 scale-110"
-                      : "border-border hover:scale-105"
-                  )}
-                  style={{ backgroundColor: c.value }}
-                />
-              );
-            })}
-            {cor && !readOnly && (
-              <button
-                type="button"
-                onClick={() => setCor("")}
-                className="text-xs text-slate-400 hover:text-slate-200 px-1"
-              >
-                Limpar
-              </button>
-            )}
-          </div>
-        </div>
-        <div>
-          <label className="label">Estilo / categoria</label>
-          <Input
-            value={estilo}
-            onChange={(e) => setEstilo(e.target.value)}
-            disabled={readOnly}
-            placeholder="Ex.: Promoção, Educativo… (opcional)"
-            className="w-full"
-          />
-        </div>
+      {/* Cor é fixa por tipo (não é escolhida). Mostra apenas como referência. */}
+      <div className="rounded-md bg-bg-elevated/40 border border-border px-3 py-2 flex items-center gap-2">
+        <span
+          className={cn("inline-block h-3.5 w-3.5 rounded-full border border-white/20", ENTRY_TIPO_COR[tipo]?.dot ?? ENTRY_TIPO_COR.post_feed.dot)}
+          aria-hidden
+        />
+        <p className="text-[11px] text-slate-400">
+          Cor no calendário definida pelo tipo ({ENTRY_TIPO_LABEL?.[tipo] ?? tipo}).
+        </p>
+      </div>
+      <div>
+        <label className="label">Estilo / categoria</label>
+        <Input
+          value={estilo}
+          onChange={(e) => setEstilo(e.target.value)}
+          disabled={readOnly}
+          placeholder="Ex.: Promoção, Educativo… (opcional)"
+          className="w-full"
+        />
       </div>
       <div>
         <label className="label">Status</label>

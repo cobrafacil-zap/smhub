@@ -3,6 +3,7 @@
 import { useState, useRef, useTransition } from "react";
 import { Paperclip, Upload, FileText, X, Trash2, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { toast } from "@/components/ui/Toast";
 import {
   uploadFaturaArquivoAction,
@@ -50,8 +51,7 @@ export function FaturaArquivosCell({
     });
   }
 
-  function handleDelete(id: string, nome: string) {
-    if (!confirm(`Excluir o arquivo "${nome}"?`)) return;
+  function handleDelete(id: string) {
     startTransition(async () => {
       const res = await deletarFaturaArquivoAction(id);
       if (res?.error) toast.error(res.error);
@@ -143,14 +143,29 @@ export function FaturaArquivosCell({
                   >
                     <ExternalLink className="h-3 w-3" />
                   </a>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(a.id, a.nome)}
-                    className="p-1 rounded text-slate-400 hover:text-danger-300"
-                    title="Excluir"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
+                  <ConfirmDialog
+                    title={`Excluir "${a.nome}"?`}
+                    description="O arquivo será removido permanentemente."
+                    confirmText="Excluir"
+                    variant="danger"
+                    trigger={
+                      <button
+                        type="button"
+                        className="p-1 rounded text-slate-400 hover:text-danger-300"
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    }
+                    onConfirm={async () => {
+                      const res = await deletarFaturaArquivoAction(a.id);
+                      if (res?.error) {
+                        toast.error(res.error);
+                        throw new Error(res.error);
+                      }
+                      toast.success("Arquivo removido.");
+                    }}
+                  />
                 </div>
               </div>
             ))}

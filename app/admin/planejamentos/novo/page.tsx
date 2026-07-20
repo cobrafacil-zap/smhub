@@ -1,5 +1,5 @@
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Cliente } from "@/types/database";
 import { NovoPlanejamentoForm } from "./NovoPlanejamentoForm";
 
@@ -7,7 +7,7 @@ export const metadata = { title: "Novo planejamento" };
 
 export default async function NovoPlanejamentoPage() {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const aid = session.profile.agencia_id!;
 
   const { data: clientes } = await supabase

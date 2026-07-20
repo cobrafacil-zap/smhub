@@ -1,5 +1,5 @@
 import { requireCliente } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import type { Planejamento, PlanejamentoEntrada } from "@/types/database";
 import { PlanejamentoAprovacaoClient } from "./PlanejamentoAprovacaoClient";
@@ -12,7 +12,7 @@ export default async function ClientePlanejamentoPage({
   searchParams: { mes?: string };
 }) {
   const session = await requireCliente();
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   // Mês de referência (default: mês atual)
   const today = new Date();

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardEmpty } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -22,21 +22,19 @@ export default async function ContratoDetalhePage({
   params: { id: string };
 }) {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
+  // Resource embedding: traz contrato + cliente em 1 round-trip (antes eram
+  // 2 sequenciais).
   const { data: contrato, error } = await supabase
     .from("contratos")
-    .select("*")
+    .select("*, cliente:clientes(id, nome_empresa, nome_responsavel, email)")
     .eq("id", params.id)
     .eq("agencia_id", session.profile.agencia_id!)
     .single();
   if (error || !contrato) notFound();
 
-  const c = contrato as Contrato;
-  const { data: cliente } = await supabase
-    .from("clientes")
-    .select("id, nome_empresa, nome_responsavel, email")
-    .eq("id", c.cliente_id)
-    .single();
+  const c = contrato as Contrato & { cliente: Pick<Cliente, "id" | "nome_empresa" | "nome_responsavel" | "email"> | null };
+  const cliente = c.cliente;
 
   const st = CONTRATO_STATUS[c.status];
   const assinaturas: AssinaturaRegistro[] = Array.isArray(c.assinaturas)

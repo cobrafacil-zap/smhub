@@ -6,6 +6,8 @@ export type CalendarCell = {
   date: string;
   /** Dia do mês (1-31). */
   day: number;
+  /** Dia da semana (0=Dom..6=Sáb) — útil p/ tintar dias de postagem. */
+  weekday: number;
   /** Se pertence ao mês/ano que está sendo visualizado. */
   isCurrentMonth: boolean;
   /** Se é o dia de hoje. */
@@ -46,6 +48,7 @@ export function buildMonthCells(
     cells.push({
       date: dateStr,
       day: d.getDate(),
+      weekday: d.getDay(),
       isCurrentMonth: d.getMonth() === month - 1 && d.getFullYear() === year,
       isToday: dateStr === todayStr,
       entries: entries.filter((e) => e.data === dateStr),

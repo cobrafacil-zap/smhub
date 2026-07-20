@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -48,6 +48,7 @@ export async function criarFaturaAction(formData: FormData) {
   });
   if (error) return { error: error.message };
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   revalidatePath("/admin/clientes");
   return { ok: true };
 }
@@ -72,6 +73,7 @@ export async function atualizarFaturaStatusAction(id: string, status: Fatura["st
   if (error) return { error: error.message };
   if (fat?.cliente_id) revalidatePath(`/admin/clientes/${fat.cliente_id}`);
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   revalidatePath("/admin/clientes");
   return { ok: true };
 }
@@ -92,6 +94,7 @@ export async function deletarFaturaAction(id: string) {
     .eq("agencia_id", session.profile.agencia_id!);
   if (fat?.cliente_id) revalidatePath(`/admin/clientes/${fat.cliente_id}`);
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   revalidatePath("/admin/clientes");
 }
 
@@ -147,6 +150,7 @@ export async function uploadFaturaArquivoAction(formData: FormData) {
 
   if (fat.cliente_id) revalidatePath(`/admin/clientes/${fat.cliente_id}`);
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   return { ok: true };
 }
 
@@ -185,6 +189,7 @@ export async function deletarFaturaArquivoAction(id: string) {
   await supabase.from("fatura_arquivos").delete().eq("id", id);
   if (fat?.cliente_id) revalidatePath(`/admin/clientes/${fat.cliente_id}`);
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   return { ok: true };
 }
 
@@ -232,6 +237,7 @@ export async function gerarFaturaClienteAction(clienteId: string, mesReferencia:
   if (error) return { error: error.message };
   revalidatePath(`/admin/clientes/${clienteId}`);
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   return { ok: true };
 }
 
@@ -247,38 +253,50 @@ export async function gerarFaturasMesAction(formData: FormData) {
     .select("id, valor_mensal, dia_vencimento, nome_empresa")
     .eq("agencia_id", session.profile.agencia_id!)
     .eq("status", "ativo");
-  const list = clientes ?? [];
+  const list = (clientes ?? []) as {
+    id: string;
+    valor_mensal: number | null;
+    dia_vencimento: number | null;
+    nome_empresa: string | null;
+  }[];
   if (list.length === 0) return { error: "Nenhum cliente ativo." };
 
-  let created = 0;
-  for (const c of list) {
-    if (!c.valor_mensal) continue;
-    const dia = Math.min(c.dia_vencimento ?? 10, 28);
-    const venc = new Date(ano, mes - 1, dia).toISOString().slice(0, 10);
+  // Dedup em LOTE: busca de uma vez todas as faturas JÁ existentes desse mês
+  // (por competencia) pra esses clientes. Antes era 1 SELECT + 1 INSERT por
+  // cliente no loop = 2N round-trips (N+1). Agora 1 SELECT + 1 INSERT em lote.
+  const competencia = `${mesReferencia}-01`;
+  const clienteIds = list.map((c) => c.id);
+  const { data: existentes } = await supabase
+    .from("faturas")
+    .select("cliente_id")
+    .in("cliente_id", clienteIds)
+    .eq("competencia", competencia);
+  const jaTem = new Set((existentes ?? []).map((f) => (f as { cliente_id: string }).cliente_id));
 
-    // Evita duplicar
-    const { data: existe } = await supabase
-      .from("faturas")
-      .select("id")
-      .eq("cliente_id", c.id)
-      .eq("data_vencimento", venc)
-      .maybeSingle();
-    if (existe) continue;
-
-    // Tabela `faturas` usa `competencia` (date) + `itens` (jsonb).
-    // competencia precisa de uma data completa (YYYY-MM-DD), não só YYYY-MM.
-    await supabase.from("faturas").insert({
-      cliente_id: c.id,
-      agencia_id: session.profile.agencia_id!,
-      competencia: `${mesReferencia}-01`,
-      data_vencimento: venc,
-      valor: c.valor_mensal,
-      itens: [{ descricao: `Mensalidade ${mesReferencia}`, valor: c.valor_mensal }],
-      status: "pendente",
+  const inserts = list
+    .filter((c) => c.valor_mensal && !jaTem.has(c.id))
+    .map((c) => {
+      const dia = Math.min(c.dia_vencimento ?? 10, 28);
+      const venc = new Date(ano, mes - 1, dia).toISOString().slice(0, 10);
+      return {
+        cliente_id: c.id,
+        agencia_id: session.profile.agencia_id!,
+        competencia,
+        data_vencimento: venc,
+        valor: c.valor_mensal!,
+        itens: [{ descricao: `Mensalidade ${mesReferencia}`, valor: c.valor_mensal! }],
+        status: "pendente" as const,
+      };
     });
-    created++;
+
+  let created = 0;
+  if (inserts.length > 0) {
+    const { error: insErr } = await supabase.from("faturas").insert(inserts);
+    if (insErr) return { error: insErr.message };
+    created = inserts.length;
   }
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   return { ok: true, count: created };
 }
 
@@ -332,4 +350,35 @@ export async function deletarBriefingAction(id: string) {
     .eq("agencia_id", session.profile.agencia_id!);
   if (briefing?.cliente_id) revalidatePath(`/admin/clientes/${briefing.cliente_id}`);
   revalidatePath("/admin/briefings");
+}
+
+export async function atualizarBriefingAction(id: string, formData: FormData) {
+  const session = await requireAgenciaMember();
+  const supabase = createClient();
+  const respostasStr = String(formData.get("respostas") ?? "");
+  let respostas: unknown;
+  try {
+    respostas = JSON.parse(respostasStr);
+  } catch {
+    return { error: "Respostas inválidas" };
+  }
+  // Confirma posse (mesma agência) e pega cliente_id para revalidar.
+  const { data: br, error: selErr } = await supabase
+    .from("briefings")
+    .select("cliente_id, agencia_id")
+    .eq("id", id)
+    .single();
+  if (selErr || !br || br.agencia_id !== session.profile.agencia_id) {
+    return { error: "Briefing não encontrado." };
+  }
+  const { error } = await supabase
+    .from("briefings")
+    .update({ respostas: respostas as object })
+    .eq("id", id)
+    .eq("agencia_id", session.profile.agencia_id!);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/briefings");
+  if (br.cliente_id) revalidatePath(`/admin/clientes/${br.cliente_id}`);
+  revalidatePath("/cliente");
+  return { ok: true };
 }

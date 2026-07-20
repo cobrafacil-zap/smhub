@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { Toaster } from "sonner";
 import { SITE } from "@/lib/site";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { ThemeToaster } from "@/components/ui/ThemeToaster";
+import { GlobalLoader } from "@/components/ui/GlobalLoader";
+import { RegisterSW } from "@/components/pwa/RegisterSW";
 import "./globals.css";
 
 const inter = Inter({
@@ -78,7 +81,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon",
     shortcut: "/icon",
-    apple: "/icon",
+  },
+  // PWA — iOS "Adicionar à Tela de Início". apple-touch-icon vem do
+  // app/apple-icon.tsx (convention) e o manifest do app/manifest.ts.
+  appleWebApp: {
+    capable: true,
+    title: SITE.name,
+    statusBarStyle: "default",
   },
 };
 
@@ -94,24 +103,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
+    <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
       <body className="font-sans antialiased min-h-screen bg-bg text-slate-100">
-        <ScrollToTop />
-        {children}
-        <Toaster
-          position="top-right"
-          theme="dark"
-          richColors
-          closeButton
-          toastOptions={{
-            classNames: {
-              toast:
-                "bg-bg-elevated border border-border text-slate-100 shadow-elevated",
-              title: "text-slate-100",
-              description: "text-slate-400",
-            },
-          }}
-        />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          disableTransitionOnChange
+        >
+          <ScrollToTop />
+          {children}
+          <GlobalLoader />
+          <RegisterSW />
+          <ThemeToaster />
+        </ThemeProvider>
       </body>
     </html>
   );

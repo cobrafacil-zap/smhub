@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/Badge";
 import { getSessionUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAssinaturaStatus } from "@/lib/assinatura";
+import { getPlanos } from "@/lib/planos";
 import { CheckoutForm } from "./CheckoutForm";
-import type { Plano, PlanoConfig } from "@/types/database";
+import type { Plano } from "@/types/database";
 import { Check } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 
@@ -29,15 +30,11 @@ export default async function CheckoutPage({
   if (!PLANOS_VALIDOS.includes(planoParam)) redirect("/");
 
   const admin = createAdminClient();
-  const { data: planoRow } = await admin
-    .from("planos")
-    .select("*")
-    .eq("id", planoParam)
-    .maybeSingle();
-  if (!planoRow) redirect("/");
-  const plano = planoRow as PlanoConfig;
+  // planos (cacheado) e sessão são independentes → paralelo.
+  const [planosAll, session] = await Promise.all([getPlanos(), getSessionUser()]);
+  const plano = planosAll.find((p) => p.id === planoParam);
+  if (!plano) redirect("/");
 
-  const session = await getSessionUser();
   let nomeAgencia: string | null = null;
   let isRenovacao = false;
   if (session && session.profile.role !== "cliente" && session.profile.agencia_id) {
@@ -76,13 +73,17 @@ export default async function CheckoutPage({
               <p className="text-sm text-slate-400 mt-2">{plano.descricao}</p>
               <div className="mt-6 pt-6 border-t border-border">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm text-slate-400">Assinatura mensal</span>
+                  <span className="text-sm text-slate-400">
+                    {isRenovacao ? "Assinatura mensal" : "Depois do período grátis"}
+                  </span>
                   <span className="text-2xl font-bold text-slate-100">
                     {formatBRL(Number(plano.valor_mensal))}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Cobrado mensalmente. Cancele a qualquer momento.
+                  {isRenovacao
+                    ? "Cobrado mensalmente. Cancele a qualquer momento."
+                    : "7 dias grátis primeiro. Depois, R$ mensal para continuar."}
                 </p>
               </div>
               <ul className="mt-6 space-y-2 text-sm text-slate-300">
@@ -111,13 +112,21 @@ export default async function CheckoutPage({
               <p className="text-sm text-slate-400 mt-1">
                 {isRenovacao
                   ? `Você está logado${nomeAgencia ? ` como ${nomeAgencia}` : ""}. Confirme o plano e prossiga para o pagamento.`
-                  : "Preencha seus dados para criar sua conta. Após o pagamento, você receberá um link por e-mail para definir sua senha."}
+                  : "Preencha seus dados para criar sua conta. Você ganha 7 dias grátis para testar a plataforma — só paga depois, se quiser continuar."}
               </p>
 
-              <div className="mt-4 p-3 rounded-lg bg-royal-500/5 border border-royal-500/20 text-xs text-slate-300">
-                💳 Pagamento processado pelo <strong>Mercado Pago</strong>. Aceitamos cartão de
-                crédito, PIX e boleto.
-              </div>
+              {isRenovacao && (
+                <div className="mt-4 p-3 rounded-lg bg-royal-500/5 border border-royal-500/20 text-xs text-slate-300">
+                  💳 Pagamento processado pelo <strong>Mercado Pago</strong>. Aceitamos cartão de
+                  crédito, PIX e boleto.
+                </div>
+              )}
+              {!isRenovacao && (
+                <div className="mt-4 p-3 rounded-lg bg-success-500/5 border border-success-500/20 text-xs text-slate-300">
+                  ✅ <strong>7 dias grátis</strong> — nenhuma cobrança agora. Você só paga após o
+                  período de teste, se decidir continuar.
+                </div>
+              )}
 
               <div className="mt-6">
                 <CheckoutForm

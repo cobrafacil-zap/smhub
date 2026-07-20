@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { requireCliente } from "@/lib/auth/session";
 import { PrintContrato } from "@/components/contracts/PrintContrato";
 
 /**
@@ -12,26 +12,16 @@ export default async function ImprimirContratoClientePage({
 }: {
   params: { id: string };
 }) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) notFound();
-
-  // Cliente: pega o cliente_id do usuario logado
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("cliente_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!usuario?.cliente_id) notFound();
-
+  // Identidade + escopo de cliente via getSessionUser (JWT local + cache).
+  const session = await requireCliente();
+  const clienteId = session.profile.cliente_id!;
   const admin = createAdminClient();
+
   const { data: contrato } = await admin
     .from("contratos")
     .select("id, titulo, conteudo, valor_mensal, duracao_meses, data_inicio, data_fim, status, agencia_id, cliente_id")
     .eq("id", params.id)
-    .eq("cliente_id", usuario.cliente_id)
+    .eq("cliente_id", clienteId)
     .maybeSingle();
 
   if (!contrato) notFound();

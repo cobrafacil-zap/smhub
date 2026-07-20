@@ -117,7 +117,7 @@ export function EditarEquipeButton({
               <label className="label">Custo mensal (R$)</label>
               <BRLInput name="custo_mensal" defaultValue={custoMensal ?? 0} />
               <p className="text-[10px] text-slate-500 mt-1">
-                Vai para o módulo financeiro (DRE / custos fixos).
+                É somado às despesas do mês no Financeiro (folha fixa da equipe).
               </p>
             </div>
             <div>

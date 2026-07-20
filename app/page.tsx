@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { getPlanos } from "@/lib/planos";
 import { Logo } from "@/components/brand/Logo";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
@@ -190,17 +192,11 @@ const faqLd = {
 
 export default async function LandingPage() {
   const supabase = createAdminClient();
-  const { data: planos } = await supabase
-    .from("planos")
-    .select("*")
-    .order("valor_mensal");
-  const planosList = (planos as PlanoConfig[] | null) ?? [];
-
-  // Detecta se o usuário está logado para mostrar "Ir para o painel" no header.
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  // planos (cacheado) e detecção de user são independentes → paralelo.
+  const [planosList, { data: { user } }] = await Promise.all([
+    getPlanos(),
+    createClient().auth.getUser(),
+  ]);
 
   let panelHref: string | null = null;
   if (user) {
@@ -262,20 +258,21 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-30 border-b border-border/40 bg-bg/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" aria-label="SM Hub — início">
-            <Logo variant="full" className="!h-7 sm:!h-8" />
+            <Logo variant="full" className="!h-10 sm:!h-12" />
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm text-slate-300">
-            <a href="#funcionalidades" className="hover:text-white transition-colors">
+            <a href="#funcionalidades" className="hover:text-slate-100 transition-colors">
               Funcionalidades
             </a>
-            <a href="#planos" className="hover:text-white transition-colors">
+            <a href="#planos" className="hover:text-slate-100 transition-colors">
               Planos
             </a>
-            <a href="#faq" className="hover:text-white transition-colors">
+            <a href="#faq" className="hover:text-slate-100 transition-colors">
               FAQ
             </a>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {panelHref ? (
               <Link href={panelHref}>
                 <Button variant="primary" size="sm" iconLeft={<LayoutDashboard className="h-4 w-4" />}>
@@ -304,6 +301,9 @@ export default async function LandingPage() {
 
       {/* Hero */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-24 pb-14 sm:pb-20 text-center">
+        <div className="flex justify-center mb-8 animate-logo-in">
+          <Logo variant="full" className="!h-32 sm:!h-40 animate-logo-float" />
+        </div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-royal-500/10 border border-royal-500/30 text-xs text-royal-200 mb-6 animate-fade-in">
           <Sparkles className="h-3.5 w-3.5" />
           7 dias grátis. Sem cartão de crédito.
@@ -545,7 +545,7 @@ export default async function LandingPage() {
       <footer className="relative z-10 border-t border-border mt-6">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="sm:col-span-2 lg:col-span-1">
-            <Logo variant="full" className="!h-7" />
+            <Logo variant="full" className="!h-12" />
             <p className="text-sm text-slate-400 mt-3 max-w-xs">
               A plataforma completa para agências de marketing gerenciarem clientes,
               planejamentos, relatórios e financeiro em um só lugar.

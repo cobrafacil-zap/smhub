@@ -1,13 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAgenciaAdmin, requireAgenciaMember } from "@/lib/auth/session";
 import { CLIENTE_SEGMENTOS } from "@/lib/constants";
-import type { Cliente, EntradaStatus, Usuario } from "@/types/database";
+import type { Cliente, EntradaStatus, PlanejamentoEntrada, Usuario } from "@/types/database";
 
 export type CriarClienteState = { error?: string; ok?: boolean } | undefined;
 
@@ -490,6 +490,36 @@ export async function atualizarPlanejamentoAction(id: string, formData: FormData
   return { ok: true };
 }
 
+/**
+ * Atualiza apenas os "dias de postagem" do planejamento (seleção de dias da
+ * semana que o admin marca no calendário). `dias` é um array de inteiros
+ * 0..6 (getDay: 0=Dom..6=Sáb). Vazio/null remove a marcação.
+ */
+export async function atualizarDiasPostagemAction(id: string, dias: number[]) {
+  const session = await requireAgenciaMember();
+  const supabase = createClient();
+  const { data: plan } = await supabase
+    .from("planejamentos")
+    .select("id, cliente_id")
+    .eq("id", id)
+    .eq("agencia_id", session.profile.agencia_id!)
+    .maybeSingle();
+  if (!plan) return { error: "Planejamento não encontrado." };
+
+  // Sanitiza: inteiros 0..6 únicos.
+  const unicos = Array.from(
+    new Set((dias ?? []).map((d) => Number(d)).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))
+  ).sort((a, b) => a - b);
+
+  const { error } = await supabase
+    .from("planejamentos")
+    .update({ dias_postagem: unicos.length > 0 ? unicos : null })
+    .eq("id", id);
+  if (error) return { error: "Erro ao salvar dias de postagem." };
+  revalidatePath(`/admin/clientes/${plan.cliente_id}`);
+  return { ok: true, dias_postagem: unicos.length > 0 ? unicos : null };
+}
+
 const entradaSchema = z.object({
   planejamento_id: z.string().uuid(),
   data: z.string(),
@@ -525,15 +555,19 @@ export async function criarEntradaAction(formData: FormData) {
     copy: formData.get("copy"),
     hashtags: hashtags.length ? hashtags : null,
     status: formData.get("status") ?? "pendente",
-    cor: normalizarCor(formData.get("cor")),
     estilo: normalizarCor(formData.get("estilo")),
   };
   const parsed = entradaSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
-  const { error } = await supabase.from("planejamento_entradas").insert(parsed.data);
+  // cor não vem mais do cliente (cor é fixa por tipo); garante null p/ não gravar lixo.
+  const { data: entrada, error } = await supabase
+    .from("planejamento_entradas")
+    .insert({ ...parsed.data, cor: null })
+    .select("*")
+    .single();
   if (error) return { error: "Erro." };
   revalidatePath(`/admin/clientes`);
-  return { ok: true };
+  return { ok: true, entrada: entrada as PlanejamentoEntrada };
 }
 
 export async function atualizarEntradaAction(entradaId: string, formData: FormData) {
@@ -552,25 +586,26 @@ export async function atualizarEntradaAction(entradaId: string, formData: FormDa
     copy: formData.get("copy"),
     hashtags: hashtags.length ? hashtags : null,
     status: formData.get("status") ?? "pendente",
-    cor: normalizarCor(formData.get("cor")),
     estilo: normalizarCor(formData.get("estilo")),
   };
   const parsed = entradaSchema.omit({ planejamento_id: true }).safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
-  const { data: entrada } = await supabase
+  const { data: entradaAntiga } = await supabase
     .from("planejamento_entradas")
     .select("planejamento_id, planejamentos(cliente_id)")
     .eq("id", entradaId)
     .single();
-  const { error } = await supabase
+  const { data: entrada, error } = await supabase
     .from("planejamento_entradas")
-    .update(parsed.data)
-    .eq("id", entradaId);
+    .update({ ...parsed.data, cor: null })
+    .eq("id", entradaId)
+    .select("*")
+    .single();
   if (error) return { error: "Erro ao atualizar entrada." };
-  const clienteId = (entrada?.planejamentos as unknown as { cliente_id?: string } | null)?.cliente_id;
+  const clienteId = (entradaAntiga?.planejamentos as unknown as { cliente_id?: string } | null)?.cliente_id;
   if (clienteId) revalidatePath(`/admin/clientes/${clienteId}`);
   revalidatePath(`/admin/clientes`);
-  return { ok: true };
+  return { ok: true, entrada: entrada as PlanejamentoEntrada };
 }
 
 export async function atualizarEntradaStatusAction(
@@ -603,6 +638,7 @@ export async function atualizarEntradaStatusAction(
   if (clienteId) revalidatePath(`/admin/clientes/${clienteId}`);
   revalidatePath(`/admin/clientes`);
   revalidatePath(`/cliente/planejamento`);
+  return { ok: true, entradaId, status, comentario: comentario?.trim() || null };
 }
 
 export async function deletarEntradaAction(entradaId: string) {
@@ -632,6 +668,7 @@ const transacaoSchema = z.object({
   status: z.enum(["pendente", "pago", "atrasado", "cancelado"]).default("pendente"),
   cliente_id: z.string().uuid().optional().nullable(),
   recorrente: z.coerce.boolean().optional(),
+  natureza: z.enum(["fixa", "variavel"]).default("variavel"),
 });
 
 export async function criarTransacaoAction(prev: unknown, formData: FormData) {
@@ -646,6 +683,7 @@ export async function criarTransacaoAction(prev: unknown, formData: FormData) {
   });
   if (error) return { error: "Erro ao criar transação." };
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   return { ok: true };
 }
 
@@ -662,18 +700,22 @@ export async function atualizarTransacaoAction(id: string, formData: FormData) {
     .eq("agencia_id", session.profile.agencia_id!);
   if (error) return { error: "Erro." };
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
   return { ok: true };
 }
 
 export async function deletarTransacaoAction(id: string) {
   const session = await requireAgenciaMember();
   const supabase = createClient();
-  await supabase
+  const { error } = await supabase
     .from("transacoes")
     .delete()
     .eq("id", id)
     .eq("agencia_id", session.profile.agencia_id!);
+  if (error) return { error: "Erro ao excluir lançamento." };
   revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
+  return { ok: true };
 }
 
 // ============================================================================

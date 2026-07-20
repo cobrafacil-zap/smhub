@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -16,25 +16,28 @@ export const metadata = { title: "Planejamentos" };
 
 export default async function PlanejamentosPage() {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const aid = session.profile.agencia_id!;
 
-  // 1) Planejamentos existentes
-  const { data: plans } = await supabase
-    .from("planejamentos")
-    .select("*, cliente:clientes(nome_empresa)")
-    .eq("agencia_id", aid)
-    .order("mes_referencia", { ascending: false });
+  // 1) Planejamentos + 2) clientes ativos são independentes (ambas filtram
+  // por aid) → paralelo. Planejamentos com LIMIT (cresce com meses×clientes).
+  const [{ data: plans }, { data: clientesAtivos }] = await Promise.all([
+    supabase
+      .from("planejamentos")
+      .select("*, cliente:clientes(nome_empresa)")
+      .eq("agencia_id", aid)
+      .order("mes_referencia", { ascending: false })
+      .limit(200),
+    supabase
+      .from("clientes")
+      .select("id, nome_empresa, status")
+      .eq("agencia_id", aid)
+      .in("status", ["ativo", "pausado"]),
+  ]);
   const list = (plans ?? []) as (Planejamento & {
     cliente: Pick<Cliente, "nome_empresa"> | null;
   })[];
 
-  // 2) Clientes ativos (para o progresso)
-  const { data: clientesAtivos } = await supabase
-    .from("clientes")
-    .select("id, nome_empresa, status")
-    .eq("agencia_id", aid)
-    .in("status", ["ativo", "pausado"]);
   const ativos = (clientesAtivos ?? []) as Pick<Cliente, "id" | "nome_empresa" | "status">[];
   const totalAtivos = ativos.length;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ENTRY_TIPO_LABEL } from "@/lib/constants";
+import { ENTRY_TIPO_LABEL, ENTRY_TIPO_COR } from "@/lib/constants";
 import { MONTHS_PT, WEEKDAYS_PT } from "@/lib/constants";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -19,16 +19,11 @@ interface EditorialCalendarProps {
   onEntryClick?: (entry: PlanejamentoEntrada) => void;
   /** Quando true, oculta controles de admin (cliente). */
   readOnly?: boolean;
+  /** Dia selecionado/fixo (YYYY-MM-DD) — destacado no calendário. */
+  selectedDate?: string;
+  /** Dias da semana marcados como "dia de postagem" (0=Dom..6=Sáb). Tingem o grid. */
+  diasPostagem?: number[] | null;
 }
-
-const tipoColors: Record<string, string> = {
-  post_feed: "bg-royal-500/30 text-royal-200 border-royal-500/40",
-  story: "bg-accent-500/30 text-accent-500 border-accent-500/40",
-  reels: "bg-pink-500/30 text-pink-200 border-pink-500/40",
-  carrossel: "bg-amber-500/30 text-amber-200 border-amber-500/40",
-  video: "bg-success-500/30 text-success-400 border-success-500/40",
-  artigo: "bg-slate-500/30 text-slate-200 border-slate-500/40",
-};
 
 export function EditorialCalendar({
   entries,
@@ -37,6 +32,8 @@ export function EditorialCalendar({
   onCellClick,
   onEntryClick,
   readOnly = false,
+  selectedDate,
+  diasPostagem,
 }: EditorialCalendarProps) {
   const [refDate, setRefDate] = useState(() => {
     if (initialDate) {
@@ -51,6 +48,13 @@ export function EditorialCalendar({
   const cells: CalendarCell[] = useMemo(
     () => buildMonthCells(year, month, entries),
     [year, month, entries]
+  );
+
+  // Dias da semana marcados como dia de postagem (índice = getDay: 0=Dom..6=Sáb,
+  // mesma ordem de WEEKDAYS_PT). Usado p/ tingir sutilmente o grid.
+  const diasSet = useMemo(
+    () => new Set((diasPostagem ?? []).map(Number)),
+    [diasPostagem]
   );
 
   function changeMonth(delta: number) {
@@ -100,10 +104,13 @@ export function EditorialCalendar({
       </div>
 
       <div className="grid grid-cols-7 gap-1 mb-1">
-        {WEEKDAYS_PT.map((w) => (
+        {WEEKDAYS_PT.map((w, i) => (
           <div
             key={w}
-            className="text-center text-[10px] font-semibold uppercase tracking-wider text-slate-500 py-1"
+            className={cn(
+              "text-center text-[10px] font-semibold uppercase tracking-wider py-1",
+              diasSet.has(i) ? "text-royal-300" : "text-slate-500"
+            )}
           >
             {w}
           </div>
@@ -121,7 +128,12 @@ export function EditorialCalendar({
               cell.isCurrentMonth
                 ? "bg-bg-elevated/40 border-border hover:border-royal-500/50"
                 : "bg-transparent border-transparent text-slate-600",
-              cell.isToday && "ring-1 ring-royal-500/60"
+              // Dia de postagem: tinta sutil (royal /10) p/ diferenciar sem destacar demais.
+              diasSet.has(cell.weekday) &&
+                cell.isCurrentMonth &&
+                "bg-royal-500/10 border-royal-500/20",
+              cell.isToday && "ring-1 ring-royal-500/60",
+              selectedDate === cell.date && "border-royal-500 ring-2 ring-royal-500/50"
             )}
           >
             <div
@@ -134,9 +146,8 @@ export function EditorialCalendar({
             </div>
             <div className="space-y-0.5">
               {cell.entries.slice(0, 3).map((e) => {
-                const corEstilo = e.cor
-                  ? { borderLeft: `4px solid ${e.cor}`, backgroundColor: `${e.cor}22`, color: "#e2e8f0" }
-                  : undefined;
+                // Cor fixa por tipo — não usa mais e.cor (coluna legada, ignorada).
+                const cor = ENTRY_TIPO_COR[e.tipo] ?? ENTRY_TIPO_COR.post_feed;
                 return (
                   <div
                     key={e.id}
@@ -146,9 +157,8 @@ export function EditorialCalendar({
                     }}
                     className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded border truncate cursor-pointer",
-                      !e.cor && (tipoColors[e.tipo] ?? tipoColors.post_feed)
+                      cor.chip
                     )}
-                    style={corEstilo}
                     title={e.titulo}
                   >
                     {ENTRY_TIPO_LABEL[e.tipo] ?? e.tipo}: {e.titulo}

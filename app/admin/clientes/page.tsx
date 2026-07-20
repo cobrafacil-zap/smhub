@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -18,36 +18,51 @@ export default async function ClientesPage({
   searchParams: { status?: string; segmento?: string; busca?: string };
 }) {
   const session = await requireAgenciaMember();
-  const supabase = createClient();
+  // Leituras service-role (bypassa RLS). Ambas as queries filtram por
+  // .eq("agencia_id", aid) — aid vem de requireAgenciaMember (sessão validada).
+  const supabase = createAdminClient();
   const aid = session.profile.agencia_id!;
+
+  // Janela de faturas: 6 meses atrás + futuras. Evita varrer histórico
+  // antigo (a lógica do card só precisa de atrasadas recentes + próximas).
+  const hoje = new Date();
+  const hojeStr = hoje.toISOString().slice(0, 10);
+  const limiteStr = new Date(hoje.getTime() + 5 * 86400000).toISOString().slice(0, 10);
+  const inicioMesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 6, 1)
+    .toISOString()
+    .slice(0, 10);
 
   let query = supabase
     .from("clientes")
-    .select("*")
+    // Só colunas usadas pelo ClienteCard — menos payload do Postgres.
+    .select("id, nome_empresa, nome_responsavel, email, telefone, segmento, status, valor_mensal, created_at")
     .eq("agencia_id", aid)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(300);
 
   if (searchParams.status) query = query.eq("status", searchParams.status as Cliente["status"]);
   if (searchParams.segmento) query = query.eq("segmento", searchParams.segmento);
   if (searchParams.busca) query = query.ilike("nome_empresa", `%${searchParams.busca}%`);
 
-  const { data: clientes } = await query;
-  const list = (clientes as Cliente[] | null) ?? [];
+  // Roda clientes e faturas EM PARALELO (antes eram sequenciais → dobro do tempo).
+  const [clientesRes, faturasRes] = await Promise.all([
+    query,
+    supabase
+      .from("faturas")
+      .select("id, cliente_id, data_vencimento, valor, status, numero")
+      .eq("agencia_id", aid)
+      .neq("status", "pago")
+      .gte("data_vencimento", inicioMesPassado)
+      .order("data_vencimento", { ascending: true })
+      .limit(500),
+  ]);
+  const list = (clientesRes.data as Cliente[] | null) ?? [];
 
-  // Faturas dos clientes: trazemos todas as não-pagas e identificamos
+  // Faturas dos clientes: identificamos
   // (a) próxima fatura por cliente
   // (b) contagem de faturas atrasadas (status=atrasado OU pendente com data passada)
   // (c) contagem de faturas a vencer nos próximos 5 dias
-  const hoje = new Date();
-  const hojeStr = hoje.toISOString().slice(0, 10);
-  const limiteStr = new Date(hoje.getTime() + 5 * 86400000).toISOString().slice(0, 10);
-  const { data: faturas } = await supabase
-    .from("faturas")
-    .select("id, cliente_id, data_vencimento, valor, status, numero")
-    .eq("agencia_id", aid)
-    .neq("status", "pago")
-    .order("data_vencimento", { ascending: true });
-  const todasFaturas = (faturas as (Fatura & { cliente_id: string })[] | null) ?? [];
+  const todasFaturas = (faturasRes.data as (Fatura & { cliente_id: string })[] | null) ?? [];
 
   const proxFaturaPorCliente = new Map<string, Fatura & { cliente_id: string }>();
   const atrasadasPorCliente = new Map<string, number>();

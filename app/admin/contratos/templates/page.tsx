@@ -1,5 +1,5 @@
 import { requireAgenciaAdmin } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -13,7 +13,7 @@ export const metadata = { title: "Templates de contrato" };
 
 export default async function TemplatesPage() {
   const session = await requireAgenciaAdmin();
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: templates } = await supabase
     .from("contrato_templates")
     .select("*")

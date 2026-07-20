@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { toast } from "@/components/ui/Toast";
 import { atualizarClienteCredenciaisAction, type CredencialCliente } from "@/lib/actions/cliente-convite-actions";
 
@@ -159,16 +160,22 @@ export function CredenciaisAcesso({
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`Excluir credencial "${c.label}"?`)) remover(idx);
-                  }}
-                  className="p-1.5 rounded text-slate-400 hover:text-danger-300 hover:bg-danger-500/10"
-                  title="Excluir"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <ConfirmDialog
+                  title={`Excluir credencial "${c.label}"?`}
+                  description="Esta credencial será removida. Salve para confirmar a alteração."
+                  confirmText="Excluir"
+                  variant="danger"
+                  trigger={
+                    <button
+                      type="button"
+                      className="p-1.5 rounded text-slate-400 hover:text-danger-300 hover:bg-danger-500/10"
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  }
+                  onConfirm={() => remover(idx)}
+                />
               </div>
             </div>
           )

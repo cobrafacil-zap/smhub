@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPlanos } from "@/lib/planos";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -9,7 +11,8 @@ import { formatDate } from "@/lib/utils";
 import { toggleAgenciaAtivaAction } from "@/lib/actions/super-admin-actions";
 import { AgenciaPlanoSelect } from "./AgenciaPlanoSelect";
 import { ForcarRenovacaoButton } from "./ForcarRenovacaoButton";
-import type { Agencia, AssinaturaAtiva, PlanoConfig } from "@/types/database";
+import { DeletarAgenciaButton } from "./DeletarAgenciaButton";
+import type { Agencia, AssinaturaAtiva } from "@/types/database";
 
 export const metadata = { title: "Agências" };
 
@@ -17,17 +20,25 @@ export default async function AgenciasPage() {
   await requireSuperAdmin();
   const supabase = createAdminClient();
 
-  const [{ data: ag }, { data: planos }, { data: assinaturas }] = await Promise.all([
-    supabase.from("agencias").select("*").order("created_at", { ascending: false }),
-    supabase.from("planos").select("*").order("valor_mensal"),
+  // Selects estreitos: antes era select("*") em agencias e assinatura_ativa,
+  // puxando colunas pesadas (mp_payment_id, mp_preference_id, logo_url, etc.)
+  // sem limite. assinatura_ativa cresce com o histórico de cobranças —
+  // selecionar só o necessário + limite de segurança reduz payload e tempo.
+  const [{ data: ag }, planosList, { data: assinaturas }] = await Promise.all([
+    supabase
+      .from("agencias")
+      .select("id, nome_fantasia, email_contato, plano, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(500),
+    getPlanos(),
     supabase
       .from("assinatura_ativa")
-      .select("*")
-      .order("periodo_fim", { ascending: false }),
+      .select("agencia_id, status, is_trial, periodo_fim")
+      .order("periodo_fim", { ascending: false })
+      .limit(2000),
   ]);
 
   const list = (ag as Agencia[] | null) ?? [];
-  const planosList = (planos as PlanoConfig[] | null) ?? [];
   const assList = (assinaturas as AssinaturaAtiva[] | null) ?? [];
 
   // Para cada agência, pega a assinatura mais recente
@@ -47,6 +58,15 @@ export default async function AgenciasPage() {
         title="Agências"
         description="Gerencie todas as agências da plataforma."
         breadcrumbs={[{ href: "/super-admin", label: "Início" }, { label: "Agências" }]}
+        actions={
+          <Link
+            href="/super-admin/agencias/novo"
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-md bg-royal-500 hover:bg-royal-600 text-white transition"
+          >
+            <Plus className="h-4 w-4" />
+            Nova agência
+          </Link>
+        }
       />
 
       {list.length === 0 ? (
@@ -137,6 +157,7 @@ export default async function AgenciasPage() {
                               {a.status === "ativa" ? "Suspender" : "Reativar"}
                             </button>
                           </form>
+                          <DeletarAgenciaButton agenciaId={a.id} nome={a.nome_fantasia} />
                         </div>
                       </td>
                     </tr>

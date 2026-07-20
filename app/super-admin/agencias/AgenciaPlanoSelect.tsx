@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
+import { toast } from "@/components/ui/Toast";
 import { atualizarPlanoAgenciaAction, type AtualizarPlanoState } from "@/lib/actions/super-admin-actions";
 import { formatBRL } from "@/lib/utils";
 
@@ -26,6 +28,16 @@ export function AgenciaPlanoSelect({
     undefined
   );
   const { pending } = useFormStatus();
+  // Dispara toast só quando o state muda (não no mount inicial).
+  const fired = useRef(false);
+  useEffect(() => {
+    if (!fired.current) {
+      fired.current = true;
+      return;
+    }
+    if (state?.ok) toast.success("Plano atualizado.");
+    else if (state?.error) toast.error(state.error);
+  }, [state]);
 
   return (
     <form action={action} className="inline-flex items-center gap-2">
