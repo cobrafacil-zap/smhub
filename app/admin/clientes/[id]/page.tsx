@@ -9,7 +9,7 @@ import { FormSkeleton } from "@/components/ui/PageSkeleton";
 import { TabsLink } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { User, FileText, BarChart3, Wallet, ClipboardList, CalendarDays, FolderArchive, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { User, FileText, BarChart3, Wallet, ClipboardList, CalendarDays, FolderArchive, AlertCircle, Clock, CheckCircle2, Mail, Phone } from "lucide-react";
 import { CLIENTE_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { InfoTab } from "./InfoTab";
@@ -145,7 +145,7 @@ export default async function ClienteDetalhePage({
 
       {/* Ações rápidas: etiquetas financeiras + ativar/desativar + excluir */}
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             {inadimplente && (
               <Badge variant="danger" className="inline-flex items-center gap-1">
@@ -174,15 +174,36 @@ export default async function ClienteDetalhePage({
       </Card>
 
       <Card>
-        <p className="text-sm text-slate-300">
-          <strong className="text-slate-100">{c.nome_responsavel}</strong>
-          {c.email && <> • {c.email}</>}
-          {c.telefone && <> • {c.telefone}</>}
-          {c.valor_mensal != null && (
-            <> • <span className="text-royal-300 font-medium">{formatBRL(c.valor_mensal)} / mês</span></>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-1.5 text-sm">
+          <span className="inline-flex items-center gap-2 font-semibold text-slate-100">
+            <User className="h-4 w-4 text-slate-400 shrink-0" />
+            {c.nome_responsavel || "—"}
+          </span>
+          {c.email && (
+            <span className="inline-flex items-center gap-2 text-slate-300 min-w-0">
+              <Mail className="h-4 w-4 text-slate-400 shrink-0" />
+              <span className="break-all">{c.email}</span>
+            </span>
           )}
-          {c.dia_vencimento && <> • vence dia {c.dia_vencimento}</>}
-        </p>
+          {c.telefone && (
+            <span className="inline-flex items-center gap-2 text-slate-300">
+              <Phone className="h-4 w-4 text-slate-400 shrink-0" />
+              {c.telefone}
+            </span>
+          )}
+          {c.valor_mensal != null && (
+            <span className="inline-flex items-center gap-2 text-royal-300 font-medium">
+              <Wallet className="h-4 w-4 text-royal-400/70 shrink-0" />
+              {formatBRL(c.valor_mensal)} <span className="text-slate-500 font-normal">/ mês</span>
+            </span>
+          )}
+          {c.dia_vencimento && (
+            <span className="inline-flex items-center gap-2 text-slate-300">
+              <CalendarDays className="h-4 w-4 text-slate-400 shrink-0" />
+              Vence dia {c.dia_vencimento}
+            </span>
+          )}
+        </div>
       </Card>
 
       <ClienteMiniStats

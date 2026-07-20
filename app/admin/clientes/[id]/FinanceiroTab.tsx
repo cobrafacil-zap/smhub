@@ -95,7 +95,38 @@ export async function FinanceiroTab({ cliente }: { cliente: Cliente }) {
             description="Use os formulários acima para criar uma fatura avulsa ou gerar a mensalidade do mês."
           />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Mobile: cada fatura vira um cartão empilhado. */}
+            <ul className="sm:hidden divide-y divide-border/50">
+              {list.map((f) => {
+                const st = FATURA_STATUS[f.status];
+                const arqs = arqsPorFatura.get(f.id) ?? [];
+                return (
+                  <li key={f.id} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-100 font-mono truncate">
+                          {f.numero ?? "—"}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Venc. {formatDate(f.data_vencimento)}
+                        </p>
+                      </div>
+                      <Badge variant={st.color}>{st.label}</Badge>
+                    </div>
+                    <p className="text-lg font-semibold text-slate-100 break-words leading-tight">
+                      {formatBRL(f.valor)}
+                    </p>
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <FaturaArquivosCell faturaId={f.id} arquivos={arqs} />
+                      <FaturaActions id={f.id} status={f.status} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {/* Desktop: tabela (sm+). */}
+            <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-slate-400 border-b border-border">
@@ -135,7 +166,8 @@ export async function FinanceiroTab({ cliente }: { cliente: Cliente }) {
                 })}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </Card>
     </div>

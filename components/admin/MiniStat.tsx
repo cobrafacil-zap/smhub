@@ -51,7 +51,7 @@ export function MiniStat({ label, value, icon, tone = "default", hint }: MiniSta
           </div>
         )}
       </div>
-      <p className="text-xl font-bold text-slate-100 leading-none">{value}</p>
+      <p className="text-lg sm:text-xl font-bold text-slate-100 leading-tight break-words">{value}</p>
       {hint && <p className="text-[11px] text-slate-500">{hint}</p>}
     </div>
   );
