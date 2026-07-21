@@ -177,6 +177,9 @@ export function PlanejamentoCalendarClient({
           setEditing(null);
           setError(null);
           toast.success("Entrada criada");
+          if ("tarefaErro" in res && res.tarefaErro) {
+            toast.error(`Tarefa não criada: ${res.tarefaErro}`);
+          }
         }
       });
     } else {
@@ -203,6 +206,9 @@ export function PlanejamentoCalendarClient({
           setEditing(null);
           setError(null);
           toast.success("Entrada atualizada");
+          if ("tarefaErro" in res && res.tarefaErro) {
+            toast.error(`Tarefa não criada: ${res.tarefaErro}`);
+          }
         }
       });
     }

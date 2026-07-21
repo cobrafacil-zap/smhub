@@ -711,20 +711,21 @@ function normalizarCor(v: FormDataEntryValue | null): string | null {
 //
 // - Só admins criam/sincronizam tarefas (membros apenas recebem).
 // - Se responsavelId for null/empty, remove a tarefa vinculada (se houver).
-// - Erros aqui NÃO abortam o salvamento da entrada (já persistida); só logam.
+// - Retorna uma string de erro se algo falhar (a entrada já foi persistida;
+//   o erro é repassado à UI como toast, sem abortar o salvamento da entrada).
 // ---------------------------------------------------------------------------
 async function sincronizarTarefaDaEntrada(
   supabase: ReturnType<typeof createClient>,
-  session: { id: string; profile: { role: string; agencia_id: string | null } },
+  session: { profile: { id: string; role: string; agencia_id: string | null } },
   entrada: { id: string; data: string; titulo: string; tipo: string },
   responsavelId: string | null,
   clienteId: string | null
-): Promise<void> {
+): Promise<string | null> {
   const aid = session.profile.agencia_id;
-  if (!aid) return;
+  if (!aid) return null;
   // Só admin cria tarefas. Membros podem atribuir o campo, mas a tarefa só
   // nasce quando um admin faz a atribuição.
-  if (session.profile.role !== "admin_agencia") return;
+  if (session.profile.role !== "admin_agencia") return null;
 
   // Tarefa existente vinculada a esta entrada (1:1).
   const { data: existente } = await supabase
@@ -739,7 +740,7 @@ async function sincronizarTarefaDaEntrada(
       await supabase.from("tarefa_responsaveis").delete().eq("tarefa_id", existente.id);
       await supabase.from("tarefas").delete().eq("id", existente.id).eq("agencia_id", aid);
     }
-    return;
+    return null;
   }
 
   // Dia de entrega configurado pela agência (0=Dom..6=Sáb, padrão 5=Sexta).
@@ -764,17 +765,14 @@ async function sincronizarTarefaDaEntrada(
       .update({ titulo, descricao, prazo, prioridade, cliente_id: clienteId })
       .eq("id", existente.id)
       .eq("agencia_id", aid);
-    if (upErr) {
-      console.error("[sincronizarTarefaDaEntrada] update falhou:", upErr.message);
-      return;
-    }
+    if (upErr) return upErr.message;
     // Sincroniza responsáveis: troca pelo designer atribuído.
     await supabase.from("tarefa_responsaveis").delete().eq("tarefa_id", existente.id);
     const { error: respErr } = await supabase
       .from("tarefa_responsaveis")
       .insert({ tarefa_id: existente.id, usuario_id: responsavelId });
-    if (respErr) console.error("[sincronizarTarefaDaEntrada] resp insert falhou:", respErr.message);
-    return;
+    if (respErr) return respErr.message;
+    return null;
   }
 
   // Cria nova tarefa vinculada à entrada.
@@ -783,7 +781,7 @@ async function sincronizarTarefaDaEntrada(
     .insert({
       agencia_id: aid,
       cliente_id: clienteId,
-      criado_por: session.id,
+      criado_por: session.profile.id,
       titulo,
       descricao,
       status: "destinada",
@@ -793,14 +791,12 @@ async function sincronizarTarefaDaEntrada(
     })
     .select("id")
     .single();
-  if (insErr || !tarefa) {
-    console.error("[sincronizarTarefaDaEntrada] insert falhou:", insErr?.message);
-    return;
-  }
+  if (insErr || !tarefa) return insErr?.message ?? "Erro ao criar tarefa.";
   const { error: respErr } = await supabase
     .from("tarefa_responsaveis")
     .insert({ tarefa_id: tarefa.id, usuario_id: responsavelId });
-  if (respErr) console.error("[sincronizarTarefaDaEntrada] resp insert falhou:", respErr.message);
+  if (respErr) return respErr.message;
+  return null;
 }
 
 export async function criarEntradaAction(formData: FormData) {
@@ -844,13 +840,14 @@ export async function criarEntradaAction(formData: FormData) {
   if (error) return { error: "Erro." };
 
   // Sincroniza a tarefa automática (quadro do time) para o responsável atribuído.
+  let tarefaErro: string | null = null;
   if (entrada) {
     const { data: plan } = await supabase
       .from("planejamentos")
       .select("cliente_id")
       .eq("id", String(formData.get("planejamento_id")))
       .maybeSingle();
-    await sincronizarTarefaDaEntrada(
+    tarefaErro = await sincronizarTarefaDaEntrada(
       supabase,
       session,
       entrada as PlanejamentoEntrada,
@@ -862,7 +859,7 @@ export async function criarEntradaAction(formData: FormData) {
   revalidatePath(`/admin/clientes`);
   revalidatePath(`/admin/tarefas`);
   revalidatePath(`/admin`);
-  return { ok: true, entrada: entrada as PlanejamentoEntrada };
+  return { ok: true, entrada: entrada as PlanejamentoEntrada, tarefaErro: tarefaErro ?? undefined };
 }
 
 export async function atualizarEntradaAction(entradaId: string, formData: FormData) {
@@ -911,8 +908,9 @@ export async function atualizarEntradaAction(entradaId: string, formData: FormDa
   const clienteId = (entradaAntiga?.planejamentos as unknown as { cliente_id?: string } | null)?.cliente_id;
 
   // Sincroniza a tarefa automática (quadro do time) para o responsável atribuído.
+  let tarefaErro: string | null = null;
   if (entrada) {
-    await sincronizarTarefaDaEntrada(
+    tarefaErro = await sincronizarTarefaDaEntrada(
       supabase,
       session,
       entrada as PlanejamentoEntrada,
@@ -925,7 +923,7 @@ export async function atualizarEntradaAction(entradaId: string, formData: FormDa
   revalidatePath(`/admin/clientes`);
   revalidatePath(`/admin/tarefas`);
   revalidatePath(`/admin`);
-  return { ok: true, entrada: entrada as PlanejamentoEntrada };
+  return { ok: true, entrada: entrada as PlanejamentoEntrada, tarefaErro: tarefaErro ?? undefined };
 }
 
 export async function atualizarEntradaStatusAction(
