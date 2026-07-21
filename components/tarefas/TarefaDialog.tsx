@@ -11,10 +11,10 @@ import { criarTarefaAction, atualizarTarefaAction } from "@/lib/actions/tarefa-a
 import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefas/page";
 
 const STATUS_OPCOES = [
-  { value: "a_fazer", label: "Tarefa destinada" },
+  { value: "destinada", label: "Tarefa destinada" },
   { value: "em_andamento", label: "Em andamento" },
-  { value: "revisao", label: "Pronta" },
-  { value: "concluido", label: "Entregue" },
+  { value: "pronta", label: "Pronta" },
+  { value: "entregue", label: "Entregue" },
 ];
 
 const PRIORIDADE_OPCOES = [
@@ -112,7 +112,7 @@ export function TarefaDialog({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="label">Status</label>
-            <Select name="status" defaultValue={tarefa?.status ?? "a_fazer"}>
+            <Select name="status" defaultValue={tarefa?.status ?? "destinada"}>
               {STATUS_OPCOES.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}

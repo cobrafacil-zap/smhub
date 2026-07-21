@@ -9,13 +9,13 @@ import type { TarefaPrioridade, TarefaStatus } from "@/types/database";
 // ============================================================================
 // SCHEMAS
 // ============================================================================
-const STATUS_VALUES: TarefaStatus[] = ["a_fazer", "em_andamento", "revisao", "concluido"];
+const STATUS_VALUES: TarefaStatus[] = ["destinada", "em_andamento", "pronta", "entregue"];
 const PRIORIDADE_VALUES: TarefaPrioridade[] = ["baixa", "media", "alta", "urgente"];
 
 const tarefaSchema = z.object({
   titulo: z.string().min(2, "Título é obrigatório."),
   descricao: z.string().optional().nullable(),
-  status: z.enum(STATUS_VALUES as [string, ...string[]]).default("a_fazer"),
+  status: z.enum(STATUS_VALUES as [string, ...string[]]).default("destinada"),
   prioridade: z.enum(PRIORIDADE_VALUES as [string, ...string[]]).default("media"),
   prazo: z.string().optional().nullable(),
   cliente_id: z.string().uuid().optional().nullable(),
@@ -46,7 +46,7 @@ export async function criarTarefaAction(
   const parsed = tarefaSchema.safeParse({
     titulo: formData.get("titulo"),
     descricao: formData.get("descricao") || null,
-    status: formData.get("status") || "a_fazer",
+    status: formData.get("status") || "destinada",
     prioridade: formData.get("prioridade") || "media",
     prazo: formData.get("prazo") || null,
     cliente_id: formData.get("cliente_id") || null,
@@ -115,7 +115,7 @@ export async function atualizarTarefaAction(
   const parsed = tarefaSchema.safeParse({
     titulo: formData.get("titulo"),
     descricao: formData.get("descricao") || null,
-    status: formData.get("status") || "a_fazer",
+    status: formData.get("status") || "destinada",
     prioridade: formData.get("prioridade") || "media",
     prazo: formData.get("prazo") || null,
     cliente_id: formData.get("cliente_id") || null,

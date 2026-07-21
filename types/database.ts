@@ -34,7 +34,7 @@ export interface PlatformConfig {
 export type AgenciaStatus = "ativa" | "suspensa" | "cancelada";
 export type UserRole = "super_admin" | "admin_agencia" | "membro_equipe" | "cliente";
 export type ClienteStatus = "ativo" | "inativo" | "pausado";
-export type TarefaStatus = "a_fazer" | "em_andamento" | "revisao" | "concluido";
+export type TarefaStatus = "destinada" | "em_andamento" | "pronta" | "entregue";
 export type TarefaPrioridade = "baixa" | "media" | "alta" | "urgente";
 export type GravacaoStatus = "agendada" | "confirmada" | "concluida" | "cancelada";
 export type PlanejamentoStatus = "rascunho" | "aprovado" | "em_execucao" | "concluido";

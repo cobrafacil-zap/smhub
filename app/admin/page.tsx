@@ -379,19 +379,19 @@ async function MemberDashboard({
 
   const naoArquivadas = minhas.filter((t) => !t.arquivado);
   const counts = {
-    a_fazer: naoArquivadas.filter((t) => t.status === "a_fazer").length,
+    destinada: naoArquivadas.filter((t) => t.status === "destinada").length,
     em_andamento: naoArquivadas.filter((t) => t.status === "em_andamento").length,
-    revisao: naoArquivadas.filter((t) => t.status === "revisao").length,
-    concluido: naoArquivadas.filter((t) => t.status === "concluido").length,
+    pronta: naoArquivadas.filter((t) => t.status === "pronta").length,
+    entregue: naoArquivadas.filter((t) => t.status === "entregue").length,
   };
-  const abertas = naoArquivadas.filter((t) => t.status !== "concluido");
+  const abertas = naoArquivadas.filter((t) => t.status !== "entregue");
   const primeiroNome = (nome ?? "você").split(" ")[0];
 
   const STATUS_LABEL: Record<string, string> = {
-    a_fazer: "Tarefa destinada",
+    destinada: "Tarefa destinada",
     em_andamento: "Em andamento",
-    revisao: "Pronta",
-    concluido: "Entregue",
+    pronta: "Pronta",
+    entregue: "Entregue",
   };
   const PRIORIDADE_VARIANTE: Record<string, "default" | "info" | "warning" | "danger"> = {
     baixa: "default",
@@ -408,10 +408,10 @@ async function MemberDashboard({
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Destinadas" value={counts.a_fazer} icon={<KanbanSquare className="h-4 w-4" />} tone="default" />
+        <StatCard label="Destinadas" value={counts.destinada} icon={<KanbanSquare className="h-4 w-4" />} tone="default" />
         <StatCard label="Em andamento" value={counts.em_andamento} icon={<KanbanSquare className="h-4 w-4" />} tone="brand" />
-        <StatCard label="Prontas" value={counts.revisao} icon={<KanbanSquare className="h-4 w-4" />} tone="warn" />
-        <StatCard label="Entregues" value={counts.concluido} icon={<KanbanSquare className="h-4 w-4" />} tone="success" />
+        <StatCard label="Prontas" value={counts.pronta} icon={<KanbanSquare className="h-4 w-4" />} tone="warn" />
+        <StatCard label="Entregues" value={counts.entregue} icon={<KanbanSquare className="h-4 w-4" />} tone="success" />
       </div>
 
       <Card>

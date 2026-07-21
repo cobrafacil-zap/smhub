@@ -12,10 +12,10 @@ import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefa
 import type { TarefaStatus } from "@/types/database";
 
 const COLUNAS: { status: TarefaStatus; label: string; accent: string }[] = [
-  { status: "a_fazer", label: "Tarefa destinada", accent: "border-slate-500" },
+  { status: "destinada", label: "Tarefa destinada", accent: "border-slate-500" },
   { status: "em_andamento", label: "Em andamento", accent: "border-royal-500" },
-  { status: "revisao", label: "Pronta", accent: "border-amber-500" },
-  { status: "concluido", label: "Entregue", accent: "border-emerald-500" },
+  { status: "pronta", label: "Pronta", accent: "border-amber-500" },
+  { status: "entregue", label: "Entregue", accent: "border-emerald-500" },
 ];
 
 export function KanbanBoard({

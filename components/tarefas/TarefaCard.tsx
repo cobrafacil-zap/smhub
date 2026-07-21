@@ -9,12 +9,12 @@ import { moverTarefaAction, deletarTarefaAction, arquivarTarefaAction } from "@/
 import type { TarefaItem } from "@/app/admin/tarefas/page";
 
 const STATUS_LABEL: Record<string, string> = {
-  a_fazer: "Tarefa destinada",
+  destinada: "Tarefa destinada",
   em_andamento: "Em andamento",
-  revisao: "Pronta",
-  concluido: "Entregue",
+  pronta: "Pronta",
+  entregue: "Entregue",
 };
-const STATUS_ORDEM = ["a_fazer", "em_andamento", "revisao", "concluido"] as const;
+const STATUS_ORDEM = ["destinada", "em_andamento", "pronta", "entregue"] as const;
 
 const PRIORIDADE_VARIANTE: Record<string, "default" | "info" | "warning" | "danger"> = {
   baixa: "default",
@@ -84,7 +84,7 @@ export function TarefaCard({
   hoje.setHours(0, 0, 0, 0);
   const prazoDate = tarefa.prazo ? new Date(tarefa.prazo + "T00:00:00") : null;
   const vencido =
-    prazoDate && prazoDate < hoje && tarefa.status !== "concluido";
+    prazoDate && prazoDate < hoje && tarefa.status !== "entregue";
 
   return (
     <div
