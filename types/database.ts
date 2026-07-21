@@ -121,6 +121,7 @@ export interface Database {
           status: AgenciaStatus;
           plano: Plano;
           trial_ate: string | null;
+          prazo_entrega_dia_semana: number;
           created_at: string;
           updated_at: string;
         };
@@ -137,6 +138,7 @@ export interface Database {
           status?: AgenciaStatus;
           plano?: Plano;
           trial_ate?: string | null;
+          prazo_entrega_dia_semana?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -300,6 +302,7 @@ export interface Database {
           prazo: string | null;
           ordem: number;
           arquivado: boolean;
+          entrada_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -315,6 +318,7 @@ export interface Database {
           prazo?: string | null;
           ordem?: number;
           arquivado?: boolean;
+          entrada_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };

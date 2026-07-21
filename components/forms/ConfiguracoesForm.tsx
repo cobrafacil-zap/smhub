@@ -71,6 +71,33 @@ export function ConfiguracoesForm({
         </div>
       </Card>
 
+      <Card>
+        <h3 className="text-sm font-semibold text-slate-300 mb-1">Entrega de peças (produção)</h3>
+        <p className="text-xs text-slate-500 mb-3">
+          Dia em que as peças programadas para a <strong>semana seguinte</strong> devem estar prontas.
+          Ex.: sexta → um post da semana que vem vira tarefa com prazo nesta sexta. Posts da semana
+          atual nascem como <strong>urgente</strong>.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="label">Dia de entrega</label>
+            <select
+              name="prazo_entrega_dia_semana"
+              className="input"
+              defaultValue={String(initial.prazo_entrega_dia_semana ?? 5)}
+            >
+              <option value="0">Domingo</option>
+              <option value="1">Segunda-feira</option>
+              <option value="2">Terça-feira</option>
+              <option value="3">Quarta-feira</option>
+              <option value="4">Quinta-feira</option>
+              <option value="5">Sexta-feira</option>
+              <option value="6">Sábado</option>
+            </select>
+          </div>
+        </div>
+      </Card>
+
       <div className="flex justify-end">
         <Button type="submit" loading={saving} iconLeft={<Save className="h-4 w-4" />}>
           Salvar configurações

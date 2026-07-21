@@ -6,7 +6,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAgenciaAdmin, requireAgenciaMember } from "@/lib/auth/session";
-import { CLIENTE_SEGMENTOS } from "@/lib/constants";
+import { CLIENTE_SEGMENTOS, ENTRY_TIPO_LABEL } from "@/lib/constants";
+import { prazoDaEntrada } from "@/lib/planejamento";
+import { formatDate } from "@/lib/utils";
 import type { Cliente, EntradaStatus, PlanejamentoEntrada, Usuario } from "@/types/database";
 
 export type CriarClienteState = { error?: string; ok?: boolean } | undefined;
@@ -700,6 +702,107 @@ function normalizarCor(v: FormDataEntryValue | null): string | null {
   return s ? s : null;
 }
 
+// ---------------------------------------------------------------------------
+// Sincroniza a tarefa automática de uma entrada do planejamento.
+//
+// Ao atribuir um responsável (designer) a um post, cria (ou atualiza) uma
+// tarefa no quadro do time — sempre a MESMA tarefa por entrada (link via
+// tarefas.entrada_id). Regra de prazo em lib/planejamento.ts.
+//
+// - Só admins criam/sincronizam tarefas (membros apenas recebem).
+// - Se responsavelId for null/empty, remove a tarefa vinculada (se houver).
+// - Erros aqui NÃO abortam o salvamento da entrada (já persistida); só logam.
+// ---------------------------------------------------------------------------
+async function sincronizarTarefaDaEntrada(
+  supabase: ReturnType<typeof createClient>,
+  session: { id: string; profile: { role: string; agencia_id: string | null } },
+  entrada: { id: string; data: string; titulo: string; tipo: string },
+  responsavelId: string | null,
+  clienteId: string | null
+): Promise<void> {
+  const aid = session.profile.agencia_id;
+  if (!aid) return;
+  // Só admin cria tarefas. Membros podem atribuir o campo, mas a tarefa só
+  // nasce quando um admin faz a atribuição.
+  if (session.profile.role !== "admin_agencia") return;
+
+  // Tarefa existente vinculada a esta entrada (1:1).
+  const { data: existente } = await supabase
+    .from("tarefas")
+    .select("id")
+    .eq("entrada_id", entrada.id)
+    .maybeSingle();
+
+  // Sem responsável -> remove a tarefa automática (e seus responsáveis).
+  if (!responsavelId) {
+    if (existente?.id) {
+      await supabase.from("tarefa_responsaveis").delete().eq("tarefa_id", existente.id);
+      await supabase.from("tarefas").delete().eq("id", existente.id).eq("agencia_id", aid);
+    }
+    return;
+  }
+
+  // Dia de entrega configurado pela agência (0=Dom..6=Sáb, padrão 5=Sexta).
+  const admin = createAdminClient();
+  const { data: ag } = await admin
+    .from("agencias")
+    .select("prazo_entrega_dia_semana")
+    .eq("id", aid)
+    .maybeSingle();
+  const diaEntrega = ag?.prazo_entrega_dia_semana ?? 5;
+
+  const { prazo, urgente } = prazoDaEntrada(entrada.data, diaEntrega);
+  const prioridade = urgente ? "urgente" : "media";
+  const titulo = `Post: ${entrada.titulo || "Peça do planejamento"}`;
+  const tipoLabel = ENTRY_TIPO_LABEL[entrada.tipo] ?? entrada.tipo;
+  const descricao = `Peça do planejamento editorial (${tipoLabel}) programada para ${formatDate(entrada.data)}.`;
+
+  if (existente?.id) {
+    // Atualiza a mesma tarefa (não toca no status — membro pode já ter movido).
+    const { error: upErr } = await supabase
+      .from("tarefas")
+      .update({ titulo, descricao, prazo, prioridade, cliente_id: clienteId })
+      .eq("id", existente.id)
+      .eq("agencia_id", aid);
+    if (upErr) {
+      console.error("[sincronizarTarefaDaEntrada] update falhou:", upErr.message);
+      return;
+    }
+    // Sincroniza responsáveis: troca pelo designer atribuído.
+    await supabase.from("tarefa_responsaveis").delete().eq("tarefa_id", existente.id);
+    const { error: respErr } = await supabase
+      .from("tarefa_responsaveis")
+      .insert({ tarefa_id: existente.id, usuario_id: responsavelId });
+    if (respErr) console.error("[sincronizarTarefaDaEntrada] resp insert falhou:", respErr.message);
+    return;
+  }
+
+  // Cria nova tarefa vinculada à entrada.
+  const { data: tarefa, error: insErr } = await supabase
+    .from("tarefas")
+    .insert({
+      agencia_id: aid,
+      cliente_id: clienteId,
+      criado_por: session.id,
+      titulo,
+      descricao,
+      status: "destinada",
+      prioridade,
+      prazo,
+      entrada_id: entrada.id,
+    })
+    .select("id")
+    .single();
+  if (insErr || !tarefa) {
+    console.error("[sincronizarTarefaDaEntrada] insert falhou:", insErr?.message);
+    return;
+  }
+  const { error: respErr } = await supabase
+    .from("tarefa_responsaveis")
+    .insert({ tarefa_id: tarefa.id, usuario_id: responsavelId });
+  if (respErr) console.error("[sincronizarTarefaDaEntrada] resp insert falhou:", respErr.message);
+}
+
 export async function criarEntradaAction(formData: FormData) {
   const session = await requireAgenciaMember();
   const supabase = createClient();
@@ -739,7 +842,26 @@ export async function criarEntradaAction(formData: FormData) {
     .select("*")
     .single();
   if (error) return { error: "Erro." };
+
+  // Sincroniza a tarefa automática (quadro do time) para o responsável atribuído.
+  if (entrada) {
+    const { data: plan } = await supabase
+      .from("planejamentos")
+      .select("cliente_id")
+      .eq("id", String(formData.get("planejamento_id")))
+      .maybeSingle();
+    await sincronizarTarefaDaEntrada(
+      supabase,
+      session,
+      entrada as PlanejamentoEntrada,
+      (parsed.data.responsavel_id as string | null) ?? null,
+      plan?.cliente_id ?? null
+    );
+  }
+
   revalidatePath(`/admin/clientes`);
+  revalidatePath(`/admin/tarefas`);
+  revalidatePath(`/admin`);
   return { ok: true, entrada: entrada as PlanejamentoEntrada };
 }
 
@@ -787,8 +909,22 @@ export async function atualizarEntradaAction(entradaId: string, formData: FormDa
     .single();
   if (error) return { error: "Erro ao atualizar entrada." };
   const clienteId = (entradaAntiga?.planejamentos as unknown as { cliente_id?: string } | null)?.cliente_id;
+
+  // Sincroniza a tarefa automática (quadro do time) para o responsável atribuído.
+  if (entrada) {
+    await sincronizarTarefaDaEntrada(
+      supabase,
+      session,
+      entrada as PlanejamentoEntrada,
+      (parsed.data.responsavel_id as string | null) ?? null,
+      clienteId ?? null
+    );
+  }
+
   if (clienteId) revalidatePath(`/admin/clientes/${clienteId}`);
   revalidatePath(`/admin/clientes`);
+  revalidatePath(`/admin/tarefas`);
+  revalidatePath(`/admin`);
   return { ok: true, entrada: entrada as PlanejamentoEntrada };
 }
 
@@ -917,6 +1053,8 @@ const agenciaSchema = z.object({
   endereco: z.string().optional().nullable(),
   cor_primaria: z.string().optional().nullable(),
   logo_url: z.string().optional().nullable(),
+  // Dia da semana de entrega das peças da semana seguinte (0=Dom..6=Sáb).
+  prazo_entrega_dia_semana: z.coerce.number().int().min(0).max(6).optional(),
 });
 
 export async function atualizarAgenciaAction(id: string, formData: FormData) {
