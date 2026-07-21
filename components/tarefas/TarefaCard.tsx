@@ -48,16 +48,22 @@ export function TarefaCard({
   meuId,
   meuRole,
   nivel = "normal",
+  arrastando = false,
   onEdit,
   onView,
+  onDragStart,
+  onDragEnd,
 }: {
   tarefa: TarefaItem;
   meuId: string;
   meuRole: string;
   /** Densidade do card conforme a quantidade na coluna. */
   nivel?: "normal" | "compacto" | "minimo";
+  arrastando?: boolean;
   onEdit: (t: TarefaItem) => void;
   onView: (t: TarefaItem) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const podeExcluir = tarefa.criado_por === meuId || meuRole === "admin_agencia";
@@ -91,6 +97,9 @@ export function TarefaCard({
     });
   }
 
+  // Botões internos não abrem o detalhe nem iniciam drag do card.
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
+
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
   const prazoDate = tarefa.prazo ? new Date(tarefa.prazo + "T00:00:00") : null;
@@ -99,25 +108,32 @@ export function TarefaCard({
 
   return (
     <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", tarefa.id);
+        e.dataTransfer.effectAllowed = "move";
+        onDragStart?.();
+      }}
+      onDragEnd={onDragEnd}
+      onClick={() => onView(tarefa)}
       className={cn(
-        "card space-y-2 transition",
+        "card space-y-2 transition cursor-pointer hover:border-royal-500/40",
         pad,
         tarefa.arquivado && "opacity-60",
-        pending && "opacity-50"
+        pending && "opacity-50",
+        arrastando && "opacity-40 ring-2 ring-royal-500/50"
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => onView(tarefa)}
+        <p
           className={cn(
-            "text-left font-medium text-slate-100 hover:text-royal-200 line-clamp-2",
+            "text-left font-medium text-slate-100 line-clamp-2 select-none",
             tituloClasse
           )}
           title="Ver detalhes"
         >
           {tarefa.titulo}
-        </button>
+        </p>
         <Badge variant={PRIORIDADE_VARIANTE[tarefa.prioridade] ?? "default"} className="shrink-0">
           {PRIORIDADE_LABEL[tarefa.prioridade] ?? tarefa.prioridade}
         </Badge>
@@ -169,8 +185,12 @@ export function TarefaCard({
       <div className="flex items-center gap-1 pt-1.5 border-t border-border">
         <button
           type="button"
+          draggable={false}
           disabled={!podeEsquerda || pending}
-          onClick={() => mover(STATUS_ORDEM[idx - 1])}
+          onClick={(e) => {
+            stop(e);
+            mover(STATUS_ORDEM[idx - 1]);
+          }}
           className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
           title="Mover para a coluna anterior"
         >
@@ -181,8 +201,12 @@ export function TarefaCard({
         </span>
         <button
           type="button"
+          draggable={false}
           disabled={!podeDireita || pending}
-          onClick={() => mover(STATUS_ORDEM[idx + 1])}
+          onClick={(e) => {
+            stop(e);
+            mover(STATUS_ORDEM[idx + 1]);
+          }}
           className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
           title="Mover para a próxima coluna"
         >
@@ -195,7 +219,11 @@ export function TarefaCard({
         {podeEditar && (
           <button
             type="button"
-            onClick={() => onEdit(tarefa)}
+            draggable={false}
+            onClick={(e) => {
+              stop(e);
+              onEdit(tarefa);
+            }}
             className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100"
             title="Editar"
           >
@@ -204,29 +232,35 @@ export function TarefaCard({
         )}
         <button
           type="button"
+          draggable={false}
           disabled={pending}
-          onClick={() => arquivar(!tarefa.arquivado)}
+          onClick={(e) => {
+            stop(e);
+            arquivar(!tarefa.arquivado);
+          }}
           className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100"
           title={tarefa.arquivado ? "Desarquivar" : "Arquivar"}
         >
           {tarefa.arquivado ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
         </button>
         {podeExcluir && (
-          <ConfirmDialog
-            trigger={
-              <span
-                className="h-7 w-7 inline-flex items-center justify-center rounded-md text-danger-400 hover:bg-danger-500/10 cursor-pointer"
-                title="Excluir"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </span>
-            }
-            title="Excluir tarefa"
-            description={`Excluir "${tarefa.titulo}"? Esta ação não pode ser desfeita.`}
-            confirmText="Excluir"
-            variant="danger"
-            onConfirm={excluir}
-          />
+          <span onClick={stop} className="inline-flex">
+            <ConfirmDialog
+              trigger={
+                <span
+                  className="h-7 w-7 inline-flex items-center justify-center rounded-md text-danger-400 hover:bg-danger-500/10 cursor-pointer"
+                  title="Excluir"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </span>
+              }
+              title="Excluir tarefa"
+              description={`Excluir "${tarefa.titulo}"? Esta ação não pode ser desfeita.`}
+              confirmText="Excluir"
+              variant="danger"
+              onConfirm={excluir}
+            />
+          </span>
         )}
       </div>
     </div>

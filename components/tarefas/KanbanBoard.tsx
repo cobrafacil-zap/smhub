@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Plus, Filter } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
+import { moverTarefaAction } from "@/lib/actions/tarefa-actions";
 import { TarefaCard } from "./TarefaCard";
 import { TarefaDialog } from "./TarefaDialog";
 import { TarefaDetailDialog } from "./TarefaDetailDialog";
@@ -39,6 +40,9 @@ export function KanbanBoard({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editando, setEditando] = useState<TarefaItem | null>(null);
   const [visualizando, setVisualizando] = useState<TarefaItem | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<TarefaStatus | null>(null);
+  const [, startTransition] = useTransition();
 
   const filtradas = useMemo(() => {
     return tarefas.filter((t) => {
@@ -67,6 +71,17 @@ export function KanbanBoard({
   }
   function abrirVer(t: TarefaItem) {
     setVisualizando(t);
+  }
+
+  // Drag-and-drop entre colunas.
+  function handleDrop(novoStatus: TarefaStatus) {
+    setDragOver(null);
+    const id = dragId;
+    setDragId(null);
+    if (!id) return;
+    startTransition(async () => {
+      await moverTarefaAction(id, novoStatus);
+    });
   }
 
   const filtroAtivo = responsavelId || clienteId || minhas;
@@ -174,9 +189,19 @@ export function KanbanBoard({
             return (
               <div
                 key={col.status}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(col.status);
+                }}
+                onDragLeave={(e) => {
+                  // só limpa se saiu da coluna de fato (não de um filho)
+                  if (e.currentTarget === e.target) setDragOver(null);
+                }}
+                onDrop={() => handleDrop(col.status)}
                 className={cn(
-                  "min-w-[260px] flex-1 bg-bg-surface/50 rounded-xl border-t-2 pb-2 flex flex-col",
-                  col.accent
+                  "min-w-[260px] flex-1 bg-bg-surface/50 rounded-xl border-t-2 pb-2 flex flex-col transition-colors",
+                  col.accent,
+                  dragOver === col.status && dragId && "bg-royal-500/10 ring-2 ring-royal-500/40"
                 )}
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-border">
@@ -199,8 +224,11 @@ export function KanbanBoard({
                         meuId={meuId}
                         meuRole={meuRole}
                         nivel={nivel}
+                        arrastando={dragId === t.id}
                         onEdit={abrirEditar}
                         onView={abrirVer}
+                        onDragStart={() => setDragId(t.id)}
+                        onDragEnd={() => setDragId(null)}
                       />
                     );
                   })}
