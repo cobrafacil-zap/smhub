@@ -103,7 +103,7 @@ export function periodoRef(refIso: string, periodo: Periodo, hoje: Date = new Da
     inicio = new Date(ref);
     inicio.setDate(ref.getDate() - offsetToMonday);
     fim = new Date(inicio);
-    fim.setDate(inicio.getDate() + 6); // domingo
+    fim.setDate(inicio.getDate() + 4); // sexta (semana de trabalho seg–sex)
     label = `Semana de ${inicio.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} a ${fim.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}`;
   } else {
     inicio = new Date(ref.getFullYear(), ref.getMonth(), 1);
