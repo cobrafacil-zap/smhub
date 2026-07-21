@@ -214,24 +214,44 @@ export function KanbanBoard({
                   {itens.length === 0 && (
                     <p className="text-xs text-slate-600 text-center py-4 italic">Vazio</p>
                   )}
-                  {itens.map((t) => {
+                  {(() => {
                     // Densidade: com muitos cards na coluna, encolhe pra caber mais.
                     const nivel = itens.length > 10 ? "minimo" : itens.length > 5 ? "compacto" : "normal";
-                    return (
-                      <TarefaCard
-                        key={t.id}
-                        tarefa={t}
-                        meuId={meuId}
-                        meuRole={meuRole}
-                        nivel={nivel}
-                        arrastando={dragId === t.id}
-                        onEdit={abrirEditar}
-                        onView={abrirVer}
-                        onDragStart={() => setDragId(t.id)}
-                        onDragEnd={() => setDragId(null)}
-                      />
+                    // Agrupa por cliente (mesmo cliente junto, com rótulo).
+                    const ordenados = [...itens].sort(
+                      (a, b) =>
+                        (a.cliente_nome ?? "~~sem cliente").localeCompare(
+                          b.cliente_nome ?? "~~sem cliente"
+                        )
                     );
-                  })}
+                    let ultimoCliente: string | null = "__init__";
+                    return ordenados.map((t) => {
+                      const grp = t.cliente_nome ?? null;
+                      const novoGrupo = grp !== ultimoCliente;
+                      ultimoCliente = grp;
+                      return (
+                        <div key={t.id}>
+                          {novoGrupo && (
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-1 pt-1.5 pb-0.5 flex items-center gap-1">
+                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-royal-400" />
+                              {grp ?? "Sem cliente"}
+                            </div>
+                          )}
+                          <TarefaCard
+                            tarefa={t}
+                            meuId={meuId}
+                            meuRole={meuRole}
+                            nivel={nivel}
+                            arrastando={dragId === t.id}
+                            onEdit={abrirEditar}
+                            onView={abrirVer}
+                            onDragStart={() => setDragId(t.id)}
+                            onDragEnd={() => setDragId(null)}
+                          />
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             );

@@ -81,3 +81,54 @@ export function prazoDentroJanelaDuasSemanas(
   const p = new Date(prazo + "T00:00:00");
   return p.getTime() < limite.getTime();
 }
+
+export type Periodo = "semana" | "mes";
+
+/**
+ * Início (segunda) e fim (domingo) da semana, ou 1º e último dia do mês,
+ * para a data de referência `refIso` (YYYY-MM-DD). Retorna também um label e se
+ * o período contém "hoje".
+ */
+export function periodoRef(refIso: string, periodo: Periodo, hoje: Date = new Date()) {
+  const ref = new Date(refIso + "T00:00:00");
+  const h = new Date(hoje);
+  h.setHours(0, 0, 0, 0);
+
+  let inicio: Date;
+  let fim: Date;
+  let label: string;
+
+  if (periodo === "semana") {
+    const offsetToMonday = (ref.getDay() + 6) % 7;
+    inicio = new Date(ref);
+    inicio.setDate(ref.getDate() - offsetToMonday);
+    fim = new Date(inicio);
+    fim.setDate(inicio.getDate() + 6); // domingo
+    label = `Semana de ${inicio.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} a ${fim.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}`;
+  } else {
+    inicio = new Date(ref.getFullYear(), ref.getMonth(), 1);
+    fim = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
+    label = inicio.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  }
+
+  const contemHoje = h >= inicio && h <= fim;
+  return { inicio, fim, label, contemHoje };
+}
+
+/**
+ * Diz se uma tarefa (pelo prazo) pertence ao período selecionado. Quando o
+ * período contém hoje, inclui também as atrasadas (prazo < início) — o
+ * designer precisa ver o que ficou pendente. Tarefas sem prazo só aparecem no
+ * período atual (pra não se perderem), não ao navegar pra outros períodos.
+ */
+export function prazoDentroPeriodo(
+  prazo: string | null | undefined,
+  inicio: Date,
+  fim: Date,
+  contemHoje: boolean
+): boolean {
+  if (!prazo) return contemHoje;
+  const p = new Date(prazo + "T00:00:00");
+  if (contemHoje) return p.getTime() <= fim.getTime(); // atrasadas + período atual
+  return p.getTime() >= inicio.getTime() && p.getTime() <= fim.getTime();
+}

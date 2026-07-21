@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { requireAgenciaMember } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { KanbanBoard } from "@/components/tarefas/KanbanBoard";
-import { prazoDentroJanelaDuasSemanas } from "@/lib/planejamento";
+import { TarefasPeriodoNav } from "@/components/tarefas/TarefasPeriodoNav";
+import { periodoRef, prazoDentroPeriodo, type Periodo } from "@/lib/planejamento";
 import type { TarefaStatus, TarefaPrioridade } from "@/types/database";
 
 export const metadata = { title: "Tarefas" };
@@ -39,10 +41,23 @@ export type EntradaResumo = {
 export type MembroOption = { id: string; nome: string; cargo: string | null };
 export type ClienteOption = { id: string; nome_empresa: string };
 
-export default async function TarefasPage() {
+export default async function TarefasPage({
+  searchParams,
+}: {
+  searchParams: { periodo?: string; ref?: string };
+}) {
   const session = await requireAgenciaMember();
   const supabase = createClient();
   const aid = session.profile.agencia_id!;
+
+  // Período selecionado (semana/mês) navegável. Default = semana atual.
+  const periodo: Periodo = searchParams.periodo === "mes" ? "mes" : "semana";
+  const hoje = new Date();
+  const refIso =
+    searchParams.ref && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.ref)
+      ? searchParams.ref
+      : `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+  const { inicio, fim, label, contemHoje } = periodoRef(refIso, periodo, hoje);
 
   // Tarefas da agência (com cliente vinculado). Join FK pode vir como array
   // na tipagem do supabase-js, então tratamos como any e acessamos com segurança.
@@ -89,9 +104,9 @@ export default async function TarefasPage() {
     };
   });
 
-  // Janela de entrega: só esta semana + próxima semana (e atrasadas).
-  // Tarefas com prazo daqui 2 semanas ou mais ficam ocultas do quadro.
-  const visiveis = itens.filter((t) => prazoDentroJanelaDuasSemanas(t.prazo));
+  // Filtro pelo período selecionado (semana/mês). No período atual, inclui
+  // também as atrasadas. Ao navegar pra outro período, só o intervalo dele.
+  const visiveis = itens.filter((t) => prazoDentroPeriodo(t.prazo, inicio, fim, contemHoje));
 
   // Membros ativos para atribuição (exclui clientes — eles não recebem tarefas)
   const { data: membrosRaw } = await supabase
@@ -125,6 +140,9 @@ export default async function TarefasPage() {
         description="Quadro de micro-gestão da equipe. Atribua tarefas e acompanhe o fluxo."
         breadcrumbs={[{ href: "/admin", label: "Início" }, { label: "Tarefas" }]}
       />
+      <Suspense fallback={null}>
+        <TarefasPeriodoNav periodo={periodo} refIso={refIso} label={label} />
+      </Suspense>
       <KanbanBoard
         tarefas={visiveis}
         membros={membros}
