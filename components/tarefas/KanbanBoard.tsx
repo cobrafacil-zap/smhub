@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 import { TarefaCard } from "./TarefaCard";
 import { TarefaDialog } from "./TarefaDialog";
+import { TarefaDetailDialog } from "./TarefaDetailDialog";
 import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefas/page";
 import type { TarefaStatus } from "@/types/database";
 
@@ -37,6 +38,7 @@ export function KanbanBoard({
   const [mostrarArquivadas, setMostrarArquivadas] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editando, setEditando] = useState<TarefaItem | null>(null);
+  const [visualizando, setVisualizando] = useState<TarefaItem | null>(null);
 
   const filtradas = useMemo(() => {
     return tarefas.filter((t) => {
@@ -60,7 +62,11 @@ export function KanbanBoard({
   }
   function abrirEditar(t: TarefaItem) {
     setEditando(t);
+    setVisualizando(null);
     setDialogOpen(true);
+  }
+  function abrirVer(t: TarefaItem) {
+    setVisualizando(t);
   }
 
   const filtroAtivo = responsavelId || clienteId || minhas;
@@ -183,15 +189,21 @@ export function KanbanBoard({
                   {itens.length === 0 && (
                     <p className="text-xs text-slate-600 text-center py-4 italic">Vazio</p>
                   )}
-                  {itens.map((t) => (
-                    <TarefaCard
-                      key={t.id}
-                      tarefa={t}
-                      meuId={meuId}
-                      meuRole={meuRole}
-                      onEdit={abrirEditar}
-                    />
-                  ))}
+                  {itens.map((t) => {
+                    // Densidade: com muitos cards na coluna, encolhe pra caber mais.
+                    const nivel = itens.length > 10 ? "minimo" : itens.length > 5 ? "compacto" : "normal";
+                    return (
+                      <TarefaCard
+                        key={t.id}
+                        tarefa={t}
+                        meuId={meuId}
+                        meuRole={meuRole}
+                        nivel={nivel}
+                        onEdit={abrirEditar}
+                        onView={abrirVer}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -205,6 +217,14 @@ export function KanbanBoard({
         membros={membros}
         clientes={clientes}
         onClose={() => setDialogOpen(false)}
+      />
+
+      <TarefaDetailDialog
+        open={!!visualizando}
+        tarefa={visualizando}
+        podeEditar={podeCriar}
+        onEdit={abrirEditar}
+        onClose={() => setVisualizando(null)}
       />
     </div>
   );

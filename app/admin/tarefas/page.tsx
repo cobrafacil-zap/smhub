@@ -2,6 +2,7 @@ import { requireAgenciaMember } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { KanbanBoard } from "@/components/tarefas/KanbanBoard";
+import { prazoDentroJanelaDuasSemanas } from "@/lib/planejamento";
 import type { TarefaStatus, TarefaPrioridade } from "@/types/database";
 
 export const metadata = { title: "Tarefas" };
@@ -18,6 +19,21 @@ export type TarefaItem = {
   cliente_nome: string | null;
   criado_por: string | null;
   responsaveis: { id: string; nome: string }[];
+  /** Entrada do planejamento vinculada (quando a tarefa veio de um post). */
+  entrada: EntradaResumo | null;
+};
+
+export type EntradaResumo = {
+  id: string;
+  data: string;
+  titulo: string;
+  tipo: string;
+  copy: string | null;
+  hashtags: string[] | null;
+  descricao: string | null;
+  midia_url: string[] | null;
+  estilo: string | null;
+  status: string;
 };
 
 export type MembroOption = { id: string; nome: string; cargo: string | null };
@@ -33,7 +49,7 @@ export default async function TarefasPage() {
   const { data: tarefasRaw } = await supabase
     .from("tarefas")
     .select(
-      "id, titulo, descricao, status, prioridade, prazo, arquivado, cliente_id, criado_por, created_at, cliente:clientes(nome_empresa)"
+      "id, titulo, descricao, status, prioridade, prazo, arquivado, cliente_id, criado_por, created_at, cliente:clientes(nome_empresa), entrada:planejamento_entradas(id, data, titulo, tipo, copy, hashtags, descricao, midia_url, estilo, status)"
     )
     .eq("agencia_id", aid)
     .order("created_at", { ascending: false });
@@ -56,6 +72,7 @@ export default async function TarefasPage() {
 
   const itens: TarefaItem[] = tarefas.map((t: any) => {
     const cli = Array.isArray(t.cliente) ? t.cliente[0] : t.cliente;
+    const ent = Array.isArray(t.entrada) ? t.entrada[0] : t.entrada;
     return {
       id: t.id,
       titulo: t.titulo,
@@ -68,8 +85,13 @@ export default async function TarefasPage() {
       cliente_nome: cli?.nome_empresa ?? null,
       criado_por: t.criado_por,
       responsaveis: respMap[t.id] ?? [],
+      entrada: ent ?? null,
     };
   });
+
+  // Janela de entrega: só esta semana + próxima semana (e atrasadas).
+  // Tarefas com prazo daqui 2 semanas ou mais ficam ocultas do quadro.
+  const visiveis = itens.filter((t) => prazoDentroJanelaDuasSemanas(t.prazo));
 
   // Membros ativos para atribuição (exclui clientes — eles não recebem tarefas)
   const { data: membrosRaw } = await supabase
@@ -104,7 +126,7 @@ export default async function TarefasPage() {
         breadcrumbs={[{ href: "/admin", label: "Início" }, { label: "Tarefas" }]}
       />
       <KanbanBoard
-        tarefas={itens}
+        tarefas={visiveis}
         membros={membros}
         clientes={clientes}
         meuId={session.profile.id}

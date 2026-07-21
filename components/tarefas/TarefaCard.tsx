@@ -47,12 +47,17 @@ export function TarefaCard({
   tarefa,
   meuId,
   meuRole,
+  nivel = "normal",
   onEdit,
+  onView,
 }: {
   tarefa: TarefaItem;
   meuId: string;
   meuRole: string;
+  /** Densidade do card conforme a quantidade na coluna. */
+  nivel?: "normal" | "compacto" | "minimo";
   onEdit: (t: TarefaItem) => void;
+  onView: (t: TarefaItem) => void;
 }) {
   const [pending, startTransition] = useTransition();
   const podeExcluir = tarefa.criado_por === meuId || meuRole === "admin_agencia";
@@ -61,6 +66,12 @@ export function TarefaCard({
   const idx = STATUS_ORDEM.indexOf(tarefa.status as (typeof STATUS_ORDEM)[number]);
   const podeEsquerda = idx > 0;
   const podeDireita = idx < STATUS_ORDEM.length - 1;
+
+  // Classes por densidade (muitos cards numa coluna -> encolhe).
+  const pad = nivel === "minimo" ? "!p-2" : nivel === "compacto" ? "!p-2.5" : "!p-3";
+  const tituloClasse =
+    nivel === "minimo" ? "text-xs" : nivel === "compacto" ? "text-[13px]" : "text-sm";
+  const mostrarDescricao = nivel !== "minimo";
 
   function mover(novaStatus: string) {
     startTransition(async () => {
@@ -89,31 +100,30 @@ export function TarefaCard({
   return (
     <div
       className={cn(
-        "card !p-3 space-y-2 transition",
+        "card space-y-2 transition",
+        pad,
         tarefa.arquivado && "opacity-60",
         pending && "opacity-50"
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        {podeEditar ? (
-          <button
-            type="button"
-            onClick={() => onEdit(tarefa)}
-            className="text-left text-sm font-medium text-slate-100 hover:text-royal-200 line-clamp-2"
-          >
-            {tarefa.titulo}
-          </button>
-        ) : (
-          <p className="text-left text-sm font-medium text-slate-100 line-clamp-2">
-            {tarefa.titulo}
-          </p>
-        )}
+        <button
+          type="button"
+          onClick={() => onView(tarefa)}
+          className={cn(
+            "text-left font-medium text-slate-100 hover:text-royal-200 line-clamp-2",
+            tituloClasse
+          )}
+          title="Ver detalhes"
+        >
+          {tarefa.titulo}
+        </button>
         <Badge variant={PRIORIDADE_VARIANTE[tarefa.prioridade] ?? "default"} className="shrink-0">
           {PRIORIDADE_LABEL[tarefa.prioridade] ?? tarefa.prioridade}
         </Badge>
       </div>
 
-      {tarefa.descricao && (
+      {mostrarDescricao && tarefa.descricao && (
         <p className="text-xs text-slate-400 line-clamp-2">{tarefa.descricao}</p>
       )}
 
@@ -144,7 +154,8 @@ export function TarefaCard({
               key={r.id}
               title={r.nome}
               className={cn(
-                "h-6 w-6 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-[10px] font-semibold border-2 border-bg-surface",
+                "rounded-full bg-gradient-to-br flex items-center justify-center text-white text-[10px] font-semibold border-2 border-bg-surface",
+                nivel === "minimo" ? "h-5 w-5" : "h-6 w-6",
                 avatarColor(r.nome)
               )}
             >
