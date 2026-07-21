@@ -43,6 +43,21 @@ function avatarColor(nome: string) {
   return colors[h % colors.length];
 }
 
+// Tintes sutis por card (barra lateral + fundo bem leve) pra diferenciar visual.
+const CARD_TINTS = [
+  { bar: "border-l-royal-500/70", bg: "bg-royal-500/[0.06]" },
+  { bar: "border-l-emerald-500/70", bg: "bg-emerald-500/[0.06]" },
+  { bar: "border-l-amber-500/70", bg: "bg-amber-500/[0.06]" },
+  { bar: "border-l-pink-500/70", bg: "bg-pink-500/[0.06]" },
+  { bar: "border-l-sky-500/70", bg: "bg-sky-500/[0.06]" },
+  { bar: "border-l-violet-500/70", bg: "bg-violet-500/[0.06]" },
+];
+function cardTint(chave: string) {
+  let h = 0;
+  for (let i = 0; i < chave.length; i++) h = (h * 31 + chave.charCodeAt(i)) >>> 0;
+  return CARD_TINTS[h % CARD_TINTS.length];
+}
+
 export function TarefaCard({
   tarefa,
   meuId,
@@ -78,6 +93,9 @@ export function TarefaCard({
   const tituloClasse =
     nivel === "minimo" ? "text-xs" : nivel === "compacto" ? "text-[13px]" : "text-sm";
   const mostrarDescricao = nivel !== "minimo";
+
+  // Cor sutil por card (determinística pelo id) pra diferenciar visual.
+  const tint = cardTint(tarefa.id);
 
   function mover(novaStatus: string) {
     startTransition(async () => {
@@ -117,8 +135,10 @@ export function TarefaCard({
       onDragEnd={onDragEnd}
       onClick={() => onView(tarefa)}
       className={cn(
-        "card space-y-2 transition cursor-pointer hover:border-royal-500/40",
+        "card space-y-2 transition cursor-pointer hover:border-royal-500/40 border-l-2",
         pad,
+        tint.bar,
+        tint.bg,
         tarefa.arquivado && "opacity-60",
         pending && "opacity-50",
         arrastando && "opacity-40 ring-2 ring-royal-500/50"
