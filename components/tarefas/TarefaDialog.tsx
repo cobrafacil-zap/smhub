@@ -11,10 +11,10 @@ import { criarTarefaAction, atualizarTarefaAction } from "@/lib/actions/tarefa-a
 import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefas/page";
 
 const STATUS_OPCOES = [
-  { value: "a_fazer", label: "A fazer" },
+  { value: "a_fazer", label: "Tarefa destinada" },
   { value: "em_andamento", label: "Em andamento" },
-  { value: "revisao", label: "Revisão" },
-  { value: "concluido", label: "Concluído" },
+  { value: "revisao", label: "Pronta" },
+  { value: "concluido", label: "Entregue" },
 ];
 
 const PRIORIDADE_OPCOES = [

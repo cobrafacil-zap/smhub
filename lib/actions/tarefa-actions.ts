@@ -32,6 +32,10 @@ export async function criarTarefaAction(
   formData: FormData
 ): Promise<TarefaState> {
   const session = await requireAgenciaMember();
+  // Só admin cria tarefas — membros da equipe apenas recebem (são atribuídos).
+  if (session.profile.role !== "admin_agencia") {
+    return { error: "Apenas administradores podem criar tarefas." };
+  }
   const supabase = createClient();
   const aid = session.profile.agencia_id!;
 
@@ -96,6 +100,11 @@ export async function atualizarTarefaAction(
   formData: FormData
 ): Promise<TarefaState> {
   const session = await requireAgenciaMember();
+  // Só admin edita a tarefa (título, atribuição de responsáveis etc.).
+  // Membros continuam podendo MOVER (mudar status) via moverTarefaAction.
+  if (session.profile.role !== "admin_agencia") {
+    return { error: "Apenas administradores podem editar tarefas." };
+  }
   const supabase = createClient();
   const aid = session.profile.agencia_id!;
 

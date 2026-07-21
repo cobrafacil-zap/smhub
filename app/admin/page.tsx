@@ -388,10 +388,10 @@ async function MemberDashboard({
   const primeiroNome = (nome ?? "você").split(" ")[0];
 
   const STATUS_LABEL: Record<string, string> = {
-    a_fazer: "A fazer",
+    a_fazer: "Tarefa destinada",
     em_andamento: "Em andamento",
-    revisao: "Revisão",
-    concluido: "Concluído",
+    revisao: "Pronta",
+    concluido: "Entregue",
   };
   const PRIORIDADE_VARIANTE: Record<string, "default" | "info" | "warning" | "danger"> = {
     baixa: "default",
@@ -408,10 +408,10 @@ async function MemberDashboard({
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="A fazer" value={counts.a_fazer} icon={<KanbanSquare className="h-4 w-4" />} tone="default" />
+        <StatCard label="Destinadas" value={counts.a_fazer} icon={<KanbanSquare className="h-4 w-4" />} tone="default" />
         <StatCard label="Em andamento" value={counts.em_andamento} icon={<KanbanSquare className="h-4 w-4" />} tone="brand" />
-        <StatCard label="Revisão" value={counts.revisao} icon={<KanbanSquare className="h-4 w-4" />} tone="warn" />
-        <StatCard label="Concluído" value={counts.concluido} icon={<KanbanSquare className="h-4 w-4" />} tone="success" />
+        <StatCard label="Prontas" value={counts.revisao} icon={<KanbanSquare className="h-4 w-4" />} tone="warn" />
+        <StatCard label="Entregues" value={counts.concluido} icon={<KanbanSquare className="h-4 w-4" />} tone="success" />
       </div>
 
       <Card>

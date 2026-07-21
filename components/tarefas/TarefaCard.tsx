@@ -9,10 +9,10 @@ import { moverTarefaAction, deletarTarefaAction, arquivarTarefaAction } from "@/
 import type { TarefaItem } from "@/app/admin/tarefas/page";
 
 const STATUS_LABEL: Record<string, string> = {
-  a_fazer: "A fazer",
+  a_fazer: "Tarefa destinada",
   em_andamento: "Em andamento",
-  revisao: "Revisão",
-  concluido: "Concluído",
+  revisao: "Pronta",
+  concluido: "Entregue",
 };
 const STATUS_ORDEM = ["a_fazer", "em_andamento", "revisao", "concluido"] as const;
 
@@ -56,6 +56,7 @@ export function TarefaCard({
 }) {
   const [pending, startTransition] = useTransition();
   const podeExcluir = tarefa.criado_por === meuId || meuRole === "admin_agencia";
+  const podeEditar = meuRole === "admin_agencia";
 
   const idx = STATUS_ORDEM.indexOf(tarefa.status as (typeof STATUS_ORDEM)[number]);
   const podeEsquerda = idx > 0;
@@ -94,13 +95,19 @@ export function TarefaCard({
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => onEdit(tarefa)}
-          className="text-left text-sm font-medium text-slate-100 hover:text-royal-200 line-clamp-2"
-        >
-          {tarefa.titulo}
-        </button>
+        {podeEditar ? (
+          <button
+            type="button"
+            onClick={() => onEdit(tarefa)}
+            className="text-left text-sm font-medium text-slate-100 hover:text-royal-200 line-clamp-2"
+          >
+            {tarefa.titulo}
+          </button>
+        ) : (
+          <p className="text-left text-sm font-medium text-slate-100 line-clamp-2">
+            {tarefa.titulo}
+          </p>
+        )}
         <Badge variant={PRIORIDADE_VARIANTE[tarefa.prioridade] ?? "default"} className="shrink-0">
           {PRIORIDADE_LABEL[tarefa.prioridade] ?? tarefa.prioridade}
         </Badge>
@@ -174,14 +181,16 @@ export function TarefaCard({
 
       {/* Ações */}
       <div className="flex items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={() => onEdit(tarefa)}
-          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100"
-          title="Editar"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
+        {podeEditar && (
+          <button
+            type="button"
+            onClick={() => onEdit(tarefa)}
+            className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100"
+            title="Editar"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           type="button"
           disabled={pending}

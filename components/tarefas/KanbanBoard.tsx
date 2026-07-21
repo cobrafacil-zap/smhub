@@ -12,10 +12,10 @@ import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefa
 import type { TarefaStatus } from "@/types/database";
 
 const COLUNAS: { status: TarefaStatus; label: string; accent: string }[] = [
-  { status: "a_fazer", label: "A fazer", accent: "border-slate-500" },
+  { status: "a_fazer", label: "Tarefa destinada", accent: "border-slate-500" },
   { status: "em_andamento", label: "Em andamento", accent: "border-royal-500" },
-  { status: "revisao", label: "Revisão", accent: "border-amber-500" },
-  { status: "concluido", label: "Concluído", accent: "border-emerald-500" },
+  { status: "revisao", label: "Pronta", accent: "border-amber-500" },
+  { status: "concluido", label: "Entregue", accent: "border-emerald-500" },
 ];
 
 export function KanbanBoard({
@@ -64,6 +64,7 @@ export function KanbanBoard({
   }
 
   const filtroAtivo = responsavelId || clienteId || minhas;
+  const podeCriar = meuRole === "admin_agencia";
 
   return (
     <div className="space-y-4">
@@ -119,11 +120,13 @@ export function KanbanBoard({
           Arquivadas
         </label>
 
-        <div className="ml-auto">
-          <Button iconLeft={<Plus className="h-4 w-4" />} onClick={abrirCriar}>
-            Nova tarefa
-          </Button>
-        </div>
+        {podeCriar && (
+          <div className="ml-auto">
+            <Button iconLeft={<Plus className="h-4 w-4" />} onClick={abrirCriar}>
+              Nova tarefa
+            </Button>
+          </div>
+        )}
       </div>
 
       {tarefas.length === 0 ? (
@@ -131,11 +134,17 @@ export function KanbanBoard({
           <EmptyState
             icon={<Plus className="h-10 w-10" />}
             title="Nenhuma tarefa"
-            description="Crie a primeira tarefa e atribua à equipe."
+            description={
+              podeCriar
+                ? "Crie a primeira tarefa e atribua à equipe."
+                : "Quando o admin criar e atribuir tarefas, elas aparecem aqui para você acompanhar."
+            }
             action={
-              <Button iconLeft={<Plus className="h-4 w-4" />} onClick={abrirCriar}>
-                Nova tarefa
-              </Button>
+              podeCriar ? (
+                <Button iconLeft={<Plus className="h-4 w-4" />} onClick={abrirCriar}>
+                  Nova tarefa
+                </Button>
+              ) : undefined
             }
           />
         </div>
