@@ -37,6 +37,7 @@ export default async function AdminLayout({
         userName={session.profile.nome}
         agencyName={agency?.nome_fantasia}
         agencyLogoUrl={agency?.logo_url}
+        role={session.profile.role as "admin_agencia" | "membro_equipe"}
       />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar
@@ -49,7 +50,7 @@ export default async function AdminLayout({
         </Suspense>
         <main className="flex-1 px-4 lg:px-6 py-6 pb-20 lg:pb-6">{children}</main>
       </div>
-      <BottomNav />
+      <BottomNav role={session.profile.role as "admin_agencia" | "membro_equipe"} />
     </div>
   );
 }

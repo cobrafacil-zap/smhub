@@ -17,6 +17,8 @@ import {
   UserCog,
   Settings,
   CreditCard,
+  KanbanSquare,
+  Video,
   LogOut,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -37,9 +39,11 @@ const groups: { title: string; items: NavItem[] }[] = [
   {
     title: "Produção",
     items: [
+      { href: "/admin/tarefas", label: "Tarefas", icon: KanbanSquare },
       { href: "/admin/planejamentos", label: "Planejamentos", icon: CalendarRange },
       { href: "/admin/briefings", label: "Briefings", icon: ClipboardList },
       { href: "/admin/datas-comemorativas", label: "Datas comemorativas", icon: CalendarHeart },
+      { href: "/admin/gravacoes", label: "Gravações", icon: Video },
     ],
   },
   {
@@ -52,16 +56,29 @@ const groups: { title: string; items: NavItem[] }[] = [
   },
 ];
 
+// Áreas exclusivas do admin (membro_equipe não vê nem acessa).
+const ADMIN_ONLY = new Set([
+  "/admin/contratos",
+  "/admin/financeiro",
+  "/admin/relatorios",
+  "/admin/equipe",
+  "/admin/planos",
+  "/admin/configuracoes",
+]);
+
 export function SidebarAdmin({
   userName,
   agencyName,
   agencyLogoUrl,
+  role = "admin_agencia",
 }: {
   userName: string;
   agencyName?: string;
   agencyLogoUrl?: string | null;
+  role?: "admin_agencia" | "membro_equipe";
 }) {
   const pathname = usePathname();
+  const isMember = role === "membro_equipe";
 
   return (
     <aside className="hidden lg:flex lg:flex-col w-64 bg-bg-surface border-r border-border min-h-screen">
@@ -90,13 +107,19 @@ export function SidebarAdmin({
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
-        {groups.map((group) => (
+        {groups.map((group) => {
+          // Filtra itens admin-only para membros. Grupos que ficarem vazios somem.
+          const items = isMember
+            ? group.items.filter((it) => !ADMIN_ONLY.has(it.href))
+            : group.items;
+          if (items.length === 0) return null;
+          return (
           <div key={group.title}>
             <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
               {group.title}
             </p>
             <div className="space-y-0.5">
-              {group.items.map((item) => {
+              {items.map((item) => {
                 const Icon = item.icon;
                 const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
                 return (
@@ -126,7 +149,8 @@ export function SidebarAdmin({
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="px-4 py-4 border-t border-border">

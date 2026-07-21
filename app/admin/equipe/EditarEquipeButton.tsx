@@ -26,12 +26,16 @@ export function EditarEquipeButton({
   cargo,
   custoMensal,
   role,
+  supervisorId,
+  membros,
 }: {
   id: string;
   nome: string;
   cargo: string | null;
   custoMensal: number | null;
   role: string;
+  supervisorId: string | null;
+  membros: { id: string; nome: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +130,20 @@ export function EditarEquipeButton({
                 <option value="admin_agencia">Admin da agência</option>
                 <option value="membro_equipe">Membro da equipe</option>
               </select>
+            </div>
+            <div>
+              <label className="label">Responde a (supervisor)</label>
+              <select name="supervisor_id" defaultValue={supervisorId ?? ""} className="input">
+                <option value="">— Nenhum —</option>
+                {membros.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] text-slate-500 mt-1">
+                Define o organograma (quem responde a quem). Não cria ciclos.
+              </p>
             </div>
             <div className="pt-3 border-t border-border flex justify-end gap-2">
               <button

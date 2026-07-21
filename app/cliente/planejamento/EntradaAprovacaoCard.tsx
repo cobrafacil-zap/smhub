@@ -16,6 +16,9 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar as CalendarIcon,
+  ImageIcon,
+  Film,
+  Paperclip,
 } from "lucide-react";
 import type { EntradaStatus, EntradaTipo, PlanejamentoEntrada } from "@/types/database";
 
@@ -113,18 +116,43 @@ export function EntradaAprovacaoCard({ entrada, showApproveActions = true }: Pro
       </button>
 
       {expandido && (
-        <div className="px-4 pb-4 space-y-3 border-t border-border">
-          {entrada.copy && (
-            <p className="text-sm text-slate-300 whitespace-pre-wrap pt-3">{entrada.copy}</p>
-          )}
-          {entrada.descricao && (
-            <div className="rounded-md bg-bg-elevated/40 border border-border px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                Briefing interno
-              </p>
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{entrada.descricao}</p>
-            </div>
-          )}
+        <div className="px-4 pb-4 space-y-4 border-t border-border">
+          {/* Formato */}
+          <div className="pt-3 flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              Formato
+            </span>
+            <Badge variant="brand">{tipoLabel}</Badge>
+          </div>
+
+          {/* Arte (mídia) — separada do texto da legenda */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
+              <ImageIcon className="h-3 w-3" /> Arte
+            </p>
+            {entrada.midia_url && entrada.midia_url.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {entrada.midia_url.map((url, i) => (
+                  <MidiaPreview key={url + i} url={url} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 italic">Sem arte anexada.</p>
+            )}
+          </div>
+
+          {/* Legenda (copy) — rotulada para o cliente saber que é a legenda do post */}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+              Legenda
+            </p>
+            {entrada.copy ? (
+              <p className="text-sm text-slate-300 whitespace-pre-wrap">{entrada.copy}</p>
+            ) : (
+              <p className="text-xs text-slate-500 italic">Sem legenda.</p>
+            )}
+          </div>
+
           {entrada.hashtags && entrada.hashtags.length > 0 && (
             <p className="text-xs text-royal-300 line-clamp-2">{entrada.hashtags.join(" ")}</p>
           )}
@@ -238,5 +266,41 @@ export function EntradaAprovacaoCard({ entrada, showApproveActions = true }: Pro
         </div>
       )}
     </Card>
+  );
+}
+
+// Preview da arte anexada: vídeo (player) ou imagem (thumbnail) ou link de download.
+function MidiaPreview({ url }: { url: string }) {
+  const ext = url.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+  const isVideo = ["mp4", "webm", "mov", "ogv", "m4v"].includes(ext);
+  if (isVideo) {
+    return (
+      <div className="relative aspect-square rounded-md overflow-hidden border border-border bg-black/40">
+        <video src={url} controls className="h-full w-full object-cover" />
+        <span className="absolute top-1 left-1 inline-flex items-center gap-1 rounded bg-black/60 px-1 py-0.5 text-[9px] text-slate-200">
+          <Film className="h-2.5 w-2.5" /> vídeo
+        </span>
+      </div>
+    );
+  }
+  const isImage = ["jpg", "jpeg", "png", "webp", "gif", "avif", "svg", "bmp"].includes(ext);
+  if (isImage) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer" className="block relative aspect-square rounded-md overflow-hidden border border-border bg-bg-elevated">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="Arte do post" className="h-full w-full object-cover" loading="lazy" />
+      </a>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-md border border-border bg-bg-elevated p-2 text-center"
+    >
+      <Paperclip className="h-4 w-4 text-slate-400" />
+      <span className="text-[10px] text-slate-400 truncate w-full">arquivo.{ext}</span>
+    </a>
   );
 }

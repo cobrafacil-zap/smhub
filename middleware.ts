@@ -174,6 +174,22 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    // 4b) Áreas admin-only: membros da equipe NÃO acessam (defesa em profundidade,
+    // além de esconder na nav). Cliente (role=cliente) já foi bloqueado acima.
+    const ADMIN_ONLY_PREFIXOS = [
+      "/admin/financeiro",
+      "/admin/contratos",
+      "/admin/relatorios",
+      "/admin/equipe",
+      "/admin/planos",
+      "/admin/configuracoes",
+    ];
+    if (role === "membro_equipe" && ADMIN_ONLY_PREFIXOS.some((p) => pathname.startsWith(p))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/tarefas";
+      return NextResponse.redirect(url);
+    }
+
     if (pathname.startsWith("/cliente") && role !== "cliente") {
       const url = request.nextUrl.clone();
       if (role === "super_admin") url.pathname = "/super-admin";

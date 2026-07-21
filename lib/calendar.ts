@@ -1,7 +1,7 @@
 import { MONTHS_PT, WEEKDAYS_PT } from "@/lib/constants";
 import type { PlanejamentoEntrada } from "@/types/database";
 
-export type CalendarCell = {
+export type CalendarCell<E = PlanejamentoEntrada> = {
   /** Data no formato YYYY-MM-DD (local). */
   date: string;
   /** Dia do mês (1-31). */
@@ -13,7 +13,7 @@ export type CalendarCell = {
   /** Se é o dia de hoje. */
   isToday: boolean;
   /** Entradas agendadas neste dia. */
-  entries: PlanejamentoEntrada[];
+  entries: E[];
 };
 
 /** Formata Date → YYYY-MM-DD no fuso local. */
@@ -26,13 +26,14 @@ export function formatDate(d: Date): string {
 
 /**
  * Constrói 42 células (6 semanas) do mês começando no domingo.
+ * Genérica sobre qualquer entrada com campo `data` (YYYY-MM-DD).
  */
-export function buildMonthCells(
+export function buildMonthCells<E extends { data: string }>(
   year: number,
   month: number,
-  entries: PlanejamentoEntrada[]
-): CalendarCell[] {
-  const cells: CalendarCell[] = [];
+  entries: E[]
+): CalendarCell<E>[] {
+  const cells: CalendarCell<E>[] = [];
   const todayStr = formatDate(new Date());
 
   const firstDay = new Date(year, month - 1, 1);

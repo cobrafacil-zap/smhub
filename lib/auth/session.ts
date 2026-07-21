@@ -244,3 +244,24 @@ export async function requireCliente(): Promise<SessionUser> {
   if (!session.profile.cliente_id) redirect("/login");
   return session;
 }
+
+/**
+ * Exige cliente OU membro da agência (admin/membro) OU super-admin.
+ * Usado pelas actions de gravações, que são editáveis por ambos os lados.
+ * Retorna a sessão; quem chama decide o escopo (cliente_id vs agencia_id)
+ * a partir de session.profile.role.
+ */
+export async function requireClienteOuAgencia(): Promise<SessionUser> {
+  const session = await requireUser();
+  const r = session.profile.role;
+  if (r === "cliente") {
+    if (!session.profile.cliente_id) redirect("/login");
+    return session;
+  }
+  if (r === "admin_agencia" || r === "membro_equipe") {
+    if (!session.profile.agencia_id) redirect("/login");
+    return session;
+  }
+  if (r === "super_admin") return session;
+  redirect("/");
+}

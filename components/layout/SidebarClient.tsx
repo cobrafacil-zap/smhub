@@ -11,6 +11,7 @@ import {
   FileText,
   Wallet,
   User,
+  Video,
   LogOut,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -18,6 +19,7 @@ import type { ComponentType } from "react";
 const items = [
   { href: "/cliente", label: "Dashboard", icon: LayoutDashboard },
   { href: "/cliente/planejamento", label: "Planejamento", icon: CalendarDays },
+  { href: "/cliente/gravacoes", label: "Gravações", icon: Video },
   { href: "/cliente/relatorios", label: "Relatórios", icon: BarChart3 },
   { href: "/cliente/contratos", label: "Contratos", icon: FileText },
   { href: "/cliente/financeiro", label: "Financeiro", icon: Wallet },

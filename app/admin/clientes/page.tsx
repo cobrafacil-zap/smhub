@@ -22,6 +22,7 @@ export default async function ClientesPage({
   // .eq("agencia_id", aid) — aid vem de requireAgenciaMember (sessão validada).
   const supabase = createAdminClient();
   const aid = session.profile.agencia_id!;
+  const readOnly = session.profile.role === "membro_equipe";
 
   // Janela de faturas: 6 meses atrás + futuras. Evita varrer histórico
   // antigo (a lógica do card só precisa de atrasadas recentes + próximas).
@@ -84,9 +85,11 @@ export default async function ClientesPage({
         description="Gerencie os clientes da sua agência."
         breadcrumbs={[{ href: "/admin", label: "Início" }, { label: "Clientes" }]}
         actions={
-          <Link href="/admin/clientes/novo">
-            <Button iconLeft={<Plus className="h-4 w-4" />}>Novo cliente</Button>
-          </Link>
+          readOnly ? undefined : (
+            <Link href="/admin/clientes/novo">
+              <Button iconLeft={<Plus className="h-4 w-4" />}>Novo cliente</Button>
+            </Link>
+          )
         }
       />
 
@@ -126,11 +129,13 @@ export default async function ClientesPage({
           <EmptyState
             icon={<Users className="h-10 w-10" />}
             title="Nenhum cliente encontrado"
-            description="Cadastre seu primeiro cliente para começar."
+            description={readOnly ? "Ainda não há clientes para mostrar." : "Cadastre seu primeiro cliente para começar."}
             action={
-              <Link href="/admin/clientes/novo">
-                <Button iconLeft={<Plus className="h-4 w-4" />}>Novo cliente</Button>
-              </Link>
+              readOnly ? undefined : (
+                <Link href="/admin/clientes/novo">
+                  <Button iconLeft={<Plus className="h-4 w-4" />}>Novo cliente</Button>
+                </Link>
+              )
             }
           />
         </Card>
@@ -145,6 +150,7 @@ export default async function ClientesPage({
                 faturasAtrasadasCount: atrasadasPorCliente.get(c.id) ?? 0,
                 faturasAVencerCount: aVencerPorCliente.get(c.id) ?? 0,
               }}
+              readOnly={readOnly}
             />
           ))}
         </div>

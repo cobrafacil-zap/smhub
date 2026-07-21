@@ -34,6 +34,9 @@ export interface PlatformConfig {
 export type AgenciaStatus = "ativa" | "suspensa" | "cancelada";
 export type UserRole = "super_admin" | "admin_agencia" | "membro_equipe" | "cliente";
 export type ClienteStatus = "ativo" | "inativo" | "pausado";
+export type TarefaStatus = "a_fazer" | "em_andamento" | "revisao" | "concluido";
+export type TarefaPrioridade = "baixa" | "media" | "alta" | "urgente";
+export type GravacaoStatus = "agendada" | "confirmada" | "concluida" | "cancelada";
 export type PlanejamentoStatus = "rascunho" | "aprovado" | "em_execucao" | "concluido";
 export type EntradaTipo = "post_feed" | "story" | "reels" | "carrossel" | "video" | "artigo";
 export type EntradaStatus =
@@ -152,6 +155,7 @@ export interface Database {
           cargo: string | null;
           custo_mensal: number | null;
           ativo: boolean;
+          supervisor_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -166,6 +170,7 @@ export interface Database {
           cargo?: string | null;
           custo_mensal?: number | null;
           ativo?: boolean;
+          supervisor_id?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["usuarios"]["Insert"]>;
@@ -279,6 +284,83 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["planejamento_entradas"]["Insert"]>;
+      };
+      tarefas: {
+        Row: {
+          id: string;
+          agencia_id: string;
+          cliente_id: string | null;
+          criado_por: string | null;
+          titulo: string;
+          descricao: string | null;
+          status: TarefaStatus;
+          prioridade: TarefaPrioridade;
+          prazo: string | null;
+          ordem: number;
+          arquivado: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agencia_id: string;
+          cliente_id?: string | null;
+          criado_por?: string | null;
+          titulo: string;
+          descricao?: string | null;
+          status?: TarefaStatus;
+          prioridade?: TarefaPrioridade;
+          prazo?: string | null;
+          ordem?: number;
+          arquivado?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefas"]["Insert"]>;
+      };
+      tarefa_responsaveis: {
+        Row: {
+          tarefa_id: string;
+          usuario_id: string;
+          created_at: string;
+        };
+        Insert: {
+          tarefa_id: string;
+          usuario_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefa_responsaveis"]["Insert"]>;
+      };
+      gravacoes: {
+        Row: {
+          id: string;
+          agencia_id: string;
+          cliente_id: string;
+          data: string;
+          hora: string | null;
+          titulo: string;
+          descricao: string | null;
+          local: string | null;
+          status: GravacaoStatus;
+          criado_por: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agencia_id: string;
+          cliente_id: string;
+          data: string;
+          hora?: string | null;
+          titulo: string;
+          descricao?: string | null;
+          local?: string | null;
+          status?: GravacaoStatus;
+          criado_por?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["gravacoes"]["Insert"]>;
       };
       datas_comemorativas: {
         Row: {
@@ -682,6 +764,10 @@ export type Agencia = Database["public"]["Tables"]["agencias"]["Row"];
 export type Usuario = Database["public"]["Tables"]["usuarios"]["Row"];
 export type Cliente = Database["public"]["Tables"]["clientes"]["Row"];
 export type Planejamento = Database["public"]["Tables"]["planejamentos"]["Row"];
+export type Tarefa = Database["public"]["Tables"]["tarefas"]["Row"];
+export type TarefaResponsavel =
+  Database["public"]["Tables"]["tarefa_responsaveis"]["Row"];
+export type Gravacao = Database["public"]["Tables"]["gravacoes"]["Row"];
 export type PlanejamentoEntrada =
   Database["public"]["Tables"]["planejamento_entradas"]["Row"];
 export type DataComemorativa =

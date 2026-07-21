@@ -18,6 +18,8 @@ import {
   Phone,
   Sparkles,
   LifeBuoy,
+  KanbanSquare,
+  CalendarClock,
 } from "lucide-react";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { CLIENTE_STATUS, CONTRATO_STATUS } from "@/lib/constants";
@@ -63,6 +65,14 @@ export default async function AdminDashboardPage() {
   // por linha fica rápido.
   const supabase = createAdminClient();
   const aid = session.profile.agencia_id!;
+
+  // -----------------------------------------------------------------------
+  // Dashboard do MEMBRO da equipe: foco nas tarefas atribuídas a ele.
+  // (Admin continua com o dashboard comercial abaixo.)
+  // -----------------------------------------------------------------------
+  if (session.profile.role === "membro_equipe") {
+    return <MemberDashboard aid={aid} membroId={session.profile.id} nome={session.profile.nome} />;
+  }
 
   // Período do mês atual (início e fim)
   const hoje = new Date();
@@ -315,5 +325,170 @@ async function ContratosRecentes({ agenciaId }: { agenciaId: string }) {
         );
       })}
     </ul>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard do MEMBRO da equipe: suas tarefas atribuídas.
+// ---------------------------------------------------------------------------
+type MinhaTarefa = {
+  id: string;
+  titulo: string;
+  status: string;
+  prioridade: string;
+  prazo: string | null;
+  arquivado: boolean;
+  cliente_nome: string | null;
+};
+
+async function MemberDashboard({
+  aid,
+  membroId,
+  nome,
+}: {
+  aid: string;
+  membroId: string;
+  nome: string;
+}) {
+  const supabase = createAdminClient();
+
+  // Tarefas onde sou responsável
+  const { data: resp } = await supabase
+    .from("tarefa_responsaveis")
+    .select("tarefa_id")
+    .eq("usuario_id", membroId);
+  const ids = (resp ?? []).map((r: any) => r.tarefa_id as string);
+
+  let minhas: MinhaTarefa[] = [];
+  if (ids.length > 0) {
+    const { data: tarefas } = await supabase
+      .from("tarefas")
+      .select("id, titulo, status, prioridade, prazo, arquivado, cliente:clientes(nome_empresa)")
+      .eq("agencia_id", aid)
+      .in("id", ids);
+    minhas = (tarefas ?? []).map((t: any) => ({
+      id: t.id,
+      titulo: t.titulo,
+      status: t.status,
+      prioridade: t.prioridade,
+      prazo: t.prazo,
+      arquivado: t.arquivado,
+      cliente_nome: t.cliente?.nome_empresa ?? null,
+    }));
+  }
+
+  const naoArquivadas = minhas.filter((t) => !t.arquivado);
+  const counts = {
+    a_fazer: naoArquivadas.filter((t) => t.status === "a_fazer").length,
+    em_andamento: naoArquivadas.filter((t) => t.status === "em_andamento").length,
+    revisao: naoArquivadas.filter((t) => t.status === "revisao").length,
+    concluido: naoArquivadas.filter((t) => t.status === "concluido").length,
+  };
+  const abertas = naoArquivadas.filter((t) => t.status !== "concluido");
+  const primeiroNome = (nome ?? "você").split(" ")[0];
+
+  const STATUS_LABEL: Record<string, string> = {
+    a_fazer: "A fazer",
+    em_andamento: "Em andamento",
+    revisao: "Revisão",
+    concluido: "Concluído",
+  };
+  const PRIORIDADE_VARIANTE: Record<string, "default" | "info" | "warning" | "danger"> = {
+    baixa: "default",
+    media: "info",
+    alta: "warning",
+    urgente: "danger",
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={`Olá, ${primeiroNome}!`}
+        description="Suas tarefas atribuídas pela equipe."
+      />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="A fazer" value={counts.a_fazer} icon={<KanbanSquare className="h-4 w-4" />} tone="default" />
+        <StatCard label="Em andamento" value={counts.em_andamento} icon={<KanbanSquare className="h-4 w-4" />} tone="brand" />
+        <StatCard label="Revisão" value={counts.revisao} icon={<KanbanSquare className="h-4 w-4" />} tone="warn" />
+        <StatCard label="Concluído" value={counts.concluido} icon={<KanbanSquare className="h-4 w-4" />} tone="success" />
+      </div>
+
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-royal-300" />
+            Minhas tarefas em aberto
+          </h3>
+          <Link
+            href="/admin/tarefas"
+            className="text-xs text-royal-400 hover:text-royal-300 inline-flex items-center gap-1"
+          >
+            Ver quadro <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        {abertas.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            Nenhuma tarefa atribuída a você no momento. 🎉
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {abertas.slice(0, 8).map((t) => {
+              const vencido =
+                t.prazo && new Date(t.prazo + "T00:00:00") < new Date(new Date().toDateString());
+              return (
+                <li key={t.id} className="flex items-center justify-between gap-3 text-sm">
+                  <div className="min-w-0">
+                    <Link href="/admin/tarefas" className="text-slate-100 hover:text-royal-300 font-medium truncate block">
+                      {t.titulo}
+                    </Link>
+                    <p className="text-xs text-slate-500 flex items-center gap-2">
+                      <span>{STATUS_LABEL[t.status] ?? t.status}</span>
+                      {t.cliente_nome && <span>· {t.cliente_nome}</span>}
+                      {t.prazo && (
+                        <span className={vencido ? "text-danger-400 inline-flex items-center gap-1" : "inline-flex items-center gap-1"}>
+                          <CalendarClock className="h-3 w-3" />
+                          {new Date(t.prazo + "T00:00:00").toLocaleDateString("pt-BR")}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <Badge variant={PRIORIDADE_VARIANTE[t.prioridade] ?? "default"} className="shrink-0 capitalize">
+                    {t.prioridade}
+                  </Badge>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
+      <Card>
+        <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-royal-300" />
+          Ações rápidas
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { href: "/admin/tarefas", label: "Tarefas", icon: KanbanSquare, desc: "Meu quadro" },
+            { href: "/admin/clientes", label: "Clientes", icon: Users, desc: "Ver todos" },
+            { href: "/admin/planejamentos", label: "Planejamentos", icon: CalendarDays, desc: "Calendário" },
+            { href: "/admin/briefings", label: "Briefings", icon: ClipboardList, desc: "Onboarding" },
+          ].map((q) => (
+            <Link
+              key={q.href + q.label}
+              href={q.href}
+              className="flex flex-col items-center justify-center gap-1.5 p-4 rounded-lg border border-border bg-bg-elevated/30 hover:border-royal-500/50 hover:bg-bg-elevated transition text-center"
+            >
+              <q.icon className="h-5 w-5 text-royal-300" />
+              <span className="text-sm font-medium text-slate-200">{q.label}</span>
+              <span className="text-[10px] text-slate-500">{q.desc}</span>
+            </Link>
+          ))}
+        </div>
+      </Card>
+
+      <AddToHomeScreen />
+    </div>
   );
 }

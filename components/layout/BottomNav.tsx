@@ -14,6 +14,10 @@ import {
   User,
   Building2,
   ShieldCheck,
+  KanbanSquare,
+  CalendarRange,
+  ClipboardList,
+  Video,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -21,7 +25,7 @@ type NavItem = { href: string; label: string; icon: ComponentType<{ className?: 
 
 // Itens por área. Antes só o admin tinha menu mobile — cliente e super-admin
 // ficavam sem navegação no celular. Agora cada layout passa seu `variant`.
-const ITEMS: Record<"admin" | "cliente" | "super-admin", NavItem[]> = {
+const ITEMS: Record<"admin" | "admin-membro" | "cliente" | "super-admin", NavItem[]> = {
   admin: [
     { href: "/admin", label: "Home", icon: LayoutDashboard },
     { href: "/admin/clientes", label: "Clientes", icon: Users },
@@ -29,9 +33,19 @@ const ITEMS: Record<"admin" | "cliente" | "super-admin", NavItem[]> = {
     { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
     { href: "/admin/configuracoes", label: "Config", icon: Settings },
   ],
+  // Membro da equipe: foco em produção + suas tarefas (sem áreas comerciais).
+  "admin-membro": [
+    { href: "/admin", label: "Home", icon: LayoutDashboard },
+    { href: "/admin/tarefas", label: "Tarefas", icon: KanbanSquare },
+    { href: "/admin/clientes", label: "Clientes", icon: Users },
+    { href: "/admin/planejamentos", label: "Plan.", icon: CalendarRange },
+    { href: "/admin/briefings", label: "Briefings", icon: ClipboardList },
+    { href: "/admin/gravacoes", label: "Gravações", icon: Video },
+  ],
   cliente: [
     { href: "/cliente", label: "Início", icon: LayoutDashboard },
     { href: "/cliente/planejamento", label: "Planejar", icon: CalendarDays },
+    { href: "/cliente/gravacoes", label: "Gravações", icon: Video },
     { href: "/cliente/relatorios", label: "Relatórios", icon: BarChart3 },
     { href: "/cliente/contratos", label: "Contratos", icon: FileText },
     { href: "/cliente/financeiro", label: "Financeiro", icon: Wallet },
@@ -47,9 +61,17 @@ const ITEMS: Record<"admin" | "cliente" | "super-admin", NavItem[]> = {
   ],
 };
 
-export function BottomNav({ variant = "admin" }: { variant?: "admin" | "cliente" | "super-admin" }) {
+export function BottomNav({
+  variant = "admin",
+  role,
+}: {
+  variant?: "admin" | "cliente" | "super-admin";
+  role?: "admin_agencia" | "membro_equipe";
+}) {
   const pathname = usePathname();
-  const items = ITEMS[variant];
+  // Membro da agência usa o set focado em produção.
+  const key = variant === "admin" && role === "membro_equipe" ? "admin-membro" : variant;
+  const items = ITEMS[key as "admin" | "admin-membro" | "cliente" | "super-admin"];
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-bg-surface/95 backdrop-blur border-t border-border">
       <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>

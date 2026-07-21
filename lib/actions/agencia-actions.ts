@@ -94,76 +94,169 @@ const equipeSchema = z.object({
   custo_mensal: z.coerce.number().min(0).optional().nullable(),
   telefone: z.string().optional().nullable(),
   role: z.enum(["admin_agencia", "membro_equipe"]).default("membro_equipe"),
+  supervisor_id: z.string().uuid().optional().nullable(),
 });
 
+export type CriarEquipeState =
+  | { error?: string; ok?: true; link?: string; nome?: string; email?: string; expiraEm?: string }
+  | undefined;
+
+/**
+ * Sobe a cadeia de supervisores a partir de `supervisorId` e devolve true se
+ * encontrar `memberId` (=> formaria ciclo). Limita a 50 níveis por segurança.
+ */
+async function formaCiclo(
+  admin: ReturnType<typeof createAdminClient>,
+  supervisorId: string,
+  memberId: string
+): Promise<boolean> {
+  let atual: string | null = supervisorId;
+  for (let i = 0; i < 50 && atual; i++) {
+    if (atual === memberId) return true;
+    const { data }: { data: { supervisor_id: string | null } | null } = await admin
+      .from("usuarios")
+      .select("supervisor_id")
+      .eq("id", atual as string)
+      .maybeSingle();
+    atual = (data as { supervisor_id: string | null } | null)?.supervisor_id ?? null;
+  }
+  return false;
+}
+
+// CONVIDAR MEMBRO POR LINK (modelo convidarClienteAction)
+// Cria o usuário no Auth com senha aleatória, registra em usuarios, gera um
+// token em convites e devolve o link /definir-senha?token=... pro admin enviar.
 export async function criarEquipeAction(
-  _prev: unknown,
+  _prev: CriarEquipeState,
   formData: FormData
-): Promise<{ error: string } | undefined> {
+): Promise<CriarEquipeState> {
   const session = await requireAgenciaAdmin();
-  const supabase = createClient();
-  const raw = Object.fromEntries(formData);
+  const aid = session.profile.agencia_id!;
+  const admin = createAdminClient();
+
+  const raw = Object.fromEntries(formData) as Record<string, unknown>;
+  // supervisor_id vazio ("") => null
+  if (raw.supervisor_id === "") raw.supervisor_id = null;
   const parsed = equipeSchema.safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
-  // Cria usuário no auth
-  const { data: signData, error: signErr } = await supabase.auth.signUp({
+
+  // Valida ciclo de supervisor (caso o admin já tenha vinculado antes)
+  if (parsed.data.supervisor_id) {
+    const ciclo = await formaCiclo(admin, parsed.data.supervisor_id, parsed.data.supervisor_id);
+    if (ciclo) return { error: "Supervisor inválido (ciclo na hierarquia)." };
+  }
+
+  // 1) Cria usuário no Auth (senha aleatória; o membro define a própria via link)
+  const senhaTemp = crypto.randomUUID() + Math.random().toString(36);
+  const { data: signData, error: signErr } = await admin.auth.admin.createUser({
     email: parsed.data.email,
-    password: "smhub123", // senha temporária — admin pode redefinir
-    options: { data: { nome: parsed.data.nome } },
+    password: senhaTemp,
+    email_confirm: true,
+    user_metadata: { nome: parsed.data.nome, role: parsed.data.role },
   });
   if (signErr || !signData.user) {
     return { error: signErr?.message ?? "Erro ao criar usuário no Auth." };
   }
-  // Cria registro em usuarios
-  const { error } = await supabase.from("usuarios").insert({
-    user_id: signData.user.id,
-    agencia_id: session.profile.agencia_id,
+  const userId = signData.user.id;
+
+  // 2) Registra em usuarios
+  const { error: userErr } = await admin.from("usuarios").insert({
+    user_id: userId,
+    agencia_id: aid,
     nome: parsed.data.nome,
     email: parsed.data.email,
     cargo: parsed.data.cargo ?? null,
     telefone: parsed.data.telefone ?? null,
     custo_mensal: parsed.data.custo_mensal ?? 0,
     role: parsed.data.role,
+    supervisor_id: parsed.data.supervisor_id ?? null,
+    ativo: true,
   });
-  if (error) {
-    // rollback do auth user para não ficar órfão
+  if (userErr) {
     try {
-      const { createAdminClient } = await import("@/lib/supabase/admin");
-      await createAdminClient().auth.admin.deleteUser(signData.user.id);
+      await admin.auth.admin.deleteUser(userId);
     } catch {
-      // ignora
+      /* ignora */
     }
-    return { error: `Erro ao criar membro: ${error.message}` };
+    return { error: `Erro ao criar membro: ${userErr.message}` };
   }
+
+  // 3) Gera token de convite (válido por 7 dias)
+  const tokenBytes = new Uint8Array(24);
+  crypto.getRandomValues(tokenBytes);
+  const token = Array.from(tokenBytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  const expiraEm = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { error: convErr } = await admin.from("convites").insert({
+    token,
+    cliente_id: null,
+    agencia_id: aid,
+    email: parsed.data.email,
+    role: parsed.data.role,
+    user_id: userId,
+    expira_em: expiraEm,
+  });
+  if (convErr) {
+    // A tarefa principal (criar o membro) deu certo; só logamos o problema do link.
+    console.error("[criarEquipeAction] erro ao gerar convite:", convErr);
+  }
+
   revalidatePath("/admin/equipe");
-  redirect("/admin/equipe?convidado=1");
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhub.com.br";
+  const link = `${baseUrl}/definir-senha?token=${token}`;
+  return {
+    ok: true,
+    nome: parsed.data.nome,
+    email: parsed.data.email,
+    link,
+    expiraEm: new Date(expiraEm).toLocaleDateString("pt-BR"),
+  };
 }
 
 export async function atualizarEquipeAction(id: string, formData: FormData) {
   const session = await requireAgenciaAdmin();
-  const supabase = createClient();
-  const raw = Object.fromEntries(formData);
+  const admin = createAdminClient();
+  const aid = session.profile.agencia_id!;
+
+  const raw = Object.fromEntries(formData) as Record<string, unknown>;
+  if (raw.supervisor_id === "") raw.supervisor_id = null;
   const parsed = equipeSchema.omit({ email: true }).partial().safeParse(raw);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
+
+  // Valida ciclo de supervisor: o supervisor escolhido não pode ter `id` na
+  // sua cadeia de supervisores (senão `id` viraria supervisor de si mesmo).
+  const novoSup = parsed.data.supervisor_id ?? null;
+  if (novoSup) {
+    const ciclo = await formaCiclo(admin, novoSup, id);
+    if (ciclo) {
+      return { error: "Esse supervisor criaria um ciclo na hierarquia. Escolha outro." };
+    }
+  }
+
   const custoMensal = raw.custo_mensal
     ? Number(String(raw.custo_mensal).replace(",", "."))
     : 0;
-  const { error } = await supabase
+  const { error } = await admin
     .from("usuarios")
     .update({
       nome: parsed.data.nome,
       cargo: parsed.data.cargo ?? null,
       telefone: parsed.data.telefone ?? null,
       role: parsed.data.role,
+      supervisor_id: novoSup,
       custo_mensal: isFinite(custoMensal) && custoMensal >= 0 ? custoMensal : 0,
     })
     .eq("id", id)
-    .eq("agencia_id", session.profile.agencia_id!);
+    .eq("agencia_id", aid);
   if (error) return { error: "Erro." };
+
+  // O perfil pode ter mudado de role — invalida o cache de sessão.
+  revalidateTag("session-profile");
   revalidatePath("/admin/equipe");
   return { ok: true };
 }

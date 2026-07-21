@@ -60,7 +60,7 @@ function avatarBgFor(nome: string): string {
   return cores[hash % cores.length];
 }
 
-export function ClienteCard({ cliente, proximaFatura, faturasAtrasadasCount = 0, faturasAVencerCount = 0 }: { cliente: ClienteCardData; proximaFatura?: ClienteCardData["proximaFatura"]; faturasAtrasadasCount?: number; faturasAVencerCount?: number }) {
+export function ClienteCard({ cliente, proximaFatura, faturasAtrasadasCount = 0, faturasAVencerCount = 0, readOnly = false }: { cliente: ClienteCardData; proximaFatura?: ClienteCardData["proximaFatura"]; faturasAtrasadasCount?: number; faturasAVencerCount?: number; readOnly?: boolean }) {
   const st = CLIENTE_STATUS[cliente.status];
   const inadimplente = faturasAtrasadasCount > 0;
   const aVencer = faturasAVencerCount > 0;
@@ -152,9 +152,9 @@ export function ClienteCard({ cliente, proximaFatura, faturasAtrasadasCount = 0,
         )}
       </div>
 
-      {/* Atalhos */}
+      {/* Atalhos (membros não veem atalhos de áreas admin-only) */}
       <div className="flex flex-wrap gap-1.5">
-        {SHORTCUTS.map((s) => {
+        {SHORTCUTS.filter((s) => !readOnly || (s.key !== "financeiro" && s.key !== "contratos")).map((s) => {
           const Icon = s.icon;
           return (
             <Link
@@ -169,20 +169,29 @@ export function ClienteCard({ cliente, proximaFatura, faturasAtrasadasCount = 0,
         })}
       </div>
 
-      {/* Footer: ações rápidas + excluir */}
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
-        <ClienteStatusButtons
-          clienteId={cliente.id}
-          currentStatus={cliente.status}
-          compact
-        />
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-slate-500 hidden sm:inline">
-            Desde {formatDate(cliente.created_at)}
-          </span>
-          <ExcluirClienteButton id={cliente.id} nome={cliente.nome_empresa} />
+      {/* Footer: ações rápidas + excluir (somente admin) */}
+      {!readOnly && (
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+          <ClienteStatusButtons
+            clienteId={cliente.id}
+            currentStatus={cliente.status}
+            compact
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-500 hidden sm:inline">
+              Desde {formatDate(cliente.created_at)}
+            </span>
+            <ExcluirClienteButton id={cliente.id} nome={cliente.nome_empresa} />
+          </div>
         </div>
-      </div>
+      )}
+      {readOnly && (
+        <div className="pt-2 border-t border-border">
+          <span className="text-[10px] text-slate-500">
+            Desde {formatDate(cliente.created_at)} · somente leitura
+          </span>
+        </div>
+      )}
     </Card>
   );
 }
