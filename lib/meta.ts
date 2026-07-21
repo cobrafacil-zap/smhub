@@ -127,6 +127,43 @@ interface IgInsightsResponse {
   }>;
 }
 
+/**
+ * Busca insights tolerando métricas descontinuadas: tenta todas juntas (rápido)
+ * e, se falhar (ex.: (#100) métrica inválida), rebusca uma a uma pulando as
+ * inválidas — assim uma métrica depreciada não derruba a importação inteira.
+ */
+async function fetchInsightsResilient(
+  path: string,
+  token: string,
+  metrics: string[],
+  period: string,
+  since: Date,
+  until: Date
+): Promise<IgInsightsResponse["data"]> {
+  const params = (metric: string) => ({
+    access_token: token,
+    metric,
+    period,
+    since: String(toUnix(since)),
+    until: String(toUnix(until)),
+  });
+  try {
+    const res = (await graphGet(path, params(metrics.join(",")))) as IgInsightsResponse;
+    return res.data ?? [];
+  } catch {
+    const out: IgInsightsResponse["data"] = [];
+    for (const m of metrics) {
+      try {
+        const res = (await graphGet(path, params(m))) as IgInsightsResponse;
+        out.push(...(res.data ?? []));
+      } catch {
+        // métrica inválida/descontinuada — ignora e segue
+      }
+    }
+    return out;
+  }
+}
+
 async function fetchIgInsights(
   igUserId: string,
   token: string,
@@ -143,17 +180,27 @@ async function fetchIgInsights(
   let firstFollowers: number | null = null;
   let lastFollowers: number | null = null;
 
-  for (const w of windows) {
-    const res = (await graphGet(`/${igUserId}/insights`, {
-      access_token: token,
-      metric:
-        "reach,impressions,follower_count,profile_views,email_contacts,phone_call_clicks,text_message_clicks",
-      period: "day",
-      since: String(toUnix(w.since)),
-      until: String(toUnix(w.until)),
-    })) as IgInsightsResponse;
+  const IG_METRICS = [
+    "reach",
+    "impressions",
+    "follower_count",
+    "profile_views",
+    "email_contacts",
+    "phone_call_clicks",
+    "text_message_clicks",
+  ];
 
-    for (const m of res.data ?? []) {
+  for (const w of windows) {
+    const data = await fetchInsightsResilient(
+      `/${igUserId}/insights`,
+      token,
+      IG_METRICS,
+      "day",
+      w.since,
+      w.until
+    );
+
+    for (const m of data) {
       for (const v of m.values ?? []) {
         const val = Number(v.value) || 0;
         if (m.name === "reach") reach += val;
@@ -268,19 +315,24 @@ async function fetchFbInsights(
   let reactions = 0;
   let fanAdds = 0;
 
-  for (const w of windows) {
-    const res = (await graphGet(`/${pageId}/insights`, {
-      access_token: token,
-      // page_actions_post_reactions_total foi descontinuado na v19.0;
-      // usamos page_post_engagements no lugar (engajamento total da Página).
-      metric:
-        "page_impressions_unique,page_impressions,page_post_engagements,page_fan_adds",
-      period: "day",
-      since: String(toUnix(w.since)),
-      until: String(toUnix(w.until)),
-    })) as FbInsightsResponse;
+  const FB_METRICS = [
+    "page_impressions_unique",
+    "page_impressions",
+    "page_post_engagements",
+    "page_fan_adds",
+  ];
 
-    for (const m of res.data ?? []) {
+  for (const w of windows) {
+    const data = await fetchInsightsResilient(
+      `/${pageId}/insights`,
+      token,
+      FB_METRICS,
+      "day",
+      w.since,
+      w.until
+    );
+
+    for (const m of data) {
       for (const v of m.values ?? []) {
         const val = Number(v.value) || 0;
         if (m.name === "page_impressions_unique") reach += val;
