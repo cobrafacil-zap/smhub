@@ -17,7 +17,9 @@ const DIALOG_URL = `https://www.facebook.com/${GRAPH_VERSION}/dialog/oauth`;
 const STATE_TTL_MS = 10 * 60 * 1000; // 10 min
 
 /**
- * Scopes pedidos no OAuth. Necessários para App Review em produção.
+ * Scopes pedidos no OAuth por plataforma. Necessários para App Review em
+ * produção. Pedir só o necessário evita "Invalid Scopes" quando o app ainda
+ * não liberou os scopes do Instagram.
  *
  * OBS (2026): a Meta descontinuou `instagram_basic` e
  * `instagram_manage_insights` — apps novos só aceitam os nomes
@@ -32,6 +34,28 @@ export const META_SCOPES = [
   "read_insights",
   "business_management",
 ] as const;
+
+/** Scopes efetivamente pedidos no OAuth, por plataforma. */
+export function scopesForProvider(provider: MetaProvider): string[] {
+  if (provider === "instagram") {
+    // IG Business Account é acessada via Página (pages_*); insights via
+    // instagram_business_*.
+    return [
+      "instagram_business_basic",
+      "instagram_business_manage_insights",
+      "pages_show_list",
+      "pages_read_engagement",
+      "business_management",
+    ];
+  }
+  // Facebook: insights da Página via read_insights + pages_*.
+  return [
+    "pages_show_list",
+    "pages_read_engagement",
+    "read_insights",
+    "business_management",
+  ];
+}
 
 export const META_REDIRECT_PATH = "/auth/meta/callback";
 
@@ -72,7 +96,7 @@ export function buildAuthUrl(args: {
   const params = new URLSearchParams({
     client_id: getAppId(),
     redirect_uri: metaRedirectUri(),
-    scope: META_SCOPES.join(","),
+    scope: scopesForProvider(args.provider).join(","),
     state,
     response_type: "code",
   });
