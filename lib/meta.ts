@@ -315,11 +315,19 @@ async function fetchFbInsights(
   let reactions = 0;
   let fanAdds = 0;
 
+  // Métricas de Página válidas na v19.0+ — as antigas (page_impressions*,
+  // page_impressions_unique*, page_fan_adds*) foram descontinuadas pela Meta
+  // (jun/nov 2025) e devolvem (#100) métrica inválida. Substituímos pelos
+  // equivalentes atuais:
+  //   page_impressions_unique  → page_total_media_view_unique (alcance)
+  //   page_impressions         → page_media_view              (impressões)
+  //   page_fan_adds            → page_daily_follows           (novos seguidores)
+  //   page_post_engagements    → mantido (ainda válido)
   const FB_METRICS = [
-    "page_impressions_unique",
-    "page_impressions",
+    "page_total_media_view_unique",
+    "page_media_view",
     "page_post_engagements",
-    "page_fan_adds",
+    "page_daily_follows",
   ];
 
   for (const w of windows) {
@@ -335,10 +343,10 @@ async function fetchFbInsights(
     for (const m of data) {
       for (const v of m.values ?? []) {
         const val = Number(v.value) || 0;
-        if (m.name === "page_impressions_unique") reach += val;
-        else if (m.name === "page_impressions") impressions += val;
+        if (m.name === "page_total_media_view_unique") reach += val;
+        else if (m.name === "page_media_view") impressions += val;
         else if (m.name === "page_post_engagements") reactions += val;
-        else if (m.name === "page_fan_adds") fanAdds += val;
+        else if (m.name === "page_daily_follows") fanAdds += val;
       }
     }
   }
@@ -356,6 +364,10 @@ async function fetchFbInsights(
   if (typeof page.fan_count === "number") {
     metricas.seguidores_fim = page.fan_count;
     metricas.seguidores_inicio = Math.max(0, page.fan_count - fanAdds);
+  } else if (typeof page.followers_count === "number") {
+    // fallback: fan_count pode vir descontinuado em algumas Páginas
+    metricas.seguidores_fim = page.followers_count;
+    metricas.seguidores_inicio = Math.max(0, page.followers_count - fanAdds);
   }
 
   // Contagem de posts no período

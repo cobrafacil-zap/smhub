@@ -50,6 +50,20 @@ export function RelatorioForm({
     (plataforma === "instagram" || plataforma === "facebook") &&
     conexoes.some((c) => c.provider === plataforma && c.connected_at);
 
+  // Campos que a importação da Meta NÃO puxa para Facebook (a API de Página
+  // não expõe esses de forma limpa). Instagram puxa todos. Outras plataformas
+  // continuam mostrando tudo (preenchimento manual).
+  const CAMPOS_OCULTOS_FACEBOOK = new Set([
+    "seguindo",
+    "comentarios",
+    "cliques",
+    "mensagens",
+    "reels",
+    "stories",
+  ]);
+  const ocultar = (campo: string) =>
+    plataforma === "facebook" && CAMPOS_OCULTOS_FACEBOOK.has(campo);
+
   function conexaoAtiva(provider: string): boolean {
     return conexoes.some((c) => c.provider === provider && c.connected_at);
   }
@@ -237,10 +251,12 @@ export function RelatorioForm({
                 <label className="label text-xs">Seguidores (fim)</label>
                 <input type="number" min="0" className="input text-sm" value={seguidoresFim} onChange={(e) => setSeguidoresFim(e.target.value)} />
               </div>
-              <div>
-                <label className="label text-xs">Seguindo</label>
-                <input type="number" min="0" className="input text-sm" value={seguindo} onChange={(e) => setSeguindo(e.target.value)} />
-              </div>
+              {!ocultar("seguindo") && (
+                <div>
+                  <label className="label text-xs">Seguindo</label>
+                  <input type="number" min="0" className="input text-sm" value={seguindo} onChange={(e) => setSeguindo(e.target.value)} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -256,10 +272,12 @@ export function RelatorioForm({
                 <label className="label text-xs">Curtidas</label>
                 <input type="number" min="0" className="input text-sm" value={curtidas} onChange={(e) => setCurtidas(e.target.value)} />
               </div>
-              <div>
-                <label className="label text-xs">Comentários</label>
-                <input type="number" min="0" className="input text-sm" value={comentarios} onChange={(e) => setComentarios(e.target.value)} />
-              </div>
+              {!ocultar("comentarios") && (
+                <div>
+                  <label className="label text-xs">Comentários</label>
+                  <input type="number" min="0" className="input text-sm" value={comentarios} onChange={(e) => setComentarios(e.target.value)} />
+                </div>
+              )}
               <div>
                 <label className="label text-xs">Alcance</label>
                 <input type="number" min="0" className="input text-sm" value={alcance} onChange={(e) => setAlcance(e.target.value)} />
@@ -275,14 +293,18 @@ export function RelatorioForm({
                 <label className="label text-xs">Impressões</label>
                 <input type="number" min="0" className="input text-sm" value={impressoes} onChange={(e) => setImpressoes(e.target.value)} />
               </div>
-              <div>
-                <label className="label text-xs">Cliques no link</label>
-                <input type="number" min="0" className="input text-sm" value={cliques} onChange={(e) => setCliques(e.target.value)} />
-              </div>
-              <div>
-                <label className="label text-xs">Mensagens</label>
-                <input type="number" min="0" className="input text-sm" value={mensagens} onChange={(e) => setMensagens(e.target.value)} />
-              </div>
+              {!ocultar("cliques") && (
+                <div>
+                  <label className="label text-xs">Cliques no link</label>
+                  <input type="number" min="0" className="input text-sm" value={cliques} onChange={(e) => setCliques(e.target.value)} />
+                </div>
+              )}
+              {!ocultar("mensagens") && (
+                <div>
+                  <label className="label text-xs">Mensagens</label>
+                  <input type="number" min="0" className="input text-sm" value={mensagens} onChange={(e) => setMensagens(e.target.value)} />
+                </div>
+              )}
               <div>
                 <label className="label text-xs">Leads</label>
                 <input type="number" min="0" className="input text-sm" value={leads} onChange={(e) => setLeads(e.target.value)} />
@@ -294,14 +316,18 @@ export function RelatorioForm({
           <div className="space-y-1">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Formato & Ads</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <div>
-                <label className="label text-xs">Reels</label>
-                <input type="number" min="0" className="input text-sm" value={reels} onChange={(e) => setReels(e.target.value)} />
-              </div>
-              <div>
-                <label className="label text-xs">Stories</label>
-                <input type="number" min="0" className="input text-sm" value={stories} onChange={(e) => setStories(e.target.value)} />
-              </div>
+              {!ocultar("reels") && (
+                <div>
+                  <label className="label text-xs">Reels</label>
+                  <input type="number" min="0" className="input text-sm" value={reels} onChange={(e) => setReels(e.target.value)} />
+                </div>
+              )}
+              {!ocultar("stories") && (
+                <div>
+                  <label className="label text-xs">Stories</label>
+                  <input type="number" min="0" className="input text-sm" value={stories} onChange={(e) => setStories(e.target.value)} />
+                </div>
+              )}
               <div>
                 <label className="label text-xs">Invest. Ads (R$)</label>
                 <input type="number" min="0" step="0.01" className="input text-sm" value={invest} onChange={(e) => setInvest(e.target.value)} />
