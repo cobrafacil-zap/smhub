@@ -211,7 +211,7 @@ export function EntradaAprovacaoCard({ entrada, showApproveActions = true }: Pro
 
           {/* ações */}
           {showApproveActions && !showFeedback && (
-            <div className="grid grid-cols-3 gap-2 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
               <Button
                 type="button"
                 size="sm"

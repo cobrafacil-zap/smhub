@@ -431,7 +431,10 @@ export async function clienteAprovarEntradaAction(
       aprovado_em: new Date().toISOString(),
     })
     .eq("id", entradaId);
-  if (error) return { error: "Erro ao registrar decisão." };
+  if (error) {
+    console.error("[clienteAprovarEntradaAction] UPDATE falhou:", error.code, error.message);
+    return { error: "Erro ao registrar decisão." };
+  }
   revalidatePath("/cliente/planejamento");
   if (cid) revalidatePath(`/admin/clientes/${cid}`);
   return { ok: true };

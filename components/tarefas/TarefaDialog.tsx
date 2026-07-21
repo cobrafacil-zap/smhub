@@ -109,7 +109,7 @@ export function TarefaDialog({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="label">Status</label>
             <Select name="status" defaultValue={tarefa?.status ?? "a_fazer"}>
@@ -132,7 +132,7 @@ export function TarefaDialog({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="label">Prazo</label>
             <Input type="date" name="prazo" defaultValue={tarefa?.prazo ?? ""} />

@@ -114,7 +114,7 @@ export function GravacoesCalendarClient({
           <Video className="h-5 w-5 text-royal-300" />
           {monthLabel}
         </p>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <Button size="sm" variant="secondary" onClick={() => navegar(-1)} iconLeft={<ChevronLeft className="h-4 w-4" />}>
             Anterior
           </Button>
@@ -270,7 +270,7 @@ function GravacaoDialog({
           <Input name="titulo" required defaultValue={gravacao?.titulo ?? ""} placeholder="Ex.: Gravação de reels institucional" />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="label">Data</label>
             <Input
@@ -286,7 +286,7 @@ function GravacaoDialog({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="label">Status</label>
             <Select name="status" defaultValue={gravacao?.status ?? "agendada"}>
