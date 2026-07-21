@@ -692,6 +692,7 @@ const entradaSchema = z.object({
   status: z.enum(["pendente", "aprovado", "publicado", "rejeitado"]).default("pendente"),
   cor: z.string().optional().nullable(),
   estilo: z.string().optional().nullable(),
+  responsavel_id: z.string().uuid().nullable().optional(),
 });
 
 function normalizarCor(v: FormDataEntryValue | null): string | null {
@@ -717,9 +718,20 @@ export async function criarEntradaAction(formData: FormData) {
     hashtags: hashtags.length ? hashtags : null,
     status: formData.get("status") ?? "pendente",
     estilo: normalizarCor(formData.get("estilo")),
+    responsavel_id: formData.get("responsavel_id") || null,
   };
   const parsed = entradaSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  // Valida que o responsável (se informado) é membro da mesma agência.
+  if (parsed.data.responsavel_id) {
+    const { data: respUser } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("id", parsed.data.responsavel_id)
+      .eq("agencia_id", session.profile.agencia_id!)
+      .maybeSingle();
+    if (!respUser) return { error: "Responsável inválido." };
+  }
   // cor não vem mais do cliente (cor é fixa por tipo); garante null p/ não gravar lixo.
   const { data: entrada, error } = await supabase
     .from("planejamento_entradas")
@@ -748,9 +760,20 @@ export async function atualizarEntradaAction(entradaId: string, formData: FormDa
     hashtags: hashtags.length ? hashtags : null,
     status: formData.get("status") ?? "pendente",
     estilo: normalizarCor(formData.get("estilo")),
+    responsavel_id: formData.get("responsavel_id") || null,
   };
   const parsed = entradaSchema.omit({ planejamento_id: true }).safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  // Valida que o responsável (se informado) é membro da mesma agência.
+  if (parsed.data.responsavel_id) {
+    const { data: respUser } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("id", parsed.data.responsavel_id)
+      .eq("agencia_id", session.profile.agencia_id!)
+      .maybeSingle();
+    if (!respUser) return { error: "Responsável inválido." };
+  }
   const { data: entradaAntiga } = await supabase
     .from("planejamento_entradas")
     .select("planejamento_id, planejamentos(cliente_id)")

@@ -38,6 +38,8 @@ interface Props {
   /** Dias da semana marcados como dia de postagem (0=Dom..6=Sáb). */
   diasPostagem: number[] | null;
   canEdit: boolean;
+  /** Membros da equipe disponíveis para atribuir como responsável pela peça. */
+  membros?: { id: string; nome: string }[];
 }
 
 // Ordem de exibição (Seg..Dom). O índice interno é getDay (0=Dom..6=Sáb).
@@ -59,6 +61,7 @@ export function PlanejamentoCalendarClient({
   entradas,
   diasPostagem,
   canEdit,
+  membros,
 }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState<PlanejamentoEntrada | "new" | null>(null);
@@ -162,6 +165,7 @@ export function PlanejamentoCalendarClient({
       fd.set("hashtags", data.hashtags.join(" "));
       fd.set("status", data.status);
       fd.set("estilo", data.estilo ?? "");
+      fd.set("responsavel_id", data.responsavelId || "");
       startTransition(async () => {
         const res = await criarEntradaAction(fd);
         if (res && "error" in res && res.error) {
@@ -186,6 +190,7 @@ export function PlanejamentoCalendarClient({
       fd.set("hashtags", data.hashtags.join(" "));
       fd.set("status", data.status);
       fd.set("estilo", data.estilo ?? "");
+      fd.set("responsavel_id", data.responsavelId || "");
       const editId = editing.id;
       startTransition(async () => {
         const res = await atualizarEntradaAction(editId, fd);
@@ -321,6 +326,7 @@ export function PlanejamentoCalendarClient({
             {lista.map((e) => {
               const st = ENTRY_STATUS[e.status];
               const corTipo = ENTRY_TIPO_COR[e.tipo as EntradaTipo] ?? ENTRY_TIPO_COR.post_feed;
+              const respNome = membros?.find((m) => m.id === e.responsavel_id)?.nome;
               return (
                 <li key={e.id} className="py-3 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-3">
@@ -337,6 +343,11 @@ export function PlanejamentoCalendarClient({
                         <Badge variant="brand">{ENTRY_TIPO_LABEL[e.tipo as EntradaTipo] ?? e.tipo}</Badge>
                         {e.estilo && (
                           <span className="text-[10px] text-slate-400 italic">{e.estilo}</span>
+                        )}
+                        {respNome && (
+                          <span className="text-[10px] text-royal-300/80 inline-flex items-center gap-1">
+                            · Resp.: {respNome}
+                          </span>
                         )}
                         <span className="text-[10px] text-slate-500">{formatDate(e.data)}</span>
                         <Badge
@@ -467,6 +478,7 @@ export function PlanejamentoCalendarClient({
               key={editing === "new" ? "new" : editing.id}
               initial={editing === "new" ? undefined : editing}
               defaultDate={defaultDate}
+              membros={membros}
               onSave={handleSave}
               onCancel={() => setEditing(null)}
               onDelete={

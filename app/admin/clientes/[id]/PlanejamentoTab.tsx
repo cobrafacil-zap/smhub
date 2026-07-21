@@ -56,33 +56,53 @@ export async function PlanejamentoTab({
 
   // Queries 1, 3, 4 e 5 são independentes → rodam em paralelo. A 2 (entradas)
   // depende de plan.id, então roda depois, só se houver plan.
-  const [{ data: plan }, { data: todosPlanejamentos }, { data: datas }, { data: briefings }] =
-    await Promise.all([
-      supabase
-        .from("planejamentos")
-        .select("*")
-        .eq("cliente_id", cliente.id)
-        .eq("mes_referencia", mesReferencia)
-        .maybeSingle(),
-      supabase
-        .from("planejamentos")
-        .select("id, mes_referencia")
-        .eq("cliente_id", cliente.id)
-        .order("mes_referencia", { ascending: false })
-        .limit(12),
-      supabase
-        .from("datas_comemorativas")
-        .select("*")
-        .gte("data", inicioMes)
-        .lte("data", fimMes)
-        .order("data"),
-      supabase
-        .from("briefings")
-        .select("id, created_at, respostas")
-        .eq("cliente_id", cliente.id)
-        .order("created_at", { ascending: false })
-        .limit(1),
-    ]);
+  const [
+    { data: plan },
+    { data: todosPlanejamentos },
+    { data: datas },
+    { data: briefings },
+    { data: membrosRaw },
+  ] = await Promise.all([
+    supabase
+      .from("planejamentos")
+      .select("*")
+      .eq("cliente_id", cliente.id)
+      .eq("mes_referencia", mesReferencia)
+      .maybeSingle(),
+    supabase
+      .from("planejamentos")
+      .select("id, mes_referencia")
+      .eq("cliente_id", cliente.id)
+      .order("mes_referencia", { ascending: false })
+      .limit(12),
+    supabase
+      .from("datas_comemorativas")
+      .select("*")
+      .gte("data", inicioMes)
+      .lte("data", fimMes)
+      .order("data"),
+    supabase
+      .from("briefings")
+      .select("id, created_at, respostas")
+      .eq("cliente_id", cliente.id)
+      .order("created_at", { ascending: false })
+      .limit(1),
+    // Membros da equipe da agência deste cliente (para atribuir responsável).
+    cliente.agencia_id
+      ? supabase
+          .from("usuarios")
+          .select("id, nome")
+          .eq("agencia_id", cliente.agencia_id)
+          .in("role", ["admin_agencia", "membro_equipe"])
+          .eq("ativo", true)
+          .order("nome")
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const membros = ((membrosRaw as { id: string; nome: string }[] | null) ?? []).map((m) => ({
+    id: m.id,
+    nome: m.nome,
+  }));
 
   // 2) Entradas (depende de plan)
   let entradas: PlanejamentoEntrada[] = [];
@@ -197,6 +217,7 @@ export async function PlanejamentoTab({
         entradas={entradas}
         diasPostagem={(plan as Planejamento | null)?.dias_postagem ?? null}
         canEdit
+        membros={membros}
       />
     </div>
   );

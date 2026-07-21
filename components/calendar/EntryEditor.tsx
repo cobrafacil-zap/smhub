@@ -17,6 +17,8 @@ interface EntryEditorProps {
   defaultDate?: string;
   /** Se o usuário pode editar (admin) ou só ver (cliente). */
   readOnly?: boolean;
+  /** Membros da equipe disponíveis para atribuição (responsável pela peça). */
+  membros?: { id: string; nome: string }[];
   onSave?: (data: EntryFormData) => Promise<void>;
   onCancel?: () => void;
   onDelete?: () => Promise<void>;
@@ -31,12 +33,14 @@ export interface EntryFormData {
   hashtags: string[];
   status: EntradaStatus;
   estilo: string;
+  responsavelId: string | null;
 }
 
 export function EntryEditor({
   initial,
   defaultDate,
   readOnly = false,
+  membros,
   onSave,
   onCancel,
   onDelete,
@@ -50,6 +54,7 @@ export function EntryEditor({
   const [hashtagsText, setHashtagsText] = useState((initial?.hashtags ?? []).join(" "));
   const [status, setStatus] = useState<EntradaStatus>((initial?.status as EntradaStatus) ?? "pendente");
   const [estilo, setEstilo] = useState(initial?.estilo ?? "");
+  const [responsavelId, setResponsavelId] = useState<string>(initial?.responsavel_id ?? "");
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -69,6 +74,7 @@ export function EntryEditor({
           .map((h) => (h.startsWith("#") ? h : `#${h}`)),
         status,
         estilo: estilo.trim(),
+        responsavelId: responsavelId || null,
       });
     } finally {
       setSaving(false);
@@ -174,6 +180,23 @@ export function EntryEditor({
           ))}
         </Select>
       </div>
+      {membros && membros.length > 0 && (
+        <div>
+          <label className="label">Responsável pela peça</label>
+          <Select
+            value={responsavelId}
+            onChange={(e) => setResponsavelId(e.target.value)}
+            disabled={readOnly}
+          >
+            <option value="">— Nenhum —</option>
+            {membros.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nome}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
       {!readOnly && (
         <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
           {onDelete && initial?.id ? (

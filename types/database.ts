@@ -262,6 +262,7 @@ export interface Database {
           aprovado_em: string | null;
           cor: string | null;
           estilo: string | null;
+          responsavel_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -281,6 +282,7 @@ export interface Database {
           aprovado_em?: string | null;
           cor?: string | null;
           estilo?: string | null;
+          responsavel_id?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["planejamento_entradas"]["Insert"]>;
