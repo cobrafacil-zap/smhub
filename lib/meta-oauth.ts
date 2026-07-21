@@ -16,10 +16,17 @@ const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
 const DIALOG_URL = `https://www.facebook.com/${GRAPH_VERSION}/dialog/oauth`;
 const STATE_TTL_MS = 10 * 60 * 1000; // 10 min
 
-/** Scopes pedidos no OAuth. Necessários para App Review em produção. */
+/**
+ * Scopes pedidos no OAuth. Necessários para App Review em produção.
+ *
+ * OBS (2026): a Meta descontinuou `instagram_basic` e
+ * `instagram_manage_insights` — apps novos só aceitam os nomes
+ * `instagram_business_basic` / `instagram_business_manage_insights`.
+ * Os scopes de Pages/FB continuam os mesmos.
+ */
 export const META_SCOPES = [
-  "instagram_basic",
-  "instagram_manage_insights",
+  "instagram_business_basic",
+  "instagram_business_manage_insights",
   "pages_show_list",
   "pages_read_engagement",
   "read_insights",
