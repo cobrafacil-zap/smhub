@@ -216,6 +216,74 @@ export async function criarEquipeAction(
   };
 }
 
+// RENVIAR / GERAR LINK DE ACESSO para um membro já existente.
+// Invalida os convites anteriores não-usados desse usuário (para não ficarem
+// links válidos soltos) e gera um novo token em `convites` (válido por 7 dias).
+// Funciona tanto para o primeiro acesso (membro ainda não definiu senha) quanto
+// como redefinição de senha (membro já ativo).
+export async function reenviarConviteEquipeAction(
+  membroId: string
+): Promise<
+  | { error: string }
+  | { ok: true; link: string; expiraEm: string; nome: string; email: string }
+> {
+  const session = await requireAgenciaAdmin();
+  const aid = session.profile.agencia_id!;
+  const admin = createAdminClient();
+
+  // 1) Localiza o membro e valida escopo (mesma agência, não é cliente).
+  const { data: membro, error: lookupErr } = await admin
+    .from("usuarios")
+    .select("id, user_id, nome, email, role, agencia_id")
+    .eq("id", membroId)
+    .maybeSingle();
+  if (lookupErr || !membro) return { error: "Membro não encontrado." };
+  if (membro.agencia_id !== aid) return { error: "Sem permissão para este membro." };
+  if (membro.role === "cliente") return { error: "Use o convite de cliente na área de Clientes." };
+  if (!membro.user_id) return { error: "Este membro não possui usuário de acesso." };
+
+  const userId = membro.user_id;
+
+  // 2) Invalida convites anteriores não-usados desse usuário (não ficam válidos).
+  await admin
+    .from("convites")
+    .update({ usado_em: new Date().toISOString() })
+    .eq("user_id", userId)
+    .is("usado_em", null);
+
+  // 3) Gera novo token (válido por 7 dias).
+  const tokenBytes = new Uint8Array(24);
+  crypto.getRandomValues(tokenBytes);
+  const token = Array.from(tokenBytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  const expiraEm = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { error: convErr } = await admin.from("convites").insert({
+    token,
+    cliente_id: null,
+    agencia_id: aid,
+    email: membro.email,
+    role: membro.role,
+    user_id: userId,
+    expira_em: expiraEm,
+  });
+  if (convErr) {
+    console.error("[reenviarConviteEquipeAction] erro ao gerar convite:", convErr);
+    return { error: "Erro ao gerar o link de acesso." };
+  }
+
+  revalidatePath("/admin/equipe");
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhub.com.br";
+  const link = `${baseUrl}/definir-senha?token=${token}`;
+  return {
+    ok: true,
+    link,
+    expiraEm: new Date(expiraEm).toLocaleDateString("pt-BR"),
+    nome: membro.nome ?? membro.email ?? "membro",
+    email: membro.email ?? "",
+  };
+}
+
 export async function atualizarEquipeAction(id: string, formData: FormData) {
   const session = await requireAgenciaAdmin();
   const admin = createAdminClient();

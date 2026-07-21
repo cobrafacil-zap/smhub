@@ -10,6 +10,7 @@ import { UserCog, Plus, Mail, Briefcase, DollarSign, Building2, GitFork } from "
 import { cn, formatBRL, formatDate } from "@/lib/utils";
 import { ExcluirEquipeButton } from "./ExcluirEquipeButton";
 import { EditarEquipeButton } from "./EditarEquipeButton";
+import { ReenviarConviteButton } from "./ReenviarConviteButton";
 import type { Usuario } from "@/types/database";
 
 export const metadata = { title: "Equipe" };
@@ -306,6 +307,9 @@ export default async function EquipePage({
                         </Link>
                       ) : (
                         <div className="flex items-center gap-1">
+                          {session.profile.role === "admin_agencia" && u.user_id !== session.id && (
+                            <ReenviarConviteButton membroId={u.id} nome={u.nome ?? u.email ?? "membro"} />
+                          )}
                           {u.user_id !== session.id && (
                             <EditarEquipeButton
                               id={u.id}
