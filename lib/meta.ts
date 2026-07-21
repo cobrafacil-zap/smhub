@@ -271,8 +271,10 @@ async function fetchFbInsights(
   for (const w of windows) {
     const res = (await graphGet(`/${pageId}/insights`, {
       access_token: token,
+      // page_actions_post_reactions_total foi descontinuado na v19.0;
+      // usamos page_post_engagements no lugar (engajamento total da Página).
       metric:
-        "page_impressions_unique,page_impressions,page_actions_post_reactions_total,page_fan_adds",
+        "page_impressions_unique,page_impressions,page_post_engagements,page_fan_adds",
       period: "day",
       since: String(toUnix(w.since)),
       until: String(toUnix(w.until)),
@@ -283,7 +285,7 @@ async function fetchFbInsights(
         const val = Number(v.value) || 0;
         if (m.name === "page_impressions_unique") reach += val;
         else if (m.name === "page_impressions") impressions += val;
-        else if (m.name === "page_actions_post_reactions_total") reactions += val;
+        else if (m.name === "page_post_engagements") reactions += val;
         else if (m.name === "page_fan_adds") fanAdds += val;
       }
     }
