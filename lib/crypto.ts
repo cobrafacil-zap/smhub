@@ -71,6 +71,23 @@ export function decryptToken(ciphertext: string, iv: string, tag: string): strin
   return dec.toString("utf8");
 }
 
+/**
+ * Cifra uma string num único blob base64 ("iv.tag.ciphertext") — prático pra
+ * guardar em cookie HTTP-only de curta duração (ex.: seleção de conta Meta).
+ */
+export function encryptString(plaintext: string): string {
+  const { ciphertext, iv, tag } = encryptToken(plaintext);
+  return `${iv}.${tag}.${ciphertext}`;
+}
+
+/** Decifra um blob produzido por `encryptString`. Lança se inválido. */
+export function decryptString(blob: string): string {
+  const parts = blob.split(".");
+  if (parts.length !== 3) throw new Error("blob cifrado inválido.");
+  const [iv, tag, ciphertext] = parts;
+  return decryptToken(ciphertext, iv, tag);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Assinatura do parametro `state` do OAuth (HMAC)                            */
 /* -------------------------------------------------------------------------- */

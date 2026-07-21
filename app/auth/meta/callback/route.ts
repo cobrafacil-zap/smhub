@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { verifyState, encryptToken } from "@/lib/crypto";
-import {
-  exchangeCodeForLongLivedToken,
-  discoverInstagramBusinessAccount,
-  resolveFacebookPage,
-} from "@/lib/meta-oauth";
+import { verifyState, encryptString } from "@/lib/crypto";
+import { exchangeCodeForLongLivedToken } from "@/lib/meta-oauth";
 
 /**
  * Callback do OAuth da Meta (Instagram + Facebook).
@@ -15,9 +10,15 @@ import {
  * preservando a URL completa em `next` (o middleware devolve aqui depois).
  *
  * Verifica o `state` (HMAC + expiração + userId), troca o `code` por um
- * long-lived token, descobre a conta IG/FB, cifra o token e faz upsert em
- * `cliente_oauth_contas`.
+ * long-lived token e guarda-o num cookie CIFRADO de curta duração
+ * (`meta_select`). A seguir redireciona pra aba Informações do cliente com
+ * `?meta_select=1`, onde o admin escolhe qual Página/Instagram conectar
+ * (seletor) — a gravação final acontece em `selecionarContaMetaAction`.
  */
+
+const SELECT_COOKIE = "meta_select";
+const SELECT_COOKIE_TTL = 5 * 60; // 5 min
+
 export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin;
 
@@ -61,71 +62,29 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // 4) Descobre a conta (IG Business Account ou FB Page)
-  let externalId: string;
-  let handle: string | null;
-  let name: string;
-  let tokenToStore: string;
+  // 4) Guarda o contexto da seleção num cookie cifrado e manda pro seletor.
+  const ctx = {
+    token: tokens.access_token,
+    expiresAt: tokens.expires_at ? tokens.expires_at.toISOString() : null,
+    scopes: tokens.scopes,
+    provider: payload.provider,
+    clienteId: payload.clienteId,
+    agenciaId: payload.agenciaId,
+    userId: user.id,
+  };
+  const blob = encryptString(JSON.stringify(ctx));
 
-  try {
-    if (payload.provider === "instagram") {
-      const r = await discoverInstagramBusinessAccount(tokens.access_token);
-      externalId = r.igUserId;
-      handle = r.igHandle;
-      name = r.pageName;
-      tokenToStore = tokens.access_token; // user token válido p/ insights do ig_user_id
-    } else {
-      const r = await resolveFacebookPage(tokens.access_token);
-      externalId = r.pageId;
-      handle = null;
-      name = r.pageName;
-      tokenToStore = r.pageAccessToken;
-    }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "discovery_failed";
-    return NextResponse.redirect(
-      new URL(
-        `/admin/clientes/${payload.clienteId}?tab=info&meta_error=${encodeURIComponent(msg)}`,
-        origin
-      )
-    );
-  }
-
-  // 5) Cifra e grava
-  const enc = encryptToken(tokenToStore);
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("cliente_oauth_contas")
-    .upsert(
-      {
-        cliente_id: payload.clienteId,
-        agencia_id: payload.agenciaId,
-        provider: payload.provider,
-        external_id: externalId,
-        access_token_ciphertext: enc.ciphertext,
-        access_token_iv: enc.iv,
-        access_token_tag: enc.tag,
-        token_expires_at: tokens.expires_at ? tokens.expires_at.toISOString() : null,
-        scopes: tokens.scopes,
-        account_handle: handle,
-        account_name: name,
-        connected_by: user.id,
-        connected_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "cliente_id,provider" }
-    );
-
-  if (error) {
-    return NextResponse.redirect(
-      new URL(
-        `/admin/clientes/${payload.clienteId}?tab=info&meta_error=${encodeURIComponent(error.message)}`,
-        origin
-      )
-    );
-  }
-
-  return NextResponse.redirect(
-    new URL(`/admin/clientes/${payload.clienteId}?tab=info&meta=connected`, origin)
+  const redirectUrl = new URL(
+    `/admin/clientes/${payload.clienteId}?tab=info&meta_select=1`,
+    origin
   );
+  const res = NextResponse.redirect(redirectUrl);
+  res.cookies.set(SELECT_COOKIE, blob, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: true,
+    path: "/",
+    maxAge: SELECT_COOKIE_TTL,
+  });
+  return res;
 }

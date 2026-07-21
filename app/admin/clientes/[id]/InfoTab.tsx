@@ -15,6 +15,7 @@ import { CredenciaisAcesso } from "./CredenciaisAcesso";
 import { ConectarRedesSociais } from "./ConectarRedesSociais";
 import { CLIENTE_SEGMENTOS } from "@/lib/constants";
 import type { ConexaoRede } from "@/types/database";
+import type { ContaMetaSelecao } from "./ConectarRedesSociais";
 
 type MetaStatus =
   | { type: "connected" }
@@ -25,10 +26,12 @@ export function InfoTab({
   cliente,
   conexoes,
   metaStatus,
+  contasParaSelecionar,
 }: {
   cliente: Cliente;
   conexoes: ConexaoRede[];
   metaStatus: MetaStatus;
+  contasParaSelecionar: ContaMetaSelecao | null;
 }) {
   const [saving, setSaving] = useState(false);
 
@@ -145,7 +148,11 @@ export function InfoTab({
       initial={(cliente.credenciais as unknown as Array<{ label: string; url?: string; usuario?: string; senha?: string; observacao?: string }> | null) ?? []}
     />
 
-    <ConectarRedesSociais clienteId={cliente.id} conexoes={conexoes} />
+    <ConectarRedesSociais
+      clienteId={cliente.id}
+      conexoes={conexoes}
+      contasParaSelecionar={contasParaSelecionar}
+    />
 
     <Card>
       <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2 mb-1">

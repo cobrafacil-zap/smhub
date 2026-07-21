@@ -188,7 +188,7 @@ interface AccountRow {
   id: string;
   name: string;
   access_token: string;
-  instagram_business_account?: { id: string };
+  instagram_business_account?: { id: string; username?: string };
 }
 
 interface MeAccountsResponse {
@@ -253,6 +253,36 @@ export async function resolveFacebookPage(userToken: string): Promise<{
     pageName: page.name,
     pageAccessToken: page.access_token,
   };
+}
+
+export interface MetaAccountOption {
+  pageId: string;
+  pageName: string;
+  pageAccessToken: string;
+  igUserId: string | null;
+  igUsername: string | null;
+}
+
+/**
+ * Lista as Páginas do Facebook que o usuário gerencia e, quando existe, a
+ * conta comercial do Instagram vinculada a cada uma. Usado pelo seletor de
+ * conta após o OAuth — o admin escolhe qual Página/Instagram conectar.
+ *
+ * `pageAccessToken` é sensível — NÃO enviar ao client; usado só no server
+ * action que grava a conta selecionada.
+ */
+export async function listAccounts(userToken: string): Promise<MetaAccountOption[]> {
+  const accounts = (await graphGet("/me/accounts", {
+    access_token: userToken,
+    fields: "id,name,access_token,instagram_business_account{id,username}",
+  })) as MeAccountsResponse;
+  return (accounts.data ?? []).map((p) => ({
+    pageId: p.id,
+    pageName: p.name,
+    pageAccessToken: p.access_token,
+    igUserId: p.instagram_business_account?.id ?? null,
+    igUsername: p.instagram_business_account?.username ?? null,
+  }));
 }
 
 /** Helper interno exportado p/ lib/meta.ts reusar. */

@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { requireAgenciaMember } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { decryptString } from "@/lib/crypto";
+import { listAccounts } from "@/lib/meta-oauth";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { FormSkeleton } from "@/components/ui/PageSkeleton";
@@ -21,7 +24,8 @@ import { BriefingTab } from "./BriefingTab";
 import { ClienteMiniStats } from "./ClienteMiniStats";
 import { ClienteStatusButtons } from "./ClienteStatusButtons";
 import { ExcluirClienteButton } from "../ExcluirClienteButton";
-import type { Cliente, ConexaoRede, Contrato, Fatura, Relatorio } from "@/types/database";
+import type { Cliente, ConexaoRede, Contrato, Fatura, Relatorio, MetaProvider } from "@/types/database";
+import type { ContaMetaSelecao } from "./ConectarRedesSociais";
 
 const TABS = [
   { key: "info", label: "Informações", icon: <User className="h-4 w-4" /> },
@@ -38,7 +42,7 @@ export default async function ClienteDetalhePage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { tab?: string; mes?: string; meta?: string; meta_error?: string };
+  searchParams: { tab?: string; mes?: string; meta?: string; meta_error?: string; meta_select?: string };
 }) {
   const session = await requireAgenciaMember();
   // Leituras service-role (bypassa RLS). O cliente é validado por agência no
@@ -96,6 +100,40 @@ export default async function ClienteDetalhePage({
 
   // Conexões OAuth (Instagram/Facebook) — só colunas não-sensíveis.
   const conexoes = (oauthRows as ConexaoRede[] | null) ?? [];
+
+  // Seletor de conta Meta pós-OAuth: cookie cifrado `meta_select` (5 min).
+  // Lista as Páginas do usuário (com IG vinculado, se houve) pra ele escolher.
+  let contasParaSelecionar: ContaMetaSelecao | null = null;
+  if (searchParams.meta_select === "1") {
+    const blob = cookies().get("meta_select")?.value;
+    if (!blob) {
+      contasParaSelecionar = { contas: [], erro: "Sessão de seleção expirou. Conecte novamente." };
+    } else {
+      try {
+        const ctx = JSON.parse(decryptString(blob));
+        if (
+          ctx.clienteId === c.id &&
+          ctx.agenciaId === session.profile.agencia_id &&
+          ctx.userId === session.id
+        ) {
+          const contas = await listAccounts(ctx.token);
+          contasParaSelecionar = {
+            provider: ctx.provider as MetaProvider,
+            contas: contas.map((p) => ({
+              pageId: p.pageId,
+              pageName: p.pageName,
+              igUserId: p.igUserId,
+              igUsername: p.igUsername,
+            })),
+          };
+        } else {
+          contasParaSelecionar = { contas: [], erro: "Sessão de seleção não pertence a este cliente." };
+        }
+      } catch {
+        contasParaSelecionar = { contas: [], erro: "Sessão de seleção inválida. Conecte novamente." };
+      }
+    }
+  }
 
   const metaStatus = searchParams.meta
     ? { type: "connected" as const }
@@ -216,7 +254,12 @@ export default async function ClienteDetalhePage({
       <TabsLink items={tabs} basePath={`/admin/clientes/${c.id}`} />
 
       {tab === "info" && (
-        <InfoTab cliente={c} conexoes={conexoes} metaStatus={metaStatus} />
+        <InfoTab
+          cliente={c}
+          conexoes={conexoes}
+          metaStatus={metaStatus}
+          contasParaSelecionar={contasParaSelecionar}
+        />
       )}
       {tab === "contratos" && (
         <Suspense fallback={<FormSkeleton />}>
