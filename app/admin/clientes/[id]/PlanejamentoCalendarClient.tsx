@@ -15,6 +15,7 @@ import {
   Check,
   RotateCcw,
   MessageSquare,
+  UserPlus,
 } from "lucide-react";
 import {
   criarEntradaAction,
@@ -23,6 +24,7 @@ import {
   criarPlanejamentoAction,
   atualizarEntradaStatusAction,
   atualizarDiasPostagemAction,
+  atribuirTodasEntradasAction,
 } from "@/lib/actions/agencia-actions";
 import { ENTRY_STATUS, ENTRY_TIPO_LABEL, ENTRY_TIPO_COR } from "@/lib/constants";
 import { formatDate, cn } from "@/lib/utils";
@@ -70,6 +72,8 @@ export function PlanejamentoCalendarClient({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<PlanejamentoEntrada | null>(null);
+  const [loteResp, setLoteResp] = useState<string>("");
+  const [loteOpen, setLoteOpen] = useState(false);
 
   // Estado local das entradas — evita recarregar a página inteira a cada ação.
   // Sincroniza com a prop `entradas` quando ela muda (ex.: troca de mês no server).
@@ -237,6 +241,27 @@ export function PlanejamentoCalendarClient({
     });
   }
 
+  // Atribuir TODAS as entradas do mês a um responsável de uma vez.
+  function handleAtribuirTodos() {
+    if (!planejamentoId || !loteResp) return;
+    startTransition(async () => {
+      const res = await atribuirTodasEntradasAction(planejamentoId, loteResp);
+      if (res && "error" in res && res.error) {
+        toast.error(res.error);
+        return;
+      }
+      const total = (res as { total?: number })?.total ?? 0;
+      const erros = (res as { erros?: number })?.erros ?? 0;
+      toast.success(
+        `${total} post(s) atribuído(s)${erros ? ` (${erros} sem tarefa)` : ""}.`
+      );
+      setLoteOpen(false);
+      // Atualiza localmente o responsável de cada entrada + recarrega tarefas.
+      setLista((prev) => prev.map((it) => ({ ...it, responsavel_id: loteResp })));
+      router.refresh();
+    });
+  }
+
   return (
     <>
       <div className="flex items-center justify-between gap-3 mb-3">
@@ -248,19 +273,75 @@ export function PlanejamentoCalendarClient({
             : `${lista.length} entrada(s) programada(s).`}
         </p>
         {canEdit && planejamentoId && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              setEditing("new");
-              setDefaultDate(diaSelecionado ?? mesReferencia);
-            }}
-            iconLeft={<CalendarPlus className="h-4 w-4" />}
-          >
-            Nova entrada
-          </Button>
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            {membros && membros.length > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setLoteOpen((v) => !v)}
+                iconLeft={<UserPlus className="h-4 w-4" />}
+                disabled={lista.length === 0}
+                title="Atribuir todos os posts do mês a uma pessoa"
+              >
+                Atribuir todos
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setEditing("new");
+                setDefaultDate(diaSelecionado ?? mesReferencia);
+              }}
+              iconLeft={<CalendarPlus className="h-4 w-4" />}
+            >
+              Nova entrada
+            </Button>
+          </div>
         )}
       </div>
+
+      {/* Atribuir em lote: escolhe um designer e atribui todos os posts do mês */}
+      {canEdit && planejamentoId && loteOpen && (
+        <div className="mb-3 rounded-lg border border-border bg-bg-elevated/40 px-3 py-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-300">Atribuir todos os posts a:</span>
+            <select
+              className="input max-w-[220px]"
+              value={loteResp}
+              onChange={(e) => setLoteResp(e.target.value)}
+            >
+              <option value="">— Escolha um designer —</option>
+              {membros?.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleAtribuirTodos}
+              loading={pending}
+              disabled={!loteResp}
+            >
+              Atribuir {lista.length} post(s)
+            </Button>
+            <button
+              type="button"
+              onClick={() => setLoteOpen(false)}
+              className="text-slate-400 hover:text-slate-100 text-xs"
+            >
+              Cancelar
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1.5">
+            Cria/atualiza a tarefa de cada post no quadro do time, com prazo de entrega conforme a
+            configuração da agência.
+          </p>
+        </div>
+      )}
 
       {!planejamentoId && canEdit ? (
         <Card>

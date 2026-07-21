@@ -799,6 +799,71 @@ async function sincronizarTarefaDaEntrada(
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Atribui TODAS as entradas de um planejamento a um único responsável de uma vez
+// (e sincroniza a tarefa automática de cada uma). Útil pra não marcar post a
+// post. responsavelId vazio = limpa todos.
+// ---------------------------------------------------------------------------
+export async function atribuirTodasEntradasAction(planejamentoId: string, responsavelId: string) {
+  const session = await requireAgenciaMember();
+  if (session.profile.role !== "admin_agencia") {
+    return { error: "Apenas administradores podem atribuir em lote." };
+  }
+  const supabase = createClient();
+  const aid = session.profile.agencia_id!;
+
+  // Valida o responsável (se informado) como membro da agência.
+  if (responsavelId) {
+    const { data: respUser } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("id", responsavelId)
+      .eq("agencia_id", aid)
+      .maybeSingle();
+    if (!respUser) return { error: "Responsável inválido." };
+  }
+
+  // Valida posse do planejamento (via agência do cliente) e pega o cliente.
+  const { data: planOk } = await supabase
+    .from("planejamentos")
+    .select("id, cliente_id, clientes!inner(agencia_id)")
+    .eq("id", planejamentoId)
+    .maybeSingle();
+  const cliAid = (planOk?.clientes as unknown as { agencia_id?: string } | null)?.agencia_id;
+  if (!planOk || cliAid !== aid) return { error: "Planejamento inválido." };
+  const clienteId = planOk.cliente_id ?? null;
+
+  // Carrega as entradas do planejamento.
+  const { data: entradas } = await supabase
+    .from("planejamento_entradas")
+    .select("id, data, titulo, tipo")
+    .eq("planejamento_id", planejamentoId)
+    .order("data");
+  const lista = (entradas ?? []) as { id: string; data: string; titulo: string; tipo: string }[];
+  if (lista.length === 0) return { error: "Nenhuma entrada para atribuir." };
+
+  // Atualiza responsavel_id de todas de uma vez.
+  const { error: upErr } = await supabase
+    .from("planejamento_entradas")
+    .update({ responsavel_id: responsavelId || null })
+    .eq("planejamento_id", planejamentoId);
+  if (upErr) return { error: "Erro ao atribuir: " + upErr.message };
+
+  // Sincroniza a tarefa de cada entrada (cria/atualiza/remove conforme o caso).
+  const rid = responsavelId || null;
+  let erros = 0;
+  for (const e of lista) {
+    const err = await sincronizarTarefaDaEntrada(supabase, session, e, rid, clienteId);
+    if (err) erros++;
+  }
+
+  if (clienteId) revalidatePath(`/admin/clientes/${clienteId}`);
+  revalidatePath(`/admin/clientes`);
+  revalidatePath(`/admin/tarefas`);
+  revalidatePath(`/admin`);
+  return { ok: true, total: lista.length, erros };
+}
+
 export async function criarEntradaAction(formData: FormData) {
   const session = await requireAgenciaMember();
   const supabase = createClient();
