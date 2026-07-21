@@ -21,14 +21,17 @@ const STATE_TTL_MS = 10 * 60 * 1000; // 10 min
  * produção. Pedir só o necessário evita "Invalid Scopes" quando o app ainda
  * não liberou os scopes do Instagram.
  *
- * OBS (2026): a Meta descontinuou `instagram_basic` e
- * `instagram_manage_insights` — apps novos só aceitam os nomes
- * `instagram_business_basic` / `instagram_business_manage_insights`.
- * Os scopes de Pages/FB continuam os mesmos.
+ * IMPORTANTE: o SM Hub usa o fluxo **Facebook Login** (graph.facebook.com,
+ * conta IG descoberta via Página do Facebook). Nesse fluxo os scopes do
+ * Instagram são `instagram_basic` e `instagram_manage_insights`.
+ * Os nomes `instagram_business_*` pertencem ao fluxo "Instagram Login"
+ * (login só pelo Instagram, sem Página) — não funcionam aqui e provocam
+ * "Invalid Scopes". Além disso, o fluxo Instagram Login nem oferece
+ * insights. Mantemos os scopes clássicos do Facebook Login.
  */
 export const META_SCOPES = [
-  "instagram_business_basic",
-  "instagram_business_manage_insights",
+  "instagram_basic",
+  "instagram_manage_insights",
   "pages_show_list",
   "pages_read_engagement",
   "read_insights",
@@ -39,10 +42,10 @@ export const META_SCOPES = [
 export function scopesForProvider(provider: MetaProvider): string[] {
   if (provider === "instagram") {
     // IG Business Account é acessada via Página (pages_*); insights via
-    // instagram_business_*.
+    // instagram_manage_insights (fluxo Facebook Login).
     return [
-      "instagram_business_basic",
-      "instagram_business_manage_insights",
+      "instagram_basic",
+      "instagram_manage_insights",
       "pages_show_list",
       "pages_read_engagement",
       "business_management",
