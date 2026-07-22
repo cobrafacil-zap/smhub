@@ -104,6 +104,8 @@ export function Hero3D() {
       renderer.domElement.style.display = "block";
 
       const universe = new THREE.Group();
+      // Desloca o universo para baixo, deixando o anel/orbita atrás/abaixo do logo SM Hub.
+      universe.position.y = -1.6;
       scene.add(universe);
 
       // --- Iluminação ambiente suave ---
