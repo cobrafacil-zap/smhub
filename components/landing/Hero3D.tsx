@@ -105,7 +105,8 @@ export function Hero3D() {
 
       const universe = new THREE.Group();
       // Desloca o universo para baixo, deixando o anel/orbita atrás/abaixo do logo SM Hub.
-      universe.position.y = -1.6;
+      // y negativo = desce na tela; z ligeiramente negativo = fica mais ao fundo.
+      universe.position.set(0, -1.95, -0.6);
       scene.add(universe);
 
       // --- Iluminação ambiente suave ---
@@ -208,27 +209,32 @@ export function Hero3D() {
       universe.add(lines);
 
       // --- Starfield piscante sutil ---
-      const STAR_N = 160;
+      const STAR_N = 420;
       const starPos = new Float32Array(STAR_N * 3);
       const starPhase = new Float32Array(STAR_N);
       const starSpeed = new Float32Array(STAR_N);
       const starSize = new Float32Array(STAR_N);
+      const starBrightness = new Float32Array(STAR_N);
       for (let i = 0; i < STAR_N; i++) {
-        const r = 7 + Math.random() * 8;
+        // Distribuição em cascata: algumas perto, muitas mais longe.
+        const r = 6 + Math.pow(Math.random(), 0.55) * 22;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
         starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
         starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        starPos[i * 3 + 2] = r * Math.cos(phi) - 3;
+        starPos[i * 3 + 2] = r * Math.cos(phi) - 4;
         starPhase[i] = Math.random() * Math.PI * 2;
-        starSpeed[i] = 0.3 + Math.random() * 1.2;
-        starSize[i] = 0.4 + Math.random() * 0.6;
+        starSpeed[i] = 0.2 + Math.random() * 1.6;
+        starSize[i] = 0.25 + Math.random() * 0.65;
+        // Brilho base: 30% das estrelas brilham mais, 70% ficam mais fracas.
+        starBrightness[i] = Math.random() < 0.3 ? 0.9 + Math.random() * 0.55 : 0.25 + Math.random() * 0.35;
       }
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
       starGeo.setAttribute("phase", new THREE.BufferAttribute(starPhase, 1));
       starGeo.setAttribute("speed", new THREE.BufferAttribute(starSpeed, 1));
       starGeo.setAttribute("size", new THREE.BufferAttribute(starSize, 1));
+      starGeo.setAttribute("brightness", new THREE.BufferAttribute(starBrightness, 1));
 
       const starMat = new THREE.ShaderMaterial({
         uniforms: {
@@ -239,24 +245,28 @@ export function Hero3D() {
           attribute float phase;
           attribute float speed;
           attribute float size;
+          attribute float brightness;
           varying float vAlpha;
+          varying float vBrightness;
           uniform float uTime;
           void main() {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.2 + 0.3 * sin(uTime * speed + phase);
+            float twinkle = 0.15 + 0.35 * sin(uTime * speed + phase);
             vAlpha = twinkle;
-            gl_PointSize = size * (2.2 + 1.2 * twinkle) * (100.0 / -mvPosition.z);
+            vBrightness = brightness;
+            gl_PointSize = size * (1.6 + 1.4 * twinkle) * (100.0 / -mvPosition.z);
           }
         `,
         fragmentShader: `
           uniform vec3 uColor;
           varying float vAlpha;
+          varying float vBrightness;
           void main() {
             float dist = length(gl_PointCoord - vec2(0.5));
             if (dist > 0.5) discard;
             float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow * 0.5);
+            gl_FragColor = vec4(uColor, vAlpha * glow * vBrightness * 0.45);
           }
         `,
         transparent: true,

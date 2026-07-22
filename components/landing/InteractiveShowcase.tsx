@@ -17,9 +17,12 @@ import {
 /**
  * InteractiveShowcase — seção "clicando você vê como a plataforma ajuda".
  *
- * Agora com layout centralizado de verdade:
+ * Layout centralizado e robusto:
  * - Mobile: carrossel simples, um card por vez, centralizado, sem cortes.
  * - Desktop: coverflow 3D simétrico, card ativo no centro, vizinhos ±1.
+ *
+ * Os cards usam left-1/2 top-1/2 + translate(-50%, -50%) no transform inline,
+ * então o centro do card coincide com o centro do palco exatamente.
  */
 
 interface Mod {
@@ -149,7 +152,7 @@ export function InteractiveShowcase() {
 
       {/* MOBILE: carrossel simples e centralizado */}
       <div
-        className="sm:hidden relative h-[360px] flex items-center justify-center"
+        className="sm:hidden relative h-[360px] flex items-center justify-center px-8"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -162,7 +165,7 @@ export function InteractiveShowcase() {
               type="button"
               key={m.title}
               onClick={() => setActive(i)}
-              className="absolute left-1/2 top-1/2 w-[min(88vw,340px)] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="relative w-full max-w-[320px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
             >
               <div className="card group p-4 flex flex-col gap-3 spotlight border-royal-500/40 shadow-elevated bg-gradient-to-b from-bg-elevated to-bg-surface">
                 <div className="flex items-start gap-3">
@@ -194,12 +197,11 @@ export function InteractiveShowcase() {
           );
         })}
 
-        {/* Setas mobile */}
         <button
           type="button"
           onClick={prev}
           aria-label="Módulo anterior"
-          className="absolute left-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-border/70 bg-bg-surface/80 text-slate-300 flex items-center justify-center active:scale-95 transition"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-border/70 bg-bg-surface/80 text-slate-300 flex items-center justify-center active:scale-95 transition"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -207,7 +209,7 @@ export function InteractiveShowcase() {
           type="button"
           onClick={next}
           aria-label="Próximo módulo"
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-border/70 bg-bg-surface/80 text-slate-300 flex items-center justify-center active:scale-95 transition"
+          className="absolute right-0 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-border/70 bg-bg-surface/80 text-slate-300 flex items-center justify-center active:scale-95 transition"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -232,8 +234,8 @@ export function InteractiveShowcase() {
           const Icon = m.icon;
 
           const transform = reduce
-            ? `translateX(${offset * 120}%) scale(${isActive ? 1 : 0.9})`
-            : `translateX(${offset * 280}px) translateZ(${-abs * 55}px) rotateY(${offset * -25}deg) scale(${isActive ? 1 : 0.85})`;
+            ? `translate(-50%, -50%) translateX(${offset * 120}%) scale(${isActive ? 1 : 0.9})`
+            : `translate(-50%, -50%) translateX(${offset * 280}px) translateZ(${-abs * 55}px) rotateY(${offset * -25}deg) scale(${isActive ? 1 : 0.85})`;
 
           return (
             <button
@@ -243,7 +245,7 @@ export function InteractiveShowcase() {
               aria-label={m.title}
               tabIndex={visible ? 0 : -1}
               className={cn(
-                "absolute left-1/2 top-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
+                "absolute left-1/2 top-1/2 w-[400px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
                 visible ? "pointer-events-auto" : "pointer-events-none"
               )}
               style={{
@@ -252,6 +254,7 @@ export function InteractiveShowcase() {
                 zIndex: isActive ? 30 : 20 - abs,
                 transformStyle: "preserve-3d",
                 backfaceVisibility: "hidden",
+                transformOrigin: "center center",
               }}
             >
               <div
