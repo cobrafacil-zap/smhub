@@ -213,7 +213,7 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-30 border-b border-border/40 bg-bg/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" aria-label="SM Hub — início">
-            <Logo variant="full" className="!h-10 sm:!h-12" />
+            <Logo variant="full" className="!h-12 sm:!h-14" />
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm text-slate-300">
             <a href="#funcionalidades" className="hover:text-slate-100 transition-colors">
@@ -260,7 +260,7 @@ export default async function LandingPage() {
         <HeroEmojiField />
         <div className="relative z-10 pointer-events-none">
         <div className="flex justify-center mb-8">
-          <Logo variant="full" className="!h-16 sm:!h-20 drop-shadow-[0_0_24px_rgba(88,108,240,0.18)]" />
+          <Logo variant="full" className="!h-64 sm:!h-80 logo-hero-animated" />
         </div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
           Menos ferramenta,{" "}
