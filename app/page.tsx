@@ -260,7 +260,7 @@ export default async function LandingPage() {
         <HeroEmojiField />
         <div className="relative z-10 pointer-events-none">
         <div className="flex justify-center mb-8">
-          <Logo variant="full" className="!h-64 sm:!h-80 logo-hero-animated" />
+          <Logo variant="full" className="!h-36 sm:!h-44 logo-hero-animated" />
         </div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
           Menos ferramenta,{" "}

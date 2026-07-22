@@ -136,31 +136,67 @@ export function FeaturesTimeline() {
       </div>
 
       <div className="relative">
-        {/* Track base — desktop */}
-        <div
-          className={`hidden md:block absolute ${desktopLineLeft} top-0 bottom-0 w-px`}
-        >
-          <div className="absolute inset-0 bg-royal-500/15" />
-        </div>
+        {/* Track base — desktop: segmentada para não passar dentro dos marcadores */}
+        {FEATURES.map((_, i) => {
+          const top = i === 0 ? "0%" : `${((i - 0.5) / (FEATURES.length - 1)) * 100}%`;
+          const bottom = i === FEATURES.length - 1 ? "100%" : `${((i + 0.5) / (FEATURES.length - 1)) * 100}%`;
+          return (
+            <div
+              key={`track-${i}`}
+              className={`hidden md:block absolute ${desktopLineLeft} w-px`}
+              style={{ top, height: `calc(${bottom} - ${top})` }}
+            >
+              <div className="absolute inset-0 bg-royal-500/15" />
+            </div>
+          );
+        })}
 
         {/* Track base — mobile */}
-        <div className={`md:hidden absolute ${mobileLineLeft} top-0 bottom-0 w-px`}>
-          <div className="absolute inset-0 bg-royal-500/15" />
-        </div>
+        {FEATURES.map((_, i) => {
+          const top = i === 0 ? "0%" : `${((i - 0.5) / (FEATURES.length - 1)) * 100}%`;
+          const bottom = i === FEATURES.length - 1 ? "100%" : `${((i + 0.5) / (FEATURES.length - 1)) * 100}%`;
+          return (
+            <div
+              key={`track-mobile-${i}`}
+              className={`md:hidden absolute ${mobileLineLeft} w-px`}
+              style={{ top, height: `calc(${bottom} - ${top})` }}
+            >
+              <div className="absolute inset-0 bg-royal-500/15" />
+            </div>
+          );
+        })}
 
-        {/* Progresso neon */}
-        <div
-          className={`hidden md:block absolute ${desktopLineLeft} top-0 w-[2px] transition-[height] duration-75 ease-linear`}
-          style={{ height: `${progress * 100}%` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
-        </div>
-        <div
-          className={`md:hidden absolute ${mobileLineLeft} top-0 w-[2px] transition-[height] duration-75 ease-linear`}
-          style={{ height: `${progress * 100}%` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
-        </div>
+        {/* Progresso neon — segmentado */}
+        {FEATURES.map((_, i) => {
+          const startProgress = i / FEATURES.length;
+          const endProgress = (i + 1) / FEATURES.length;
+          const top = i === 0 ? "0%" : `${((i - 0.5) / (FEATURES.length - 1)) * 100}%`;
+          const bottom = i === FEATURES.length - 1 ? "100%" : `${((i + 0.5) / (FEATURES.length - 1)) * 100}%`;
+          const segProgress = Math.max(0, Math.min(1, (progress - startProgress) / (endProgress - startProgress)));
+          return (
+            <div key={`neon-${i}`}
+              className={`hidden md:block absolute ${desktopLineLeft} w-[2px] transition-opacity duration-75`}
+              style={{ top, height: `calc(${bottom} - ${top})`, opacity: segProgress }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
+            </div>
+          );
+        })}
+        {FEATURES.map((_, i) => {
+          const startProgress = i / FEATURES.length;
+          const endProgress = (i + 1) / FEATURES.length;
+          const top = i === 0 ? "0%" : `${((i - 0.5) / (FEATURES.length - 1)) * 100}%`;
+          const bottom = i === FEATURES.length - 1 ? "100%" : `${((i + 0.5) / (FEATURES.length - 1)) * 100}%`;
+          const segProgress = Math.max(0, Math.min(1, (progress - startProgress) / (endProgress - startProgress)));
+          return (
+            <div key={`neon-mobile-${i}`}
+              className={`md:hidden absolute ${mobileLineLeft} w-[2px] transition-opacity duration-75`}
+              style={{ top, height: `calc(${bottom} - ${top})`, opacity: segProgress }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
+            </div>
+          );
+        })}
 
         {/* Nó neon na ponta do progresso */}
         <div
