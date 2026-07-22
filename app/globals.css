@@ -403,6 +403,18 @@
     );
   }
 
+  /* Hero 3D (WebGL) — camada de fundo do hero da LP. Atrás do conteúdo,
+     não bloqueia cliques e esconde nas bordas pra não brigar com o texto. */
+  .hero-3d {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.85;
+    -webkit-mask: radial-gradient(70% 70% at 50% 45%, #000 55%, transparent 82%);
+    mask: radial-gradient(70% 70% at 50% 45%, #000 55%, transparent 82%);
+  }
+
   /* Spotlight — radial suave que segue o cursor (premium em cards).
      As variáveis --mx/--my (0..100%) são setadas pelo componente
      <Spotlight>. Sem JS, fica centrado e só aparece no hover. */

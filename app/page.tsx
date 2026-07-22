@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
 import { EcossistemaMarquee } from "@/components/landing/EcossistemaMarquee";
+import { Hero3D } from "@/components/landing/Hero3D";
 import { Reveal } from "@/components/ui/motion/Reveal";
 import { TiltCard } from "@/components/ui/motion/TiltCard";
 import { SITE } from "@/lib/site";
@@ -317,6 +318,8 @@ export default async function LandingPage() {
 
       {/* Hero */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-24 pb-14 sm:pb-20 text-center">
+        <Hero3D />
+        <div className="relative z-10">
         <div className="flex justify-center mb-8 animate-logo-in">
           <Logo variant="full" className="!h-32 sm:!h-40 animate-logo-float" />
         </div>
@@ -367,6 +370,7 @@ export default async function LandingPage() {
               <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{s.label}</p>
             </Reveal>
           ))}
+        </div>
         </div>
       </section>
 
