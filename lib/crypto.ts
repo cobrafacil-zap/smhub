@@ -103,7 +103,9 @@ function base64urlDecode(str: string): Buffer {
 
 export interface StatePayload {
   clienteId: string;
-  provider: "instagram" | "facebook";
+  // "unified" = OAuth único pedindo todos os scopes (IG + FB); o provider
+  // final é decidido no seletor pós-OAuth, não aqui.
+  provider: "instagram" | "facebook" | "unified";
   agenciaId: string;
   userId: string;
   nonce: string;

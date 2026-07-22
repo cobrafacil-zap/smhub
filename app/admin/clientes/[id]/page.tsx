@@ -82,7 +82,7 @@ export default async function ClienteDetalhePage({
     supabase.from("relatorios").select("alcance_total, leads_validados, receita_gerada").eq("cliente_id", c.id),
     supabase
       .from("cliente_oauth_contas")
-      .select("provider, account_handle, account_name, connected_at")
+      .select("provider, account_handle, account_name, account_picture_url, connected_at")
       .eq("cliente_id", c.id),
   ]);
 
@@ -118,12 +118,14 @@ export default async function ClienteDetalhePage({
         ) {
           const contas = await listAccounts(ctx.token);
           contasParaSelecionar = {
-            provider: ctx.provider as MetaProvider,
+            provider: ctx.provider as MetaProvider | "unified",
             contas: contas.map((p) => ({
               pageId: p.pageId,
               pageName: p.pageName,
               igUserId: p.igUserId,
               igUsername: p.igUsername,
+              pagePictureUrl: p.pagePictureUrl,
+              igPictureUrl: p.igPictureUrl,
             })),
           };
         } else {

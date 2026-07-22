@@ -38,6 +38,20 @@ export const META_SCOPES = [
   "business_management",
 ] as const;
 
+/**
+ * Scopes do OAuth UNIFICADO (um só login pede tudo de Instagram + Facebook).
+ * Usado pelo botão único "Conectar conta da Meta" — depois o seletor pós-OAuth
+ * deixa o admin escolher conectar como Instagram ou como Facebook.
+ */
+export const META_UNIFIED_SCOPES = [
+  "instagram_basic",
+  "instagram_manage_insights",
+  "pages_show_list",
+  "pages_read_engagement",
+  "read_insights",
+  "business_management",
+] as const;
+
 /** Scopes efetivamente pedidos no OAuth, por plataforma. */
 export function scopesForProvider(provider: MetaProvider): string[] {
   if (provider === "instagram") {
@@ -83,7 +97,7 @@ export function metaRedirectUri(): string {
 
 export function buildAuthUrl(args: {
   clienteId: string;
-  provider: MetaProvider;
+  provider: MetaProvider | "unified";
   agenciaId: string;
   userId: string;
 }): string {
@@ -96,10 +110,14 @@ export function buildAuthUrl(args: {
     },
     STATE_TTL_MS
   );
+  const scope =
+    args.provider === "unified"
+      ? META_UNIFIED_SCOPES.join(",")
+      : scopesForProvider(args.provider).join(",");
   const params = new URLSearchParams({
     client_id: getAppId(),
     redirect_uri: metaRedirectUri(),
-    scope: scopesForProvider(args.provider).join(","),
+    scope,
     state,
     response_type: "code",
   });
@@ -191,7 +209,12 @@ interface AccountRow {
   id: string;
   name: string;
   access_token: string;
-  instagram_business_account?: { id: string; username?: string };
+  instagram_business_account?: {
+    id: string;
+    username?: string;
+    profile_picture_url?: string;
+  };
+  picture?: { data?: { url?: string } };
 }
 
 interface MeAccountsResponse {
@@ -264,6 +287,8 @@ export interface MetaAccountOption {
   pageAccessToken: string;
   igUserId: string | null;
   igUsername: string | null;
+  pagePictureUrl: string | null;
+  igPictureUrl: string | null;
 }
 
 /**
@@ -272,12 +297,14 @@ export interface MetaAccountOption {
  * conta após o OAuth — o admin escolhe qual Página/Instagram conectar.
  *
  * `pageAccessToken` é sensível — NÃO enviar ao client; usado só no server
- * action que grava a conta selecionada.
+ * action que grava a conta selecionada. As URLs de foto são CDN públicas e
+ * seguras para o client.
  */
 export async function listAccounts(userToken: string): Promise<MetaAccountOption[]> {
   const accounts = (await graphGet("/me/accounts", {
     access_token: userToken,
-    fields: "id,name,access_token,instagram_business_account{id,username}",
+    fields:
+      "id,name,access_token,picture{url},instagram_business_account{id,username,profile_picture_url}",
   })) as MeAccountsResponse;
   return (accounts.data ?? []).map((p) => ({
     pageId: p.id,
@@ -285,6 +312,8 @@ export async function listAccounts(userToken: string): Promise<MetaAccountOption
     pageAccessToken: p.access_token,
     igUserId: p.instagram_business_account?.id ?? null,
     igUsername: p.instagram_business_account?.username ?? null,
+    pagePictureUrl: p.picture?.data?.url ?? null,
+    igPictureUrl: p.instagram_business_account?.profile_picture_url ?? null,
   }));
 }
 

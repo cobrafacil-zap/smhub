@@ -827,6 +827,7 @@ export interface ClienteOauthConta {
   scopes: string | null;
   account_handle: string | null;
   account_name: string | null;
+  account_picture_url: string | null;
   connected_by: string | null;
   connected_at: string;
   updated_at: string;
@@ -835,7 +836,7 @@ export interface ClienteOauthConta {
 /** Shape seguro p/ enviar ao browser (sem campos de token). */
 export type ConexaoRede = Pick<
   ClienteOauthConta,
-  "provider" | "account_handle" | "account_name" | "connected_at"
+  "provider" | "account_handle" | "account_name" | "account_picture_url" | "connected_at"
 >;
 
 /** Métricas parciais puxadas da Meta p/ pré-preencher o relatório. */
