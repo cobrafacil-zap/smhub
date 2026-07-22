@@ -1,11 +1,5 @@
 import Link from "next/link";
 import {
-  Users,
-  CalendarDays,
-  TrendingUp,
-  Wallet,
-  FileText,
-  UserCog,
   ArrowRight,
   LayoutDashboard,
   Check,
@@ -24,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
 import { EcossistemaMarquee } from "@/components/landing/EcossistemaMarquee";
+import { FeaturesTimeline } from "@/components/landing/FeaturesTimeline";
 import { Hero3D } from "@/components/landing/Hero3D";
 import { InteractiveShowcase } from "@/components/landing/InteractiveShowcase";
 import { HeroEmojiField } from "@/components/landing/HeroEmojiField";
@@ -47,39 +42,6 @@ export const metadata: Metadata = {
     url: SITE.url,
   },
 };
-
-const FEATURES = [
-  {
-    icon: Users,
-    title: "Gestão de Clientes",
-    desc: "Cadastro completo, segmentação, status e portal individual para cada cliente.",
-  },
-  {
-    icon: CalendarDays,
-    title: "Planejamento Editorial",
-    desc: "Calendário mensal com posts, stories, reels e carrosséis por cliente.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Relatórios de Mídias",
-    desc: "Métricas de Instagram, Facebook, TikTok, LinkedIn, YouTube e X.",
-  },
-  {
-    icon: Wallet,
-    title: "Financeiro",
-    desc: "Receitas, despesas, faturas e fluxo de caixa da sua agência.",
-  },
-  {
-    icon: FileText,
-    title: "Contratos Digitais",
-    desc: "Crie e envie contratos com assinatura eletrônica integrada.",
-  },
-  {
-    icon: UserCog,
-    title: "Multi-usuário",
-    desc: "Equipe com permissões separadas: admin e membros de equipe.",
-  },
-];
 
 const STATS = [
   { value: "7 dias", label: "de teste grátis", icon: Clock },
@@ -347,32 +309,8 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
-      <section id="funcionalidades" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-20">
-        <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs text-slate-500 font-medium">Funcionalidades</p>
-          <h2 className="text-2xl sm:text-4xl font-bold mt-2">
-            Tudo integrado, do briefing ao fechamento
-          </h2>
-          <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
-            Cada etapa da operação da sua agência em um só lugar, sem planilhas
-            soltas nem trocas de aba.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
-          {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={i * 70}>
-              <Card className="h-full group card-hover">
-                <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3 transition-colors duration-300 group-hover:bg-royal-500/20">
-                  <f.icon className="h-5 w-5 text-royal-300" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-100">{f.title}</h3>
-                <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{f.desc}</p>
-              </Card>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+      {/* Features — timeline */}
+      <FeaturesTimeline />
 
       {/* Nosso Ecossistema — loop infinito de logos */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
