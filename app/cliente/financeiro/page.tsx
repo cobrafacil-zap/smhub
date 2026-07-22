@@ -8,6 +8,8 @@ import { Wallet, Download } from "lucide-react";
 import { FATURA_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
 import type { Fatura } from "@/types/database";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { CountUp } from "@/components/ui/motion/CountUp";
 
 export const metadata = { title: "Financeiro" };
 
@@ -36,22 +38,30 @@ export default async function ClienteFinanceiroPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card>
-          <p className="text-xs text-slate-400 uppercase tracking-wider">Total pago</p>
-          <p className="text-xl sm:text-2xl font-bold kpi-num text-success-400 mt-1 break-words leading-tight">
-            {formatBRL(totalPago)}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-xs text-slate-400 uppercase tracking-wider">Pendente</p>
-          <p className="text-xl sm:text-2xl font-bold kpi-num text-warning-400 mt-1 break-words leading-tight">
-            {formatBRL(totalPendente)}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-xs text-slate-400 uppercase tracking-wider">Faturas</p>
-          <p className="text-xl sm:text-2xl font-bold kpi-num text-slate-100 mt-1 break-words leading-tight">{list.length}</p>
-        </Card>
+        <Reveal>
+          <Card>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Total pago</p>
+            <p className="text-xl sm:text-2xl font-bold kpi-num text-success-400 mt-1 break-words leading-tight">
+              <CountUp value={totalPago} prefix="R$ " decimals={2} />
+            </p>
+          </Card>
+        </Reveal>
+        <Reveal delay={50}>
+          <Card>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Pendente</p>
+            <p className="text-xl sm:text-2xl font-bold kpi-num text-warning-400 mt-1 break-words leading-tight">
+              <CountUp value={totalPendente} prefix="R$ " decimals={2} />
+            </p>
+          </Card>
+        </Reveal>
+        <Reveal delay={100}>
+          <Card>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Faturas</p>
+            <p className="text-xl sm:text-2xl font-bold kpi-num text-slate-100 mt-1 break-words leading-tight">
+              <CountUp value={list.length} />
+            </p>
+          </Card>
+        </Reveal>
       </div>
 
       {list.length === 0 ? (
@@ -66,10 +76,10 @@ export default async function ClienteFinanceiroPage() {
         <Card className="!p-0">
           {/* Mobile: cada fatura vira um cartão empilhado. */}
           <ul className="sm:hidden divide-y divide-border/50">
-            {list.map((f) => {
+            {list.map((f, i) => {
               const st = FATURA_STATUS[f.status];
               return (
-                <li key={f.id} className="p-4 space-y-2">
+                <Reveal as="li" key={f.id} delay={Math.min(i, 8) * 50} className="p-4 space-y-2 hover-row">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-100 font-mono">
@@ -84,7 +94,7 @@ export default async function ClienteFinanceiroPage() {
                   <p className="text-lg font-semibold text-slate-100 break-words leading-tight">
                     {formatBRL(f.valor)}
                   </p>
-                </li>
+                </Reveal>
               );
             })}
           </ul>
@@ -101,10 +111,10 @@ export default async function ClienteFinanceiroPage() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((f) => {
+                {list.map((f, i) => {
                   const st = FATURA_STATUS[f.status];
                   return (
-                    <tr key={f.id} className="border-b border-border/50">
+                    <Reveal as="tr" key={f.id} delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                       <td className="px-4 py-3 text-slate-200">{f.numero ?? "—"}</td>
                       <td className="px-4 py-3 text-slate-300">{formatDate(f.competencia)}</td>
                       <td className="px-4 py-3 text-slate-300">{formatDate(f.data_vencimento)}</td>
@@ -114,7 +124,7 @@ export default async function ClienteFinanceiroPage() {
                       <td className="px-4 py-3">
                         <Badge variant={st.color}>{st.label}</Badge>
                       </td>
-                    </tr>
+                    </Reveal>
                   );
                 })}
               </tbody>

@@ -9,6 +9,7 @@ import { Users, Plus } from "lucide-react";
 import type { Cliente, Fatura } from "@/types/database";
 import { ClienteCard } from "./ClienteCard";
 import { CLIENTE_SEGMENTOS } from "@/lib/constants";
+import { Reveal } from "@/components/ui/motion/Reveal";
 
 export const metadata = { title: "Clientes" };
 
@@ -141,17 +142,18 @@ export default async function ClientesPage({
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {list.map((c) => (
-            <ClienteCard
-              key={c.id}
-              cliente={{
-                ...c,
-                proximaFatura: proxFaturaPorCliente.get(c.id) ?? null,
-                faturasAtrasadasCount: atrasadasPorCliente.get(c.id) ?? 0,
-                faturasAVencerCount: aVencerPorCliente.get(c.id) ?? 0,
-              }}
-              readOnly={readOnly}
-            />
+          {list.map((c, i) => (
+            <Reveal key={c.id} delay={Math.min(i, 8) * 50} className="h-full">
+              <ClienteCard
+                cliente={{
+                  ...c,
+                  proximaFatura: proxFaturaPorCliente.get(c.id) ?? null,
+                  faturasAtrasadasCount: atrasadasPorCliente.get(c.id) ?? 0,
+                  faturasAVencerCount: aVencerPorCliente.get(c.id) ?? 0,
+                }}
+                readOnly={readOnly}
+              />
+            </Reveal>
           ))}
         </div>
       )}

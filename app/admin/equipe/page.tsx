@@ -11,6 +11,9 @@ import { cn, formatBRL, formatDate } from "@/lib/utils";
 import { ExcluirEquipeButton } from "./ExcluirEquipeButton";
 import { EditarEquipeButton } from "./EditarEquipeButton";
 import { ReenviarConviteButton } from "./ReenviarConviteButton";
+import { CountUp } from "@/components/ui/motion/CountUp";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { TiltCard } from "@/components/ui/motion/TiltCard";
 import type { Usuario } from "@/types/database";
 
 export const metadata = { title: "Equipe" };
@@ -129,7 +132,9 @@ export default async function EquipePage({
               </div>
               <div>
                 <p className="text-xs text-slate-400">Custo mensal da equipe</p>
-                <p className="text-lg font-semibold text-slate-100">{formatBRL(custoTotal)}</p>
+                <p className="text-lg font-semibold text-slate-100">
+                  <CountUp value={custoTotal} prefix="R$ " decimals={2} />
+                </p>
               </div>
             </div>
             <p className="text-[11px] text-slate-500 max-w-xs text-right">
@@ -237,11 +242,13 @@ export default async function EquipePage({
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {list.map((u) => {
+              {list.map((u, i) => {
                 const isCliente = u.role === "cliente";
                 const supervisorNome = u.supervisor_id ? nomeById.get(u.supervisor_id) ?? null : null;
                 return (
-                  <Card key={u.id}>
+                  <Reveal key={u.id} delay={Math.min(i, 8) * 50} className="h-full">
+                    <TiltCard className="h-full">
+                    <Card className="h-full">
                     <div className="flex items-start gap-3">
                       <div className="h-12 w-12 rounded-full bg-gradient-to-br from-royal-500 to-navy-700 flex items-center justify-center text-white font-semibold">
                         {(u.nome ?? u.email ?? "?").slice(0, 1).toUpperCase()}
@@ -342,6 +349,8 @@ export default async function EquipePage({
                       </p>
                     )}
                   </Card>
+                    </TiltCard>
+                  </Reveal>
                 );
               })}
             </div>

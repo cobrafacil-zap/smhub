@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ClipboardList } from "lucide-react";
 import { NovoBriefingButton } from "./NovoBriefingButton";
 import { BriefingCard } from "@/components/briefings/BriefingCard";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import type { Briefing, Cliente, Json } from "@/types/database";
 
 export const metadata = { title: "Briefings" };
@@ -87,20 +88,21 @@ export default async function BriefingsPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {list.map((b) => {
+          {list.map((b, i) => {
             const paraEdicao = extrairParaEdicao(b.respostas);
             return (
-              <BriefingCard
-                key={b.id}
-                briefingId={b.id}
-                clienteId={b.cliente_id}
-                clienteNome={b.cliente?.nome_empresa ?? "—"}
-                titulo={paraEdicao.titulo}
-                pares={paraEdicao.pares}
-                createdAt={b.created_at}
-                interno={b.interno}
-                podeEditar={podeEditar}
-              />
+              <Reveal key={b.id} delay={Math.min(i, 8) * 50}>
+                <BriefingCard
+                  briefingId={b.id}
+                  clienteId={b.cliente_id}
+                  clienteNome={b.cliente?.nome_empresa ?? "—"}
+                  titulo={paraEdicao.titulo}
+                  pares={paraEdicao.pares}
+                  createdAt={b.created_at}
+                  interno={b.interno}
+                  podeEditar={podeEditar}
+                />
+              </Reveal>
             );
           })}
         </div>

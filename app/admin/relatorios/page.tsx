@@ -9,6 +9,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { BarChart3, Plus, Pencil } from "lucide-react";
 import { PLATAFORMA_LABELS } from "@/lib/constants";
 import { formatNumber } from "@/lib/utils";
+import { CountUp } from "@/components/ui/motion/CountUp";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import { DeletarRelatorioButton } from "./DeletarRelatorioButton";
 import type { Cliente, Relatorio } from "@/types/database";
 
@@ -67,8 +69,8 @@ export default async function RelatoriosPage() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((r) => (
-                  <tr key={r.id} className="border-b border-border/50">
+                {list.map((r, i) => (
+                  <Reveal key={r.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                     <td className="px-4 py-3 text-slate-100 font-medium">
                       {r.cliente?.nome_empresa ?? "—"}
                     </td>
@@ -78,8 +80,12 @@ export default async function RelatoriosPage() {
                     <td className="px-4 py-3">
                       <Badge variant="brand">{PLATAFORMA_LABELS[r.plataforma] ?? r.plataforma}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-slate-300 text-right">{formatNumber(r.alcance_total)}</td>
-                    <td className="px-4 py-3 text-slate-300 text-right">{r.leads_validados}</td>
+                    <td className="px-4 py-3 text-slate-300 text-right">
+                      <CountUp value={Number(r.alcance_total) || 0} />
+                    </td>
+                    <td className="px-4 py-3 text-slate-300 text-right">
+                      <CountUp value={Number(r.leads_validados) || 0} />
+                    </td>
                     <td className="px-4 py-3 text-slate-100 text-right font-semibold">
                       R$ {formatNumber(r.receita_gerada)}
                     </td>
@@ -95,7 +101,7 @@ export default async function RelatoriosPage() {
                         <DeletarRelatorioButton id={r.id} />
                       </div>
                     </td>
-                  </tr>
+                  </Reveal>
                 ))}
               </tbody>
             </table>

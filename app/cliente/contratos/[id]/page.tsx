@@ -13,6 +13,7 @@ import { assinarContratoAction } from "@/lib/actions/contrato-actions";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { AssinaturaRegistro, Contrato } from "@/types/database";
+import { Reveal } from "@/components/ui/motion/Reveal";
 
 export default async function ClienteContratoDetalhePage({
   params,
@@ -56,34 +57,42 @@ export default async function ClienteContratoDetalhePage({
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status</h3>
-          <Badge variant={st.color} className="text-sm">{st.label}</Badge>
-        </Card>
-        <Card>
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor mensal</h3>
-          <p className="text-2xl font-bold kpi-num text-slate-100">
-            {c.valor_mensal ? formatBRL(c.valor_mensal) : "—"}
-          </p>
-        </Card>
-        <Card>
-          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Vigência</h3>
-          <p className="text-sm text-slate-200">
-            {c.data_inicio ? formatDate(c.data_inicio) : "—"} →{" "}
-            {c.data_fim ? formatDate(c.data_fim) : "—"}
-          </p>
-        </Card>
+        <Reveal>
+          <Card>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status</h3>
+            <Badge variant={st.color} className="text-sm">{st.label}</Badge>
+          </Card>
+        </Reveal>
+        <Reveal delay={50}>
+          <Card>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Valor mensal</h3>
+            <p className="text-2xl font-bold kpi-num text-slate-100">
+              {c.valor_mensal ? formatBRL(c.valor_mensal) : "—"}
+            </p>
+          </Card>
+        </Reveal>
+        <Reveal delay={100}>
+          <Card>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Vigência</h3>
+            <p className="text-sm text-slate-200">
+              {c.data_inicio ? formatDate(c.data_inicio) : "—"} →{" "}
+              {c.data_fim ? formatDate(c.data_fim) : "—"}
+            </p>
+          </Card>
+        </Reveal>
       </div>
 
-      <Card>
-        <h3 className="text-sm font-semibold text-slate-300 mb-3">Conteúdo do contrato</h3>
-        <div
-          className="prose prose-invert prose-sm max-w-none text-slate-200
-            prose-headings:text-slate-100 prose-h1:text-xl prose-h2:text-base
-            prose-strong:text-slate-100"
-          dangerouslySetInnerHTML={{ __html: c.conteudo }}
-        />
-      </Card>
+      <Reveal>
+        <Card>
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">Conteúdo do contrato</h3>
+          <div
+            className="prose prose-invert prose-sm max-w-none text-slate-200
+              prose-headings:text-slate-100 prose-h1:text-xl prose-h2:text-base
+              prose-strong:text-slate-100"
+            dangerouslySetInnerHTML={{ __html: c.conteudo }}
+          />
+        </Card>
+      </Reveal>
 
       <ContractSigner
         contratoId={c.id}
@@ -95,32 +104,36 @@ export default async function ClienteContratoDetalhePage({
       />
 
       {assinaturas.length > 0 && (
-        <Card>
-          <h3 className="text-sm font-semibold text-slate-300 mb-3">Registro de assinaturas</h3>
-          <div className="space-y-3">
-            {assinaturas.map((a, i) => (
-              <div key={i} className="rounded-lg border border-border p-3 bg-bg-elevated/50">
-                <div className="flex items-center justify-between">
-                  <Badge variant={a.papel === "cliente" ? "success" : "info"}>
-                    {a.papel === "cliente" ? "Assinatura do cliente" : "Assinatura da agência"}
-                  </Badge>
-                  <span className="text-xs text-slate-500">
-                    {new Date(a.data).toLocaleString("pt-BR")}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2 font-mono break-all">IP: {a.ip}</p>
-                <p className="text-xs text-slate-500 mt-1 font-mono break-all">
-                  Hash: {a.hash}
-                </p>
-                {a.signature_data_url && (
-                  <div className="mt-2 bg-white rounded p-2 inline-block">
-                    <img src={a.signature_data_url} alt="Assinatura" className="h-16" />
+        <Reveal>
+          <Card>
+            <h3 className="text-sm font-semibold text-slate-300 mb-3">Registro de assinaturas</h3>
+            <div className="space-y-3">
+              {assinaturas.map((a, i) => (
+                <Reveal key={i} delay={Math.min(i, 8) * 50}>
+                  <div className="rounded-lg border border-border p-3 bg-bg-elevated/50 hover-row">
+                    <div className="flex items-center justify-between">
+                      <Badge variant={a.papel === "cliente" ? "success" : "info"}>
+                        {a.papel === "cliente" ? "Assinatura do cliente" : "Assinatura da agência"}
+                      </Badge>
+                      <span className="text-xs text-slate-500">
+                        {new Date(a.data).toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 font-mono break-all">IP: {a.ip}</p>
+                    <p className="text-xs text-slate-500 mt-1 font-mono break-all">
+                      Hash: {a.hash}
+                    </p>
+                    {a.signature_data_url && (
+                      <div className="mt-2 bg-white rounded p-2 inline-block">
+                        <img src={a.signature_data_url} alt="Assinatura" className="h-16" />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </Card>
+                </Reveal>
+              ))}
+            </div>
+          </Card>
+        </Reveal>
       )}
     </div>
   );

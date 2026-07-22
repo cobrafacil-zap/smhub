@@ -10,6 +10,7 @@ import { formatLongDate, buildMonthCells } from "@/lib/calendar";
 import { MONTHS_PT } from "@/lib/constants";
 import { EntradaAprovacaoCard } from "./EntradaAprovacaoCard";
 import type { PlanejamentoEntrada } from "@/types/database";
+import { Reveal } from "@/components/ui/motion/Reveal";
 
 interface Props {
   entradas: PlanejamentoEntrada[];
@@ -152,8 +153,10 @@ export function PlanejamentoAprovacaoClient({ entradas, initialDate }: Props) {
                   {formatLongDate(data)}
                 </p>
               </div>
-              {lista.map((e) => (
-                <EntradaAprovacaoCard key={e.id} entrada={e} showApproveActions />
+              {lista.map((e, i) => (
+                <Reveal key={e.id} delay={Math.min(i, 8) * 50}>
+                  <EntradaAprovacaoCard entrada={e} showApproveActions />
+                </Reveal>
               ))}
             </div>
           ))}
@@ -168,8 +171,10 @@ export function PlanejamentoAprovacaoClient({ entradas, initialDate }: Props) {
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider pt-2">
                   {formatLongDate(data)}
                 </p>
-                {lista.map((e) => (
-                  <EntradaAprovacaoCard key={e.id} entrada={e} showApproveActions />
+                {lista.map((e, i) => (
+                  <Reveal key={e.id} delay={Math.min(i, 8) * 50}>
+                    <EntradaAprovacaoCard entrada={e} showApproveActions />
+                  </Reveal>
                 ))}
               </div>
             ))}

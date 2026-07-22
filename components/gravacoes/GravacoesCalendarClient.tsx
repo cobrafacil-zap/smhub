@@ -18,6 +18,7 @@ import {
   deletarGravacaoAction,
 } from "@/lib/actions/gravacao-actions";
 import type { Gravacao, GravacaoStatus } from "@/types/database";
+import { Reveal } from "@/components/ui/motion/Reveal";
 
 export type GravacaoItem = Gravacao & { cliente_nome?: string | null };
 export type ClienteOption = { id: string; nome_empresa: string };
@@ -109,44 +110,48 @@ export function GravacoesCalendarClient({
 
   return (
     <div className="space-y-4">
-      <Card className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <p className="text-lg font-semibold text-slate-100 capitalize flex items-center gap-2">
-          <Video className="h-5 w-5 text-royal-300" />
-          {monthLabel}
-        </p>
-        <div className="flex flex-wrap items-center justify-end gap-1">
-          <Button size="sm" variant="secondary" onClick={() => navegar(-1)} iconLeft={<ChevronLeft className="h-4 w-4" />}>
-            Anterior
-          </Button>
-          <Button size="sm" variant="secondary" onClick={irHoje}>
-            Hoje
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => navegar(1)} iconRight={<ChevronRight className="h-4 w-4" />}>
-            Próximo
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              const d = new Date();
-              abrirNovo(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
-            }}
-            iconLeft={<Plus className="h-4 w-4" />}
-          >
-            Nova gravação
-          </Button>
-        </div>
-      </Card>
-
-      {gravacoes.length === 0 ? (
-        <Card>
-          <div className="text-center py-8">
-            <Video className="h-10 w-10 mx-auto text-slate-600 mb-3" />
-            <p className="text-sm font-semibold text-slate-300">Nenhuma gravação em {monthLabel}</p>
-            <p className="text-xs text-slate-500 mt-1">
-              Clique em um dia do calendário para agendar uma gravação.
-            </p>
+      <Reveal>
+        <Card spotlight className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-lg font-semibold text-slate-100 capitalize flex items-center gap-2">
+            <Video className="h-5 w-5 text-royal-300" />
+            {monthLabel}
+          </p>
+          <div className="flex flex-wrap items-center justify-end gap-1">
+            <Button size="sm" variant="secondary" onClick={() => navegar(-1)} iconLeft={<ChevronLeft className="h-4 w-4" />}>
+              Anterior
+            </Button>
+            <Button size="sm" variant="secondary" onClick={irHoje}>
+              Hoje
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => navegar(1)} iconRight={<ChevronRight className="h-4 w-4" />}>
+              Próximo
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                const d = new Date();
+                abrirNovo(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
+              }}
+              iconLeft={<Plus className="h-4 w-4" />}
+            >
+              Nova gravação
+            </Button>
           </div>
         </Card>
+      </Reveal>
+
+      {gravacoes.length === 0 ? (
+        <Reveal>
+          <Card>
+            <div className="text-center py-8">
+              <Video className="h-10 w-10 mx-auto text-slate-600 mb-3" />
+              <p className="text-sm font-semibold text-slate-300">Nenhuma gravação em {monthLabel}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Clique em um dia do calendário para agendar uma gravação.
+              </p>
+            </div>
+          </Card>
+        </Reveal>
       ) : null}
 
       <EditorialCalendar
@@ -163,11 +168,11 @@ export function GravacoesCalendarClient({
       <Card>
         <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">Legenda</p>
         <ul className="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1">
-          {STATUS_OPCOES.map((o) => (
-            <li key={o.value} className="flex items-center gap-2">
+          {STATUS_OPCOES.map((o, i) => (
+            <Reveal as="li" key={o.value} delay={Math.min(i, 8) * 50} className="flex items-center gap-2">
               <span className={cn("h-2 w-2 rounded-full border", STATUS_CHIP[o.value])} />
               {o.label}
-            </li>
+            </Reveal>
           ))}
         </ul>
       </Card>

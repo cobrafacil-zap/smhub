@@ -6,6 +6,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/Stat";
 import { Badge } from "@/components/ui/Badge";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { TiltCard } from "@/components/ui/motion/TiltCard";
+import { CountUp } from "@/components/ui/motion/CountUp";
 import {
   Users,
   Wallet,
@@ -165,7 +168,7 @@ export default async function AdminDashboardPage() {
         />
         <StatCard
           label="Receita do mês"
-          value={formatBRL(receitaMes)}
+          value={<CountUp value={receitaMes} prefix="R$ " decimals={2} />}
           icon={<Wallet className="h-4 w-4" />}
           tone="success"
         />
@@ -218,10 +221,10 @@ export default async function AdminDashboardPage() {
             </p>
           ) : (
             <ul className="space-y-2">
-              {recentes.map((c) => {
+              {recentes.map((c, i) => {
                 const st = CLIENTE_STATUS[c.status];
                 return (
-                  <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
+                  <Reveal as="li" key={c.id} delay={i * 50} className="flex items-center justify-between gap-3 text-sm">
                     <div>
                       <Link href={`/admin/clientes/${c.id}`} className="text-slate-100 hover:text-royal-300 font-medium">
                         {c.nome_empresa}
@@ -231,7 +234,7 @@ export default async function AdminDashboardPage() {
                       </p>
                     </div>
                     <Badge variant={st.color}>{st.label}</Badge>
-                  </li>
+                  </Reveal>
                 );
               })}
             </ul>
@@ -254,16 +257,19 @@ export default async function AdminDashboardPage() {
             { href: "/admin/relatorios", label: "Relatórios", icon: TrendingUp, desc: "Métricas mensais" },
             { href: "/admin/planejamentos", label: "Planejamentos", icon: CalendarDays, desc: "Calendário editorial" },
             { href: "/admin/briefings", label: "Briefings", icon: ClipboardList, desc: "Onboarding" },
-          ].map((q) => (
-            <Link
-              key={q.href + q.label}
-              href={q.href}
-              className="flex flex-col items-center justify-center gap-1.5 p-4 rounded-lg border border-border bg-bg-elevated/30 hover:border-royal-500/50 hover:bg-bg-elevated transition text-center"
-            >
-              <q.icon className="h-5 w-5 text-royal-300" />
-              <span className="text-sm font-medium text-slate-200">{q.label}</span>
-              <span className="text-[10px] text-slate-500">{q.desc}</span>
-            </Link>
+          ].map((q, i) => (
+            <Reveal key={q.href + q.label} delay={i * 50}>
+              <TiltCard max={5} className="rounded-lg">
+                <Link
+                  href={q.href}
+                  className="group spotlight flex flex-col items-center justify-center gap-1.5 p-4 rounded-lg border border-border bg-bg-elevated/30 hover:border-royal-500/50 hover:bg-bg-elevated transition text-center"
+                >
+                  <q.icon className="h-5 w-5 text-royal-300 icon-pop" />
+                  <span className="text-sm font-medium text-slate-200">{q.label}</span>
+                  <span className="text-[10px] text-slate-500">{q.desc}</span>
+                </Link>
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
       </Card>
@@ -299,10 +305,10 @@ async function ContratosRecentes({ agenciaId }: { agenciaId: string }) {
   }
   return (
     <ul className="space-y-2">
-      {contratos.map((c) => {
+      {contratos.map((c, i) => {
         const st = CONTRATO_STATUS[c.status];
         return (
-          <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
+          <Reveal as="li" key={c.id} delay={i * 50} className="flex items-center justify-between gap-3 text-sm">
             <div className="min-w-0">
               <Link
                 href={c.cliente_id ? `/admin/clientes/${c.cliente_id}?tab=contratos` : `/admin/contratos/${c.id}`}
@@ -321,7 +327,7 @@ async function ContratosRecentes({ agenciaId }: { agenciaId: string }) {
               </p>
               <Badge variant={st.color}>{st.label}</Badge>
             </div>
-          </li>
+          </Reveal>
         );
       })}
     </ul>
@@ -433,11 +439,11 @@ async function MemberDashboard({
           </p>
         ) : (
           <ul className="space-y-2">
-            {abertas.slice(0, 8).map((t) => {
+            {abertas.slice(0, 8).map((t, i) => {
               const vencido =
                 t.prazo && new Date(t.prazo + "T00:00:00") < new Date(new Date().toDateString());
               return (
-                <li key={t.id} className="flex items-center justify-between gap-3 text-sm">
+                <Reveal as="li" key={t.id} delay={i * 50} className="flex items-center justify-between gap-3 text-sm">
                   <div className="min-w-0">
                     <Link href="/admin/tarefas" className="text-slate-100 hover:text-royal-300 font-medium truncate block">
                       {t.titulo}
@@ -456,7 +462,7 @@ async function MemberDashboard({
                   <Badge variant={PRIORIDADE_VARIANTE[t.prioridade] ?? "default"} className="shrink-0 capitalize">
                     {t.prioridade}
                   </Badge>
-                </li>
+                </Reveal>
               );
             })}
           </ul>
@@ -474,16 +480,19 @@ async function MemberDashboard({
             { href: "/admin/clientes", label: "Clientes", icon: Users, desc: "Ver todos" },
             { href: "/admin/planejamentos", label: "Planejamentos", icon: CalendarDays, desc: "Calendário" },
             { href: "/admin/briefings", label: "Briefings", icon: ClipboardList, desc: "Onboarding" },
-          ].map((q) => (
-            <Link
-              key={q.href + q.label}
-              href={q.href}
-              className="flex flex-col items-center justify-center gap-1.5 p-4 rounded-lg border border-border bg-bg-elevated/30 hover:border-royal-500/50 hover:bg-bg-elevated transition text-center"
-            >
-              <q.icon className="h-5 w-5 text-royal-300" />
-              <span className="text-sm font-medium text-slate-200">{q.label}</span>
-              <span className="text-[10px] text-slate-500">{q.desc}</span>
-            </Link>
+          ].map((q, i) => (
+            <Reveal key={q.href + q.label} delay={i * 50}>
+              <TiltCard max={5} className="rounded-lg">
+                <Link
+                  href={q.href}
+                  className="group spotlight flex flex-col items-center justify-center gap-1.5 p-4 rounded-lg border border-border bg-bg-elevated/30 hover:border-royal-500/50 hover:bg-bg-elevated transition text-center"
+                >
+                  <q.icon className="h-5 w-5 text-royal-300 icon-pop" />
+                  <span className="text-sm font-medium text-slate-200">{q.label}</span>
+                  <span className="text-[10px] text-slate-500">{q.desc}</span>
+                </Link>
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
       </Card>

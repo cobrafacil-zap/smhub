@@ -33,11 +33,11 @@ export function ConfirmDialog({
       </span>
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in"
+          className="dialog-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
           onClick={() => !loading && setOpen(false)}
         >
           <div
-            className={cn("card max-w-md w-full animate-scale-in")}
+            className={cn("card dialog-panel max-w-md w-full")}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"

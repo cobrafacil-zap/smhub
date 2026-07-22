@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 import { Shield } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import { AdicionarSuperAdminForm } from "./AdicionarSuperAdminForm";
 import {
   toggleSuperAdminAtivoAction,
@@ -45,10 +46,12 @@ export default async function SuperAdminsPage() {
           ) : (
             <Card className="!p-0">
               <ul className="divide-y divide-border">
-                {list.map((s) => (
-                  <li
+                {list.map((s, i) => (
+                  <Reveal
+                    as="li"
                     key={s.id}
-                    className="p-4 flex items-center justify-between gap-3"
+                    delay={Math.min(i, 8) * 50}
+                    className="p-4 flex items-center justify-between gap-3 hover-row"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -87,7 +90,7 @@ export default async function SuperAdminsPage() {
                         </button>
                       </form>
                     </div>
-                  </li>
+                  </Reveal>
                 ))}
               </ul>
             </Card>

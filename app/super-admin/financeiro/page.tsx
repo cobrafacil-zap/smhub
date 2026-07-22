@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Wallet, TrendingUp, Building2, CreditCard } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { PlanoValorCard } from "./PlanoValorCard";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { TiltCard } from "@/components/ui/motion/TiltCard";
 import type { Agencia } from "@/types/database";
 
 export const metadata = { title: "Financeiro" };
@@ -78,13 +80,16 @@ export default async function FinanceiroPage() {
       <div>
         <h2 className="text-sm font-semibold text-slate-300 mb-3">Configuração de planos</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {planosList.map((p) => (
-            <PlanoValorCard
-              key={p.id}
-              plano={p}
-              agenciasAtivas={contagemPorPlano[p.id] ?? 0}
-              receitaMensal={(contagemPorPlano[p.id] ?? 0) * Number(p.valor_mensal)}
-            />
+          {planosList.map((p, i) => (
+            <Reveal key={p.id} delay={Math.min(i, 8) * 50}>
+              <TiltCard>
+                <PlanoValorCard
+                  plano={p}
+                  agenciasAtivas={contagemPorPlano[p.id] ?? 0}
+                  receitaMensal={(contagemPorPlano[p.id] ?? 0) * Number(p.valor_mensal)}
+                />
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
       </div>

@@ -10,6 +10,7 @@ import { CalendarDays, ArrowRight, Plus, TrendingUp } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { MONTHS_PT } from "@/lib/constants";
 import { PlanejamentoPDFButton } from "@/components/calendar/PlanejamentoPDFButton";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import type { Cliente, Planejamento } from "@/types/database";
 
 export const metadata = { title: "Planejamentos" };
@@ -164,8 +165,8 @@ export default async function PlanejamentosPage() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((p) => (
-                  <tr key={p.id} className="border-b border-border/50">
+                {list.map((p, i) => (
+                  <Reveal key={p.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                     <td className="px-4 py-3 text-slate-100 font-medium">
                       {p.cliente?.nome_empresa ?? "—"}
                     </td>
@@ -202,7 +203,7 @@ export default async function PlanejamentosPage() {
                         </Link>
                       </div>
                     </td>
-                  </tr>
+                  </Reveal>
                 ))}
               </tbody>
             </table>

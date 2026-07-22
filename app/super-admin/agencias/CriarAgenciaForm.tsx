@@ -5,6 +5,7 @@ import { Save, CheckCircle2, Copy } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import {
   criarAgenciaAction,
   type CriarAgenciaState,
@@ -50,59 +51,63 @@ export function CriarAgenciaForm() {
         </Card>
       )}
 
-      <Card>
-        <h3 className="text-sm font-semibold text-slate-300 mb-3">Dados da agência</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="label">Nome fantasia *</label>
-            <input name="nome_fantasia" className="input" required minLength={2} />
+      <Reveal delay={0}>
+        <Card>
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">Dados da agência</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="label">Nome fantasia *</label>
+              <input name="nome_fantasia" className="input" required minLength={2} />
+            </div>
+            <div>
+              <label className="label">Razão social</label>
+              <input name="razao_social" className="input" />
+            </div>
+            <div>
+              <label className="label">CNPJ</label>
+              <input name="cnpj" className="input" placeholder="00.000.000/0000-00" />
+            </div>
+            <div>
+              <label className="label">E-mail de contato *</label>
+              <input name="email_contato" type="email" className="input" required />
+            </div>
+            <div>
+              <label className="label">Telefone</label>
+              <input name="telefone" className="input" />
+            </div>
+            <div>
+              <label className="label">Plano</label>
+              <Select name="plano" defaultValue="pro">
+                <option value="basico">Básico</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </Select>
+            </div>
           </div>
-          <div>
-            <label className="label">Razão social</label>
-            <input name="razao_social" className="input" />
-          </div>
-          <div>
-            <label className="label">CNPJ</label>
-            <input name="cnpj" className="input" placeholder="00.000.000/0000-00" />
-          </div>
-          <div>
-            <label className="label">E-mail de contato *</label>
-            <input name="email_contato" type="email" className="input" required />
-          </div>
-          <div>
-            <label className="label">Telefone</label>
-            <input name="telefone" className="input" />
-          </div>
-          <div>
-            <label className="label">Plano</label>
-            <Select name="plano" defaultValue="pro">
-              <option value="basico">Básico</option>
-              <option value="pro">Pro</option>
-              <option value="enterprise">Enterprise</option>
-            </Select>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      </Reveal>
 
-      <Card>
-        <h3 className="text-sm font-semibold text-slate-300 mb-3">
-          Admin da agência
-        </h3>
-        <p className="text-xs text-slate-500 mb-3">
-          Será criado o usuário administrador desta agência com uma senha
-          temporária. Ele já fica com acesso ao painel (+ trial de 7 dias).
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="label">Nome do admin *</label>
-            <input name="admin_nome" className="input" required minLength={2} />
+      <Reveal delay={80}>
+        <Card>
+          <h3 className="text-sm font-semibold text-slate-300 mb-3">
+            Admin da agência
+          </h3>
+          <p className="text-xs text-slate-500 mb-3">
+            Será criado o usuário administrador desta agência com uma senha
+            temporária. Ele já fica com acesso ao painel (+ trial de 7 dias).
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="label">Nome do admin *</label>
+              <input name="admin_nome" className="input" required minLength={2} />
+            </div>
+            <div>
+              <label className="label">E-mail do admin *</label>
+              <input name="admin_email" type="email" className="input" required />
+            </div>
           </div>
-          <div>
-            <label className="label">E-mail do admin *</label>
-            <input name="admin_email" type="email" className="input" required />
-          </div>
-        </div>
-      </Card>
+        </Card>
+      </Reveal>
 
       <div className="flex justify-end gap-2">
         <Button type="submit" loading={pending} iconLeft={<Save className="h-4 w-4" />}>

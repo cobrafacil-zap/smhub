@@ -65,7 +65,7 @@ export function ClienteCard({ cliente, proximaFatura, faturasAtrasadasCount = 0,
   const inadimplente = faturasAtrasadasCount > 0;
   const aVencer = faturasAVencerCount > 0;
   return (
-    <Card className="flex flex-col gap-4 hover:border-royal-500/40 transition-colors" hoverable>
+    <Card className="flex flex-col gap-4 h-full hover:border-royal-500/40 transition-colors group" hoverable spotlight>
       {/* Header */}
       <div className="flex items-start gap-3">
         <div
@@ -162,7 +162,7 @@ export function ClienteCard({ cliente, proximaFatura, faturasAtrasadasCount = 0,
               href={`/admin/clientes/${cliente.id}?tab=${s.key}`}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-bg-elevated hover:bg-royal-500/15 hover:text-royal-200 text-[11px] font-medium text-slate-300 transition"
             >
-              <Icon className="h-3 w-3" />
+              <Icon className="h-3 w-3 icon-pop" />
               {s.label}
             </Link>
           );

@@ -8,6 +8,8 @@ import { BarChart, BarChart3, TrendingUp, Users, Eye } from "lucide-react";
 import { PLATAFORMA_LABELS } from "@/lib/constants";
 import { formatNumber, formatPercent } from "@/lib/utils";
 import type { Plataforma, Relatorio } from "@/types/database";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { CountUp } from "@/components/ui/motion/CountUp";
 
 export const metadata = { title: "Relatórios" };
 
@@ -68,7 +70,9 @@ export default async function ClienteRelatoriosPage() {
 
           return (
             <div key={mes} className="space-y-3">
-              <h2 className="text-lg font-semibold text-slate-100 capitalize">{nomeMes}</h2>
+              <Reveal>
+                <h2 className="text-lg font-semibold text-slate-100 capitalize">{nomeMes}</h2>
+              </Reveal>
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                 <StatCard
                   label="Alcance total"
@@ -118,27 +122,27 @@ export default async function ClienteRelatoriosPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rs.map((r) => (
-                        <tr key={r.id} className="border-b border-border/50">
+                      {rs.map((r, i) => (
+                        <Reveal as="tr" key={r.id} delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                           <td className="px-4 py-3">
                             <Badge variant="brand">
                               {PLATAFORMA_LABELS[r.plataforma as Plataforma] ?? r.plataforma}
                             </Badge>
                           </td>
                           <td className="px-4 py-3 text-slate-200">
-                            {formatNumber(r.seguidores_fim)}
+                            <CountUp value={r.seguidores_fim} />
                             <span className="text-xs text-slate-500 ml-1">
                               ({r.seguidores_fim >= r.seguidores_inicio ? "+" : ""}
                               {r.seguidores_fim - r.seguidores_inicio})
                             </span>
                           </td>
                           <td className="px-4 py-3 text-slate-200">
-                            {formatNumber(r.alcance_total)}
+                            <CountUp value={r.alcance_total} />
                           </td>
-                          <td className="px-4 py-3 text-slate-200">{r.total_posts}</td>
-                          <td className="px-4 py-3 text-slate-200">{r.total_reels}</td>
-                          <td className="px-4 py-3 text-slate-200">{r.leads_validados}</td>
-                        </tr>
+                          <td className="px-4 py-3 text-slate-200"><CountUp value={r.total_posts} /></td>
+                          <td className="px-4 py-3 text-slate-200"><CountUp value={r.total_reels} /></td>
+                          <td className="px-4 py-3 text-slate-200"><CountUp value={r.leads_validados} /></td>
+                        </Reveal>
                       ))}
                     </tbody>
                   </table>

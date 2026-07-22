@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { CountUp } from "@/components/ui/motion/CountUp";
 
 interface MiniStatProps {
   label: string;
@@ -39,20 +41,29 @@ const toneStyles: Record<NonNullable<MiniStatProps["tone"]>, { bg: string; iconB
 
 export function MiniStat({ label, value, icon, tone = "default", hint }: MiniStatProps) {
   const styles = toneStyles[tone];
+  const isNumber = typeof value === "number";
   return (
-    <div className={cn("rounded-lg border p-3 flex flex-col gap-1.5", styles.bg)}>
+    <Reveal
+      as="div"
+      className={cn(
+        "group lift spotlight rounded-lg border p-3 flex flex-col gap-1.5",
+        styles.bg
+      )}
+    >
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
           {label}
         </p>
         {icon && (
-          <div className={cn("h-7 w-7 rounded-md flex items-center justify-center", styles.iconBg, styles.iconColor)}>
+          <div className={cn("h-7 w-7 rounded-md flex items-center justify-center icon-pop", styles.iconBg, styles.iconColor)}>
             {icon}
           </div>
         )}
       </div>
-      <p className="text-lg sm:text-xl font-bold text-slate-100 leading-tight break-words">{value}</p>
+      <p className="text-lg sm:text-xl font-bold text-slate-100 leading-tight break-words kpi-num">
+        {isNumber ? <CountUp value={value as number} /> : value}
+      </p>
       {hint && <p className="text-[11px] text-slate-500">{hint}</p>}
-    </div>
+    </Reveal>
   );
 }

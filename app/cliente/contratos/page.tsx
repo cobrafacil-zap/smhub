@@ -10,6 +10,7 @@ import Link from "next/link";
 import { CONTRATO_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
 import type { Contrato } from "@/types/database";
+import { Reveal } from "@/components/ui/motion/Reveal";
 
 export const metadata = { title: "Meus contratos" };
 
@@ -55,10 +56,10 @@ export default async function ClienteContratosPage() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((c) => {
+                {list.map((c, i) => {
                   const st = CONTRATO_STATUS[c.status];
                   return (
-                    <tr key={c.id} className="border-b border-border/50 hover:bg-bg-elevated/50">
+                    <Reveal as="tr" key={c.id} delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover:bg-bg-elevated/50 hover-row">
                       <td className="px-4 py-3 font-medium text-slate-100">{c.titulo}</td>
                       <td className="px-4 py-3 text-slate-200">
                         {c.valor_mensal ? formatBRL(c.valor_mensal) : "—"}
@@ -76,7 +77,7 @@ export default async function ClienteContratosPage() {
                           <Button variant="ghost" size="sm">Abrir</Button>
                         </Link>
                       </td>
-                    </tr>
+                    </Reveal>
                   );
                 })}
               </tbody>

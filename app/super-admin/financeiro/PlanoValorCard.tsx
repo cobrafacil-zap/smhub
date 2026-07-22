@@ -47,7 +47,7 @@ export function PlanoValorCard({
 
   if (!editing) {
     return (
-      <Card>
+      <Card spotlight className="lift">
         <div className="flex items-start justify-between mb-2">
           <div>
             <p className="text-xs text-slate-500 uppercase tracking-wider">{badge?.label ?? plano.nome}</p>
@@ -77,7 +77,7 @@ export function PlanoValorCard({
   }
 
   return (
-    <Card>
+    <Card spotlight className="lift">
       <form action={action} className="space-y-3">
         <input type="hidden" name="id" value={plano.id} />
         <div className="flex items-center justify-between">

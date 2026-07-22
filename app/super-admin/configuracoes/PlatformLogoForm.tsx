@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import { Save } from "lucide-react";
 import { toast } from "@/components/ui/Toast";
 import { LogoUpload } from "@/components/forms/LogoUpload";
@@ -35,49 +36,51 @@ export function PlatformLogoForm({
 
   return (
     <form action={onSubmit} className="space-y-4">
-      <Card>
-        <h3 className="text-sm font-semibold text-slate-300 mb-1">
-          Logo da plataforma
-        </h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Exibida em todo o site (landing, login, checkout, painel). Envie uma
-          versão para fundo claro e outra para fundo escuro — o tema escolhido
-          pelo usuário decide qual aparece.
-        </p>
+      <Reveal delay={0}>
+        <Card>
+          <h3 className="text-sm font-semibold text-slate-300 mb-1">
+            Logo da plataforma
+          </h3>
+          <p className="text-xs text-slate-500 mb-4">
+            Exibida em todo o site (landing, login, checkout, painel). Envie uma
+            versão para fundo claro e outra para fundo escuro — o tema escolhido
+            pelo usuário decide qual aparece.
+          </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="label">Logo — modo claro</label>
-            <LogoUpload
-              name="logo_url_light"
-              bucket={STORAGE_BUCKETS.platform}
-              pathPrefix="logos/light"
-              label="Logo para fundo claro (ex.: landing)."
-              hint="Use cores escuras sobre fundo claro. PNG, JPG, WebP ou SVG — máx 2 MB."
-              previewClassName="bg-white"
-              initialUrl={initialLight}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="label">Logo — modo claro</label>
+              <LogoUpload
+                name="logo_url_light"
+                bucket={STORAGE_BUCKETS.platform}
+                pathPrefix="logos/light"
+                label="Logo para fundo claro (ex.: landing)."
+                hint="Use cores escuras sobre fundo claro. PNG, JPG, WebP ou SVG — máx 2 MB."
+                previewClassName="bg-white"
+                initialUrl={initialLight}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="label">Logo — modo escuro</label>
+              <LogoUpload
+                name="logo_url_dark"
+                bucket={STORAGE_BUCKETS.platform}
+                pathPrefix="logos/dark"
+                label="Logo para fundo escuro (ex.: painel)."
+                hint="Use cores claras sobre fundo escuro. PNG, JPG, WebP ou SVG — máx 2 MB."
+                previewClassName="bg-bg-surface"
+                initialUrl={initialDark}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="label">Logo — modo escuro</label>
-            <LogoUpload
-              name="logo_url_dark"
-              bucket={STORAGE_BUCKETS.platform}
-              pathPrefix="logos/dark"
-              label="Logo para fundo escuro (ex.: painel)."
-              hint="Use cores claras sobre fundo escuro. PNG, JPG, WebP ou SVG — máx 2 MB."
-              previewClassName="bg-bg-surface"
-              initialUrl={initialDark}
-            />
-          </div>
-        </div>
-
-        <p className="mt-4 text-[11px] text-slate-500">
-          Se uma das versões ficar vazia, o site usa <code>/logo-full.svg</code>{" "}
-          como fallback.
-        </p>
-      </Card>
+          <p className="mt-4 text-[11px] text-slate-500">
+            Se uma das versões ficar vazia, o site usa <code>/logo-full.svg</code>{" "}
+            como fallback.
+          </p>
+        </Card>
+      </Reveal>
 
       <div className="flex justify-end">
         <Button type="submit" loading={saving} iconLeft={<Save className="h-4 w-4" />}>

@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { FileText, Plus, Sparkles } from "lucide-react";
 import { CONTRATO_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import type { Contrato } from "@/types/database";
 
 export const metadata = { title: "Contratos" };
@@ -75,10 +76,10 @@ export default async function ContratosPage() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((c) => {
+                {list.map((c, i) => {
                   const st = CONTRATO_STATUS[c.status];
                   return (
-                    <tr key={c.id} className="border-b border-border/50 hover:bg-bg-elevated/50">
+                    <Reveal key={c.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover:bg-bg-elevated/50 hover-row">
                       <td className="px-4 py-3">
                         <Link
                           href={`/admin/contratos/${c.id}`}
@@ -104,7 +105,7 @@ export default async function ContratosPage() {
                           <Button variant="ghost" size="sm">Ver</Button>
                         </Link>
                       </td>
-                    </tr>
+                    </Reveal>
                   );
                 })}
               </tbody>

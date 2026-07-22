@@ -59,7 +59,7 @@ export function BriefingCard({
           }
         }}
         className={cn(
-          "card border-l-2 space-y-2 cursor-pointer hover:border-royal-500/40 transition",
+          "card spotlight lift border-l-2 space-y-2 cursor-pointer hover:border-royal-500/40",
           tint.bar,
           tint.bg
         )}
@@ -122,11 +122,11 @@ export function BriefingCard({
       {/* Dialog de visualização (somente leitura) — briefing completo */}
       {ver && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fade-in"
+          className="dialog-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
           onClick={() => setVer(false)}
         >
           <div
-            className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in"
+            className="card dialog-panel max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"

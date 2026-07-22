@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Building2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { toggleAgenciaAtivaAction } from "@/lib/actions/super-admin-actions";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import { AgenciaPlanoSelect } from "./AgenciaPlanoSelect";
 import { ForcarRenovacaoButton } from "./ForcarRenovacaoButton";
 import { DeletarAgenciaButton } from "./DeletarAgenciaButton";
@@ -91,10 +92,10 @@ export default async function AgenciasPage() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((a) => {
+                {list.map((a, i) => {
                   const ass = assPorAgencia.get(a.id);
                   return (
-                    <tr key={a.id} className="border-b border-border/50">
+                    <Reveal as="tr" key={a.id} delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                       <td className="px-4 py-3 text-slate-100 font-medium">
                         {a.nome_fantasia}
                       </td>
@@ -160,7 +161,7 @@ export default async function AgenciasPage() {
                           <DeletarAgenciaButton agenciaId={a.id} nome={a.nome_fantasia} />
                         </div>
                       </td>
-                    </tr>
+                    </Reveal>
                   );
                 })}
               </tbody>

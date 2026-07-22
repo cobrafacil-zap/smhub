@@ -21,6 +21,7 @@ import {
   Paperclip,
 } from "lucide-react";
 import type { EntradaStatus, EntradaTipo, PlanejamentoEntrada } from "@/types/database";
+import { TiltCard } from "@/components/ui/motion/TiltCard";
 
 interface Props {
   entrada: PlanejamentoEntrada;
@@ -75,17 +76,19 @@ export function EntradaAprovacaoCard({ entrada, showApproveActions = true }: Pro
   const tipoLabel = ENTRY_TIPO_LABEL[entrada.tipo as EntradaTipo] ?? entrada.tipo;
 
   return (
-    <Card
-      className={`!p-0 overflow-hidden border ${
-        entrada.status === "alteracao_solicitada"
-          ? "!border-warning-500/40"
-          : entrada.status === "aprovado" || entrada.status === "publicado"
-          ? "!border-success-500/30"
-          : entrada.status === "rejeitado"
-          ? "!border-danger-500/30"
-          : "!border-border"
-      }`}
-    >
+    <TiltCard className="h-full">
+      <Card
+        spotlight
+        className={`!p-0 overflow-hidden border ${
+          entrada.status === "alteracao_solicitada"
+            ? "!border-warning-500/40"
+            : entrada.status === "aprovado" || entrada.status === "publicado"
+            ? "!border-success-500/30"
+            : entrada.status === "rejeitado"
+            ? "!border-danger-500/30"
+            : "!border-border"
+        }`}
+      >
       {/* header */}
       <button
         type="button"
@@ -265,7 +268,8 @@ export function EntradaAprovacaoCard({ entrada, showApproveActions = true }: Pro
             )}
         </div>
       )}
-    </Card>
+      </Card>
+    </TiltCard>
   );
 }
 

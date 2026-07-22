@@ -10,6 +10,8 @@ import { unstable_cache } from "next/cache";
 import { Wallet, TrendingUp, TrendingDown, Plus, FileText, Zap, Users, UserCog, ArrowRight } from "lucide-react";
 import { FATURA_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
+import { CountUp } from "@/components/ui/motion/CountUp";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import { FinanceChartClient as FinanceChart } from "@/components/finance/FinanceChartClient";
 import { MarcarFaturaPagaButton } from "./MarcarFaturaPagaButton";
 import { ExcluirTransacaoButton } from "./ExcluirTransacaoButton";
@@ -279,7 +281,9 @@ export default async function FinanceiroPage({
             </p>
             <TrendingUp className="h-4 w-4 text-emerald-400 shrink-0" />
           </div>
-          <p className="text-xl sm:text-2xl font-semibold text-emerald-400 mt-2 break-words leading-tight">{formatBRL(kpiReceita)}</p>
+          <p className="text-xl sm:text-2xl font-semibold text-emerald-400 mt-2 break-words leading-tight">
+            <CountUp value={kpiReceita} prefix="R$ " decimals={2} />
+          </p>
           <p className="text-[11px] text-slate-500 mt-1">
             {modoLabel}
             {!realizado && " — todas as faturas (pagas + a receber)"}
@@ -292,7 +296,9 @@ export default async function FinanceiroPage({
             </p>
             <TrendingDown className="h-4 w-4 text-rose-400 shrink-0" />
           </div>
-          <p className="text-xl sm:text-2xl font-semibold text-rose-400 mt-2 break-words leading-tight">{formatBRL(kpiDespesa)}</p>
+          <p className="text-xl sm:text-2xl font-semibold text-rose-400 mt-2 break-words leading-tight">
+            <CountUp value={kpiDespesa} prefix="R$ " decimals={2} />
+          </p>
           {custoEquipe > 0 && (
             <p className="text-[11px] text-slate-500 mt-1">
               {modoLabel} — inclui {formatBRL(folhaTotal)} de folha
@@ -308,7 +314,7 @@ export default async function FinanceiroPage({
             <Wallet className="h-4 w-4 text-royal-300 shrink-0" />
           </div>
           <p className={`text-xl sm:text-2xl font-semibold mt-2 break-words leading-tight ${kpiSaldo >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-            {formatBRL(kpiSaldo)}
+            <CountUp value={kpiSaldo} prefix="R$ " decimals={2} />
           </p>
           <p className="text-[11px] text-slate-500 mt-1">{modoLabel}</p>
         </Card>
@@ -349,13 +355,13 @@ export default async function FinanceiroPage({
           <>
             {/* Mobile: cada fatura vira um cartão empilhado (sem scroll horizontal). */}
             <ul className="sm:hidden divide-y divide-border/50">
-              {faturas.map((f) => {
+              {faturas.map((f, i) => {
                 const st = FATURA_STATUS[f.status as keyof typeof FATURA_STATUS] ?? {
                   label: f.status ?? "—",
                   color: "default" as const,
                 };
                 return (
-                  <li key={f.id} className="p-4 space-y-2.5">
+                  <Reveal key={f.id} as="li" delay={Math.min(i, 8) * 50} className="p-4 space-y-2.5 hover-row">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-100 truncate">
@@ -375,7 +381,7 @@ export default async function FinanceiroPage({
                       </p>
                       {f.status !== "pago" && <MarcarFaturaPagaButton id={f.id} />}
                     </div>
-                  </li>
+                  </Reveal>
                 );
               })}
               <li className="p-4 flex flex-col gap-1 border-t border-border bg-bg-elevated/30 text-xs">
@@ -404,7 +410,7 @@ export default async function FinanceiroPage({
                 </tr>
               </thead>
               <tbody>
-                {faturas.map((f) => {
+                {faturas.map((f, i) => {
                   // Guarda contra status nulo/fora do mapa (evita crash no SSR
                   // se uma fatura vier com status inválido).
                   const st = FATURA_STATUS[f.status as keyof typeof FATURA_STATUS] ?? {
@@ -412,7 +418,7 @@ export default async function FinanceiroPage({
                     color: "default" as const,
                   };
                   return (
-                    <tr key={f.id} className="border-b border-border/50">
+                    <Reveal key={f.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                       <td className="px-4 py-2 text-slate-300 font-mono text-xs">{f.numero ?? "—"}</td>
                       <td className="px-4 py-2 text-slate-100">{f.cliente?.nome_empresa ?? "—"}</td>
                       <td className="px-4 py-2 text-slate-300">{f.data_vencimento ? formatDate(f.data_vencimento) : "—"}</td>
@@ -425,7 +431,7 @@ export default async function FinanceiroPage({
                           <MarcarFaturaPagaButton id={f.id} />
                         )}
                       </td>
-                    </tr>
+                    </Reveal>
                   );
                 })}
               </tbody>
@@ -483,8 +489,8 @@ export default async function FinanceiroPage({
           <>
             {/* Mobile: cada membro vira um cartão empilhado. */}
             <ul className="sm:hidden divide-y divide-border/50">
-              {membrosComCusto.map((m) => (
-                <li key={m.id} className="p-4 flex items-center justify-between gap-3">
+              {membrosComCusto.map((m, i) => (
+                <Reveal key={m.id} as="li" delay={Math.min(i, 8) * 50} className="p-4 flex items-center justify-between gap-3 hover-row">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="h-7 w-7 rounded-full bg-gradient-to-br from-royal-500 to-navy-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                       {(m.nome ?? m.email ?? "?").slice(0, 1).toUpperCase()}
@@ -499,7 +505,7 @@ export default async function FinanceiroPage({
                   <p className="text-sm font-semibold text-rose-400 shrink-0">
                     {formatBRL(m.custo_mensal!)}
                   </p>
-                </li>
+                </Reveal>
               ))}
               <li className="p-4 flex items-center justify-between border-t border-border bg-bg-elevated/30">
                 <span className="text-xs text-slate-400">Total da folha</span>
@@ -517,8 +523,8 @@ export default async function FinanceiroPage({
                 </tr>
               </thead>
               <tbody>
-                {membrosComCusto.map((m) => (
-                  <tr key={m.id} className="border-b border-border/50">
+                {membrosComCusto.map((m, i) => (
+                  <Reveal key={m.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
                         <span className="h-7 w-7 rounded-full bg-gradient-to-br from-royal-500 to-navy-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">
@@ -537,7 +543,7 @@ export default async function FinanceiroPage({
                     <td className="px-4 py-2 text-right text-rose-400 font-semibold">
                       {formatBRL(m.custo_mensal!)}
                     </td>
-                  </tr>
+                  </Reveal>
                 ))}
               </tbody>
               <tfoot>
@@ -571,8 +577,8 @@ export default async function FinanceiroPage({
           <>
             {/* Mobile: cada lançamento vira um cartão empilhado. */}
             <ul className="sm:hidden divide-y divide-border/50">
-              {lancamentosFiltrados.map((t) => (
-                <li key={t.id} className="p-4 space-y-2.5">
+              {lancamentosFiltrados.map((t, i) => (
+                <Reveal key={t.id} as="li" delay={Math.min(i, 8) * 50} className="p-4 space-y-2.5 hover-row">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm text-slate-200 truncate">{t.descricao}</p>
@@ -610,7 +616,7 @@ export default async function FinanceiroPage({
                       <ExcluirTransacaoButton id={t.id} descricao={t.descricao} />
                     </div>
                   </div>
-                </li>
+                </Reveal>
               ))}
               <li className="p-4 flex items-center justify-between border-t border-border bg-bg-elevated/30">
                 <span className="text-xs text-slate-400">Saldo dos lançamentos</span>
@@ -634,8 +640,8 @@ export default async function FinanceiroPage({
                 </tr>
               </thead>
               <tbody>
-                {lancamentosFiltrados.map((t) => (
-                  <tr key={t.id} className="border-b border-border/50">
+                {lancamentosFiltrados.map((t, i) => (
+                  <Reveal key={t.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                     <td className="px-4 py-2 text-slate-300">{t.data_vencimento ? formatDate(t.data_vencimento) : "—"}</td>
                     <td className="px-4 py-2 text-slate-200">{t.descricao}</td>
                     <td className="px-4 py-2 text-slate-400">{t.categoria ?? "—"}</td>
@@ -667,7 +673,7 @@ export default async function FinanceiroPage({
                         <ExcluirTransacaoButton id={t.id} descricao={t.descricao} />
                       </div>
                     </td>
-                  </tr>
+                  </Reveal>
                 ))}
               </tbody>
               <tfoot>

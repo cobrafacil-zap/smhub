@@ -5,14 +5,20 @@ export function Card({
   className,
   hoverable,
   shine,
+  spotlight,
   ...props
-}: HTMLAttributes<HTMLDivElement> & { hoverable?: boolean; shine?: boolean }) {
+}: HTMLAttributes<HTMLDivElement> & {
+  hoverable?: boolean;
+  shine?: boolean;
+  spotlight?: boolean;
+}) {
   return (
     <div
       className={cn(
         "card",
         hoverable && "card-hover",
         shine && "shine",
+        spotlight && "spotlight",
         className
       )}
       {...props}

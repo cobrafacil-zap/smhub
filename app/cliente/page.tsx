@@ -33,6 +33,8 @@ import type {
   PlanejamentoEntrada,
   Relatorio,
 } from "@/types/database";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { TiltCard } from "@/components/ui/motion/TiltCard";
 
 export const metadata = { title: "Início" };
 
@@ -220,11 +222,11 @@ export default async function ClienteDashboardPage({
           <p className="text-sm text-slate-500">Nenhum post programado para este mês.</p>
         ) : (
           <ul className="space-y-2">
-            {postsMes.slice(0, 10).map((e) => {
+            {postsMes.slice(0, 10).map((e, i) => {
               const sb = STATUS_BADGE[e.status];
               const tipoLabel = ENTRY_TIPO_LABEL[e.tipo as EntradaTipo] ?? e.tipo;
               return (
-                <li key={e.id} className="flex items-center justify-between gap-3 text-sm">
+                <Reveal as="li" key={e.id} delay={Math.min(i, 8) * 50} className="flex items-center justify-between gap-3 text-sm hover-row">
                   <div className="min-w-0">
                     <p className="text-slate-200 truncate">{e.titulo}</p>
                     <p className="text-xs text-slate-500">
@@ -234,7 +236,7 @@ export default async function ClienteDashboardPage({
                   <Badge variant={sb.variant} className="shrink-0">
                     {sb.label}
                   </Badge>
-                </li>
+                </Reveal>
               );
             })}
           </ul>
@@ -284,10 +286,10 @@ export default async function ClienteDashboardPage({
           <p className="text-sm text-slate-500">Nenhuma fatura.</p>
         ) : (
           <ul className="space-y-2">
-            {faturas.slice(0, 5).map((f) => {
+            {faturas.slice(0, 5).map((f, i) => {
               const st = FATURA_STATUS[f.status];
               return (
-                <li key={f.id} className="flex items-center justify-between gap-3 text-sm">
+                <Reveal as="li" key={f.id} delay={Math.min(i, 8) * 50} className="flex items-center justify-between gap-3 text-sm hover-row">
                   <div>
                     <p className="text-slate-200">{f.numero ?? formatDate(f.competencia)}</p>
                     <p className="text-xs text-slate-500">Vence em {formatDate(f.data_vencimento)}</p>
@@ -296,7 +298,7 @@ export default async function ClienteDashboardPage({
                     <p className="font-semibold text-slate-100">{formatBRL(f.valor)}</p>
                     <Badge variant={st.color}>{st.label}</Badge>
                   </div>
-                </li>
+                </Reveal>
               );
             })}
           </ul>
@@ -311,15 +313,18 @@ export default async function ClienteDashboardPage({
             { href: "/cliente/relatorios", label: "Relatórios", icon: BarChart3 },
             { href: "/cliente/contratos", label: "Contratos", icon: FileText },
             { href: "/cliente/financeiro", label: "Financeiro", icon: Wallet },
-          ].map((q) => (
-            <Link
-              key={q.href}
-              href={q.href}
-              className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-border bg-bg-elevated/30 hover:border-royal-500/50 hover:bg-bg-elevated transition"
-            >
-              <q.icon className="h-5 w-5 text-royal-300" />
-              <span className="text-sm font-medium text-slate-200">{q.label}</span>
-            </Link>
+          ].map((q, i) => (
+            <Reveal key={q.href} delay={Math.min(i, 8) * 50}>
+              <TiltCard className="h-full">
+                <Link
+                  href={q.href}
+                  className="group flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-border bg-bg-elevated/30 hover:border-royal-500/50 hover:bg-bg-elevated transition spotlight"
+                >
+                  <q.icon className="h-5 w-5 text-royal-300 icon-pop" />
+                  <span className="text-sm font-medium text-slate-200">{q.label}</span>
+                </Link>
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
       </Card>

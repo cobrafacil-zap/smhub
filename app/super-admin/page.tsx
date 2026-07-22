@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Building2, Users, Wallet, FileText } from "lucide-react";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { AddToHomeScreen } from "@/components/pwa/AddToHomeScreen";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { CountUp } from "@/components/ui/motion/CountUp";
 import type { Agencia, Contrato } from "@/types/database";
 
 export const metadata = { title: "Super Admin" };
@@ -57,34 +59,50 @@ export default async function SuperAdminHomePage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-400">Agências</p>
-            <Building2 className="h-4 w-4 text-royal-300" />
-          </div>
-          <p className="text-3xl font-semibold text-slate-100 mt-2">{countAg ?? 0}</p>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-400">Clientes</p>
-            <Users className="h-4 w-4 text-royal-300" />
-          </div>
-          <p className="text-3xl font-semibold text-slate-100 mt-2">{totalClientes ?? 0}</p>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-400">MRR estimado</p>
-            <Wallet className="h-4 w-4 text-emerald-400" />
-          </div>
-          <p className="text-3xl font-semibold text-emerald-400 mt-2">{formatBRL(mrr)}</p>
-        </Card>
-        <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-400">Contratos</p>
-            <FileText className="h-4 w-4 text-royal-300" />
-          </div>
-          <p className="text-3xl font-semibold text-slate-100 mt-2">{ctList.length}</p>
-        </Card>
+        <Reveal delay={0}>
+          <Card spotlight className="group lift">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-400">Agências</p>
+              <Building2 className="h-4 w-4 text-royal-300 icon-pop" />
+            </div>
+            <p className="text-3xl font-semibold text-slate-100 mt-2">
+              <CountUp value={countAg ?? 0} />
+            </p>
+          </Card>
+        </Reveal>
+        <Reveal delay={50}>
+          <Card spotlight className="group lift">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-400">Clientes</p>
+              <Users className="h-4 w-4 text-royal-300 icon-pop" />
+            </div>
+            <p className="text-3xl font-semibold text-slate-100 mt-2">
+              <CountUp value={totalClientes ?? 0} />
+            </p>
+          </Card>
+        </Reveal>
+        <Reveal delay={100}>
+          <Card spotlight className="group lift">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-400">MRR estimado</p>
+              <Wallet className="h-4 w-4 text-emerald-400 icon-pop" />
+            </div>
+            <p className="text-3xl font-semibold text-emerald-400 mt-2">
+              <CountUp value={mrr} prefix="R$ " decimals={2} />
+            </p>
+          </Card>
+        </Reveal>
+        <Reveal delay={150}>
+          <Card spotlight className="group lift">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-400">Contratos</p>
+              <FileText className="h-4 w-4 text-royal-300 icon-pop" />
+            </div>
+            <p className="text-3xl font-semibold text-slate-100 mt-2">
+              <CountUp value={ctList.length} />
+            </p>
+          </Card>
+        </Reveal>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -99,8 +117,8 @@ export default async function SuperAdminHomePage() {
             <p className="p-6 text-sm text-slate-500 text-center">Nenhuma agência cadastrada.</p>
           ) : (
             <ul className="divide-y divide-border">
-              {agList.map((a) => (
-                <li key={a.id} className="p-4 flex items-center justify-between">
+              {agList.map((a, i) => (
+                <Reveal as="li" key={a.id} delay={Math.min(i, 8) * 50} className="p-4 flex items-center justify-between hover-row">
                   <div>
                     <p className="font-medium text-slate-100">{a.nome_fantasia}</p>
                     <p className="text-xs text-slate-500">
@@ -110,7 +128,7 @@ export default async function SuperAdminHomePage() {
                   <Badge variant={a.status === "ativa" ? "success" : "danger"}>
                     {a.status === "ativa" ? "Ativa" : "Suspensa"}
                   </Badge>
-                </li>
+                </Reveal>
               ))}
             </ul>
           )}
@@ -124,8 +142,8 @@ export default async function SuperAdminHomePage() {
             <p className="p-6 text-sm text-slate-500 text-center">Nenhum contrato ainda.</p>
           ) : (
             <ul className="divide-y divide-border">
-              {ctList.map((c) => (
-                <li key={c.id} className="p-4 flex items-center justify-between">
+              {ctList.map((c, i) => (
+                <Reveal as="li" key={c.id} delay={Math.min(i, 8) * 50} className="p-4 flex items-center justify-between hover-row">
                   <div>
                     <p className="font-medium text-slate-100">{c.titulo}</p>
                     <p className="text-xs text-slate-500">
@@ -133,7 +151,7 @@ export default async function SuperAdminHomePage() {
                     </p>
                   </div>
                   <Badge variant="brand">{c.status}</Badge>
-                </li>
+                </Reveal>
               ))}
             </ul>
           )}

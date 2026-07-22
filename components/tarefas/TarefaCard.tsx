@@ -135,7 +135,7 @@ export function TarefaCard({
       onDragEnd={onDragEnd}
       onClick={() => onView(tarefa)}
       className={cn(
-        "card space-y-2 transition cursor-pointer hover:border-royal-500/40 border-l-2",
+        "card spotlight lift space-y-2 transition cursor-pointer hover:border-royal-500/40 border-l-2",
         pad,
         tint.bar,
         tint.bg,

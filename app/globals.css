@@ -209,6 +209,22 @@
   0% { transform: translateX(-130%) skewX(-12deg); }
   100% { transform: translateX(130%) skewX(-12deg); }
 }
+@keyframes mesh-pan {
+  0% { background-position: 0% 0%, 100% 0%, 50% 100%; }
+  100% { background-position: 20% 15%, 80% 10%, 60% 90%; }
+}
+@keyframes text-shimmer-pan {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes dialog-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes dialog-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 /* ===========================================================================
   Micro-interações — menos "cara de IA" (3D, ícones animados, reveal, brilho).
@@ -375,6 +391,94 @@
   /* Marquee: pausa no hover */
   .pause-on-hover:hover {
     animation-play-state: paused;
+  }
+
+  /* Spotlight — radial suave que segue o cursor (premium em cards).
+     As variáveis --mx/--my (0..100%) são setadas pelo componente
+     <Spotlight>. Sem JS, fica centrado e só aparece no hover. */
+  .spotlight {
+    position: relative;
+  }
+  .spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      240px circle at var(--mx, 50%) var(--my, 50%),
+      rgb(255 255 255 / 0.07),
+      transparent 55%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+
+  /* Hover-row — para linhas de listas/tabelas (sem cursor-follow, leve) */
+  .hover-row {
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hover-row:hover {
+    transform: translateX(2px);
+  }
+
+  /* Glass — superfície com blur + borda translúcida (topbars/sidebars) */
+  .glass {
+    background-color: rgb(var(--bg-surface) / 0.7);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+  }
+
+  /* Mesh bg — gradiente de fundo animado, muito sutil, para painéis */
+  .mesh-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 50% at 12% 0%, rgb(61 90 254 / 0.06), transparent 60%),
+      radial-gradient(55% 45% at 100% 10%, rgb(34 211 238 / 0.05), transparent 60%),
+      radial-gradient(60% 60% at 50% 100%, rgb(10 26 64 / 0.10), transparent 60%);
+    animation: mesh-pan 22s ease-in-out infinite alternate;
+  }
+
+  /* Glow no hover de botões primários / CTAs */
+  .glow-hover {
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .glow-hover:hover {
+    box-shadow: 0 8px 28px -8px rgb(61 90 254 / 0.55);
+  }
+
+  /* Texto shimmer — gradiente animado para títulos de destaque */
+  .text-shimmer {
+    background: linear-gradient(
+      100deg,
+      var(--slate-100) 30%,
+      rgb(var(--royal-300)) 50%,
+      var(--slate-100) 70%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: text-shimmer-pan 6s linear infinite;
+  }
+
+  /* Diálogos — entrada mais refinada (backdrop blur + scale + fade) */
+  .dialog-backdrop {
+    animation: dialog-fade 0.2s ease-out both;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  .dialog-panel {
+    animation: dialog-pop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 

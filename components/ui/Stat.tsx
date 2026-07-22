@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Reveal } from "./motion/Reveal";
+import { CountUp } from "./motion/CountUp";
 
 export type StatTone = "default" | "brand" | "success" | "warn" | "danger";
 
@@ -53,11 +54,12 @@ export function Stat({
   trend,
 }: StatProps) {
   const styles = toneStyles[tone];
+  const isNumber = typeof value === "number";
   return (
     <Reveal
       as="div"
       className={cn(
-        "card group lift border flex flex-col gap-3",
+        "card group lift spotlight border flex flex-col gap-3",
         styles.bg,
         tone === "default" && "border-border"
       )}
@@ -78,7 +80,7 @@ export function Stat({
         )}
       </div>
       <div className={cn("text-xl sm:text-2xl font-bold kpi-num break-words leading-tight", styles.text)}>
-        {value}
+        {isNumber ? <CountUp value={value as number} /> : value}
       </div>
       <div className="flex items-center gap-2 text-xs">
         {trend && (

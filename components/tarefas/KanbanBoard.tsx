@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 import { moverTarefaAction } from "@/lib/actions/tarefa-actions";
+import { Reveal } from "@/components/ui/motion/Reveal";
 import { TarefaCard } from "./TarefaCard";
 import { TarefaDialog } from "./TarefaDialog";
 import { TarefaDetailDialog } from "./TarefaDetailDialog";
@@ -225,7 +226,7 @@ export function KanbanBoard({
                         )
                     );
                     let ultimoCliente: string | null = "__init__";
-                    return ordenados.map((t) => {
+                    return ordenados.map((t, i) => {
                       const grp = t.cliente_nome ?? null;
                       const novoGrupo = grp !== ultimoCliente;
                       ultimoCliente = grp;
@@ -237,17 +238,19 @@ export function KanbanBoard({
                               {grp ?? "Sem cliente"}
                             </div>
                           )}
-                          <TarefaCard
-                            tarefa={t}
-                            meuId={meuId}
-                            meuRole={meuRole}
-                            nivel={nivel}
-                            arrastando={dragId === t.id}
-                            onEdit={abrirEditar}
-                            onView={abrirVer}
-                            onDragStart={() => setDragId(t.id)}
-                            onDragEnd={() => setDragId(null)}
-                          />
+                          <Reveal delay={Math.min(i, 8) * 50}>
+                            <TarefaCard
+                              tarefa={t}
+                              meuId={meuId}
+                              meuRole={meuRole}
+                              nivel={nivel}
+                              arrastando={dragId === t.id}
+                              onEdit={abrirEditar}
+                              onView={abrirVer}
+                              onDragStart={() => setDragId(t.id)}
+                              onDragEnd={() => setDragId(null)}
+                            />
+                          </Reveal>
                         </div>
                       );
                     });

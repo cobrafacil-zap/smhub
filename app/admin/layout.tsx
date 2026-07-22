@@ -5,6 +5,7 @@ import { SidebarAdmin } from "@/components/layout/SidebarAdmin";
 import { Topbar } from "@/components/layout/Topbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AssinaturaBanner } from "@/components/billing/AssinaturaBanner";
+import { PageTransition } from "@/components/ui/motion/PageTransition";
 import { getAssinaturaStatus, countClientesAgencia, trialMaxClientes } from "@/lib/assinatura";
 import type { Agencia } from "@/types/database";
 
@@ -32,14 +33,15 @@ export default async function AdminLayout({
   const agency = (ag as Agencia | null) ?? null;
 
   return (
-    <div className="min-h-screen bg-bg text-slate-100 flex">
+    <div className="min-h-screen bg-bg text-slate-100 flex relative">
+      <div className="mesh-bg" aria-hidden />
       <SidebarAdmin
         userName={session.profile.nome}
         agencyName={agency?.nome_fantasia}
         agencyLogoUrl={agency?.logo_url}
         role={session.profile.role as "admin_agencia" | "membro_equipe"}
       />
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col relative">
         <Topbar
           userName={session.profile.nome}
           contextLabel={agency?.nome_fantasia}
@@ -48,7 +50,9 @@ export default async function AdminLayout({
         <Suspense fallback={null}>
           <AssinaturaBannerAsync aid={aid} />
         </Suspense>
-        <main className="flex-1 px-4 lg:px-6 py-6 pb-20 lg:pb-6">{children}</main>
+        <main className="flex-1 px-4 lg:px-6 py-6 pb-20 lg:pb-6">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
       <BottomNav role={session.profile.role as "admin_agencia" | "membro_equipe"} />
     </div>
