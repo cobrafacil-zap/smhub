@@ -126,11 +126,11 @@ export function Hero3D() {
       rim.position.set(4, 3, 3);
       scene.add(rim);
 
-      const ringGeo = new THREE.TorusGeometry(0.92, 0.035, 20, 120);
+      const ringGeo = new THREE.TorusGeometry(1.25, 0.045, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
-        color: 0x5e74ff,
+        color: 0x8797ff,
         transparent: true,
-        opacity: 0.45,
+        opacity: 0.55,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -138,11 +138,11 @@ export function Hero3D() {
       ring.rotation.x = Math.PI / 2;
       universe.add(ring);
 
-      const coreGlowGeo = new THREE.SphereGeometry(0.35, 32, 32);
+      const coreGlowGeo = new THREE.SphereGeometry(0.55, 32, 32);
       const coreGlowMat = new THREE.MeshBasicMaterial({
         color: 0x3d5afe,
         transparent: true,
-        opacity: 0.18,
+        opacity: 0.22,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -230,28 +230,118 @@ export function Hero3D() {
       };
       mount.addEventListener("pointermove", onMove, { passive: true });
 
-      // --- Starfield ---
-      const STAR_N = 600;
+      // --- Starfield piscante ---
+      const STAR_N = 700;
       const starPos = new Float32Array(STAR_N * 3);
+      const starPhase = new Float32Array(STAR_N);
+      const starSpeed = new Float32Array(STAR_N);
+      const starSize = new Float32Array(STAR_N);
       for (let i = 0; i < STAR_N; i++) {
-        const r = 6 + Math.random() * 10;
+        const r = 6 + Math.random() * 12;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
         starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
         starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
         starPos[i * 3 + 2] = r * Math.cos(phi) - 2;
+        starPhase[i] = Math.random() * Math.PI * 2;
+        starSpeed[i] = 0.5 + Math.random() * 2.5;
+        starSize[i] = 0.5 + Math.random() * 1.5;
       }
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-      const starMat = new THREE.PointsMaterial({
-        color: 0x8797ff,
-        size: 0.025,
+      starGeo.setAttribute("phase", new THREE.BufferAttribute(starPhase, 1));
+      starGeo.setAttribute("speed", new THREE.BufferAttribute(starSpeed, 1));
+      starGeo.setAttribute("size", new THREE.BufferAttribute(starSize, 1));
+
+      const starMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uColor: { value: new THREE.Color(0x8797ff) },
+        },
+        vertexShader: `
+          attribute float phase;
+          attribute float speed;
+          attribute float size;
+          varying float vAlpha;
+          uniform float uTime;
+          void main() {
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * mvPosition;
+            float twinkle = 0.45 + 0.55 * sin(uTime * speed + phase);
+            vAlpha = twinkle;
+            gl_PointSize = size * (8.0 + 4.0 * twinkle) * (100.0 / -mvPosition.z);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          varying float vAlpha;
+          void main() {
+            float dist = length(gl_PointCoord - vec2(0.5));
+            if (dist > 0.5) discard;
+            float glow = 1.0 - smoothstep(0.0, 0.5, dist);
+            gl_FragColor = vec4(uColor, vAlpha * glow);
+          }
+        `,
         transparent: true,
-        opacity: 0.4,
-        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
       });
       const stars = new THREE.Points(starGeo, starMat);
       scene.add(stars);
+
+      // --- Luzes menores piscantes (fireflies) próximas ao universo ---
+      const FIREFLY_N = 40;
+      const flyPos = new Float32Array(FIREFLY_N * 3);
+      const flyPhase = new Float32Array(FIREFLY_N);
+      const flySpeed = new Float32Array(FIREFLY_N);
+      for (let i = 0; i < FIREFLY_N; i++) {
+        const r = 2.5 + Math.random() * 3.5;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        flyPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        flyPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        flyPos[i * 3 + 2] = r * Math.cos(phi);
+        flyPhase[i] = Math.random() * Math.PI * 2;
+        flySpeed[i] = 0.8 + Math.random() * 2.2;
+      }
+      const flyGeo = new THREE.BufferGeometry();
+      flyGeo.setAttribute("position", new THREE.BufferAttribute(flyPos, 3));
+      flyGeo.setAttribute("phase", new THREE.BufferAttribute(flyPhase, 1));
+      flyGeo.setAttribute("speed", new THREE.BufferAttribute(flySpeed, 1));
+      const flyMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uColor: { value: new THREE.Color(0xb0bbff) },
+        },
+        vertexShader: `
+          attribute float phase;
+          attribute float speed;
+          varying float vAlpha;
+          uniform float uTime;
+          void main() {
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * mvPosition;
+            float twinkle = 0.2 + 0.8 * sin(uTime * speed + phase);
+            vAlpha = twinkle;
+            gl_PointSize = (6.0 + 5.0 * twinkle) * (100.0 / -mvPosition.z);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uColor;
+          varying float vAlpha;
+          void main() {
+            float dist = length(gl_PointCoord - vec2(0.5));
+            if (dist > 0.5) discard;
+            float glow = 1.0 - smoothstep(0.0, 0.5, dist);
+            gl_FragColor = vec4(uColor, vAlpha * glow);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const fireflies = new THREE.Points(flyGeo, flyMat);
+      scene.add(fireflies);
 
       // --- Parallax/tilt do universo seguindo o mouse dentro do canvas ---
       const target = { rx: 0, ry: 0 };
@@ -331,6 +421,8 @@ export function Hero3D() {
         lineGeo.attributes.position.needsUpdate = true;
 
         stars.rotation.y = t * 0.02;
+        starMat.uniforms.uTime.value = t;
+        flyMat.uniforms.uTime.value = t;
         renderer.render(scene, camera);
       };
 
@@ -375,6 +467,8 @@ export function Hero3D() {
         lineMat.dispose();
         starGeo.dispose();
         starMat.dispose();
+        flyGeo.dispose();
+        flyMat.dispose();
         renderer.dispose();
         if (renderer.domElement.parentNode === mount) {
           mount.removeChild(renderer.domElement);
