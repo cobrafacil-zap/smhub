@@ -40,7 +40,7 @@ export function Hero3D() {
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-      camera.position.set(0, 0, 5);
+      camera.position.set(0, 0, 6);
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -58,7 +58,7 @@ export function Hero3D() {
       const group = new THREE.Group();
       scene.add(group);
 
-      const icoGeo = new THREE.IcosahedronGeometry(1.35, 1);
+      const icoGeo = new THREE.IcosahedronGeometry(1.2, 1);
       const solidMat = new THREE.MeshStandardMaterial({
         color: 0x3d5afe,
         metalness: 0.55,
@@ -70,7 +70,7 @@ export function Hero3D() {
       const solid = new THREE.Mesh(icoGeo, solidMat);
       group.add(solid);
 
-      const wireGeo = new THREE.IcosahedronGeometry(1.38, 1);
+      const wireGeo = new THREE.IcosahedronGeometry(1.23, 1);
       const wireMat = new THREE.MeshBasicMaterial({
         color: 0x8797ff,
         wireframe: true,
@@ -81,7 +81,7 @@ export function Hero3D() {
       group.add(wire);
 
       // Halo maior, bem sutil, pra dar profundidade.
-      const haloGeo = new THREE.IcosahedronGeometry(1.9, 0);
+      const haloGeo = new THREE.IcosahedronGeometry(1.7, 0);
       const haloMat = new THREE.MeshBasicMaterial({
         color: 0x22d3ee,
         wireframe: true,
