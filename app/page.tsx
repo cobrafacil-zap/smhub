@@ -326,7 +326,7 @@ export default async function LandingPage() {
         </div>
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] animate-slide-up">
           A plataforma completa para{" "}
-          <span className="bg-gradient-to-r from-royal-300 to-royal-500 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-royal-300 via-royal-400 to-royal-500 bg-clip-text text-transparent text-gradient-anim">
             agências de marketing
           </span>
         </h1>

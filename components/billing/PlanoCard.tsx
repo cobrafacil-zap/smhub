@@ -37,11 +37,11 @@ export function PlanoCard({
     <Reveal as="div" className="h-full">
       <div
         className={cn(
-          "group relative rounded-2xl border p-6 flex flex-col h-full",
+          "group relative rounded-[1.5rem] border p-6 flex flex-col h-full",
           "bg-bg-surface shadow-soft",
           destaque
-            ? "gradient-border border-royal-500/60 shadow-elevated ring-1 ring-royal-500/30"
-            : "border-border lift hover:shadow-elevated"
+            ? "gradient-border border-transparent shadow-elevated ring-1 ring-royal-500/25 md:-translate-y-3 md:scale-[1.02]"
+            : "border-white/[0.07] lift hover:shadow-elevated"
         )}
       >
         {destaque && (

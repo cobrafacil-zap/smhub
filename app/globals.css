@@ -87,14 +87,16 @@
      Profundidade real: sombra em camadas + highlight interno no topo
      (tira o "card plano" que denuncia IA) e transição suave de transform/border. */
   .card {
-    @apply rounded-2xl border border-border bg-bg-surface p-6;
+    /* Raio maior + borda hairline = menos "caixa quadrada de IA". A sombra
+       em camadas + highlight interno no topo dá material, não planicidade. */
+    @apply rounded-[1.5rem] border border-white/[0.07] bg-bg-surface p-6;
     box-shadow:
       var(--shadow-card),
       inset 0 1px 0 rgb(255 255 255 / 0.04);
     transition:
-      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-      box-shadow 0.25s ease,
-      border-color 0.25s ease;
+      transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.3s ease,
+      border-color 0.3s ease;
   }
   .card-hover {
     @apply hover:-translate-y-1;
@@ -325,8 +327,8 @@
     transform: rotate(360deg);
   }
 
-  /* Borda de gradiente animado — SÓ em destaques (plano destaque, CTA,
-     item ativo de nav). Nunca em todos os cards. */
+  /* Borda de gradiente — SÓ em destaques (plano destaque, CTA, item ativo de
+     nav). Estática e calma (sem giro) — o giro "arco-íris" gritava IA. */
   .gradient-border {
     position: relative;
     background-clip: padding-box;
@@ -337,20 +339,13 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 1px;
-    background: conic-gradient(
-      from var(--gb-angle, 0deg),
-      #3D5AFE,
-      #8797FF,
-      #0A1A40,
-      #3D5AFE
-    );
+    padding: 1.5px;
+    background: linear-gradient(135deg, #3D5AFE 0%, #8797FF 45%, transparent 78%);
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    animation: spin 6s linear infinite;
     pointer-events: none;
   }
 
@@ -391,6 +386,21 @@
   /* Marquee: pausa no hover */
   .pause-on-hover:hover {
     animation-play-state: paused;
+  }
+
+  /* Luz ambiente global — uma única luz royal que segue o cursor por toda a
+     viewport (componente <AmbientCursor> define --ax/--ay). Subtle, premium,
+     dá vida sem precisar passar em cada card. Sem pointer:fine não renderiza. */
+  .ambient-cursor {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      540px circle at var(--ax, 50%) var(--ay, 30%),
+      rgb(61 90 254 / 0.07),
+      transparent 50%
+    );
   }
 
   /* Spotlight — radial suave que segue o cursor (premium em cards).
@@ -508,7 +518,8 @@
   .glare,
   .gradient-border::before,
   .aurora-blob,
-  .pulse-ring {
+  .pulse-ring,
+  .ambient-cursor {
     all: unset !important;
     animation: none !important;
   }

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { SITE } from "@/lib/site";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { AmbientCursor } from "@/components/ui/motion/AmbientCursor";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { ThemeToaster } from "@/components/ui/ThemeToaster";
 import { RegisterSW } from "@/components/pwa/RegisterSW";
@@ -110,6 +111,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ScrollToTop />
+          <AmbientCursor />
           {children}
           <RegisterSW />
           <ThemeToaster />
