@@ -124,10 +124,10 @@ export function InteractiveShowcase() {
     const measure = () => {
       const w = stageRef.current?.clientWidth ?? 600;
       // painel ~300px; espaçamento cresce com a tela, com teto.
-      const cardW = window.innerWidth < 640 ? 320 : 360;
-      // Espaçamento menor = cards mais juntos e centralizados.
-      const maxSpacing = Math.max(120, (w - cardW) / 2 * 0.6);
-      setSpacing(Math.max(130, Math.min(200, Math.min(maxSpacing, w * 0.24))));
+      const cardW = window.innerWidth < 640 ? 340 : 400;
+      // Cards laterais ficam logo ao lado do ativo, mantendo o trio centralizado.
+      const maxSpacing = Math.max(140, (w - cardW) / 2 * 0.55);
+      setSpacing(Math.max(150, Math.min(220, Math.min(maxSpacing, w * 0.22))));
     };
     const onDesk = () => setIsDesktop(deskMq.matches);
     measure();
@@ -171,8 +171,8 @@ export function InteractiveShowcase() {
         ref={stageRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="relative h-[340px] sm:h-[400px] flex items-center justify-center overflow-visible"
-        style={{ perspective: "1200px", touchAction: "pan-y" }}
+        className="relative h-[360px] sm:h-[420px] flex items-center justify-center overflow-visible"
+        style={{ perspective: "1200px", perspectiveOrigin: "center center", touchAction: "pan-y" }}
       >
         {/* Painéis */}
         <div
@@ -198,9 +198,9 @@ export function InteractiveShowcase() {
             const transform = reduce
               ? `translateX(${offset * (isActive ? 0 : 120)}%) scale(${isActive ? 1 : 0.92})`
               : `translateX(${offset * spacing}px) translateZ(${
-                  -abs * 70
-                }px) rotateY(${offset * -38}deg) scale(${
-                  isActive ? 1 : 0.85
+                  -abs * 60
+                }px) rotateY(${offset * -35}deg) scale(${
+                  isActive ? 1 : 0.88
                 })`;
 
             return (
@@ -210,14 +210,16 @@ export function InteractiveShowcase() {
                 onClick={() => setActive(i)}
                 aria-label={m.title}
                 tabIndex={visible ? 0 : -1}
-                className="absolute left-1/2 top-1/2 w-[min(90vw,320px)] sm:w-[360px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-95"
+                className="absolute left-1/2 top-1/2 w-[min(92vw,340px)] sm:w-[400px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-95"
                 style={{
                   transform,
-                  opacity: !visible ? 0 : isActive ? 1 : 0.45,
-                  zIndex: isActive ? 20 : 19 - abs,
+                  opacity: !visible ? 0 : isActive ? 1 : 0.5,
+                  zIndex: isActive ? 30 : 20 - abs,
                   pointerEvents: visible ? "auto" : "none",
                   transformStyle: "preserve-3d",
                   backfaceVisibility: "hidden",
+                  WebkitTransformOrigin: "center center",
+                  transformOrigin: "center center",
                 }}
               >
                 <div className={`card group h-full p-4 sm:p-5 flex flex-col gap-3 spotlight ${isActive ? "border-royal-500/40 shadow-elevated" : ""}`}>
