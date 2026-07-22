@@ -38,20 +38,6 @@ export const META_SCOPES = [
   "business_management",
 ] as const;
 
-/**
- * Scopes do OAuth UNIFICADO (um só login pede tudo de Instagram + Facebook).
- * Usado pelo botão único "Conectar conta da Meta" — depois o seletor pós-OAuth
- * deixa o admin escolher conectar como Instagram ou como Facebook.
- */
-export const META_UNIFIED_SCOPES = [
-  "instagram_basic",
-  "instagram_manage_insights",
-  "pages_show_list",
-  "pages_read_engagement",
-  "read_insights",
-  "business_management",
-] as const;
-
 /** Scopes efetivamente pedidos no OAuth, por plataforma. */
 export function scopesForProvider(provider: MetaProvider): string[] {
   if (provider === "instagram") {
@@ -97,7 +83,7 @@ export function metaRedirectUri(): string {
 
 export function buildAuthUrl(args: {
   clienteId: string;
-  provider: MetaProvider | "unified";
+  provider: MetaProvider;
   agenciaId: string;
   userId: string;
 }): string {
@@ -110,14 +96,10 @@ export function buildAuthUrl(args: {
     },
     STATE_TTL_MS
   );
-  const scope =
-    args.provider === "unified"
-      ? META_UNIFIED_SCOPES.join(",")
-      : scopesForProvider(args.provider).join(",");
   const params = new URLSearchParams({
     client_id: getAppId(),
     redirect_uri: metaRedirectUri(),
-    scope,
+    scope: scopesForProvider(args.provider).join(","),
     state,
     response_type: "code",
   });

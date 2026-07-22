@@ -18,25 +18,19 @@ type ImportResult =
   | { ok: false; error: string };
 
 const providerSchema = z.enum(["instagram", "facebook"]);
-// OAuth unificado: um só login pede os scopes de IG + FB; o provider final
-// é escolhido no seletor pós-OAuth.
-const connectProviderSchema = z.enum(["instagram", "facebook", "unified"]);
 
 /**
  * Inicia o OAuth da Meta: valida que o cliente pertence à agência e devolve a
  * URL de autorização para o browser redirecionar. Apenas admin da agência.
- *
- * `providerRaw` pode ser "instagram", "facebook" ou "unified" (OAuth único com
- * todos os scopes — usado pelo botão "Conectar conta da Meta").
  */
 export async function iniciarMetaOAuthAction(
   clienteId: string,
   providerRaw: string
 ): Promise<ConnectResult> {
   const session = await requireAgenciaAdmin();
-  const parsed = connectProviderSchema.safeParse(providerRaw);
+  const parsed = providerSchema.safeParse(providerRaw);
   if (!parsed.success) return { ok: false, error: "Plataforma inválida." };
-  const provider = parsed.data as MetaProvider | "unified";
+  const provider = parsed.data as MetaProvider;
 
   const supabase = createClient();
   const { data: cli } = await supabase
@@ -136,7 +130,7 @@ export async function selecionarContaMetaAction(formData: FormData): Promise<Sim
     token: string;
     expiresAt: string | null;
     scopes: string;
-    provider: MetaProvider | "unified";
+    provider: MetaProvider;
     clienteId: string;
     agenciaId: string;
     userId: string;
@@ -152,13 +146,9 @@ export async function selecionarContaMetaAction(formData: FormData): Promise<Sim
     return { error: "Sessão de seleção não pertence a esta agência." };
   }
 
-  // No fluxo unificado o provider é decidido no seletor (formData), não no
-  // OAuth. Validamos aqui — só instagram|facebook são graváveis.
+  // O provider vem do OAuth (ctx), não do client — evita spoofing.
   const pageId = String(formData.get("page_id") ?? "").trim();
-  const providerRaw = String(formData.get("provider") ?? "").trim();
-  const parsed = providerSchema.safeParse(providerRaw);
-  if (!parsed.success) return { error: "Plataforma inválida." };
-  const provider = parsed.data;
+  const provider = ctx.provider;
   if (!pageId) return { error: "Selecione uma conta." };
 
   // Re-busca as Páginas (tokens frescos) — não confia no pageId sozinho.

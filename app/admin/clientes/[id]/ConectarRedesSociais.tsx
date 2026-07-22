@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Instagram, Facebook, Plug, Unplug, CheckCircle2, AlertCircle } from "lucide-react";
+import { Instagram, Facebook, Plug, Unplug, AlertCircle, Search } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -17,8 +17,7 @@ import type { ConexaoRede, MetaProvider } from "@/types/database";
 
 /** Contas disponíveis para o seletor pós-OAuth (sem token — seguro p/ client). */
 export type ContaMetaSelecao = {
-  // "unified" = OAuth único (IG+FB); o seletor mostra Páginas FB e contas IG juntas.
-  provider?: MetaProvider | "unified";
+  provider?: MetaProvider;
   contas: {
     pageId: string;
     pageName: string;
@@ -48,8 +47,9 @@ export function ConectarRedesSociais({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [busyProvider, setBusyProvider] = useState<MetaProvider | "unified" | null>(null);
+  const [busyProvider, setBusyProvider] = useState<MetaProvider | null>(null);
   const [selecionada, setSelecionada] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
 
   const PROVIDERS: Array<{
     provider: MetaProvider;
@@ -64,11 +64,11 @@ export function ConectarRedesSociais({
     return conexoes.find((c) => c.provider === provider && c.connected_at);
   }
 
-  function conectar() {
-    setBusyProvider("unified");
+  function conectar(provider: MetaProvider) {
+    setBusyProvider(provider);
     startTransition(async () => {
       try {
-        const res = await iniciarMetaOAuthAction(clienteId, "unified");
+        const res = await iniciarMetaOAuthAction(clienteId, provider);
         if (!res.ok) {
           toast.error(res.error);
           return;
@@ -110,16 +110,9 @@ export function ConectarRedesSociais({
       toast.error("Selecione uma conta.");
       return;
     }
-    // selecionada vem no formato "<provider>:<pageId>".
-    const [provider, pageId] = selecionada.split(":");
-    if (!provider || !pageId) {
-      toast.error("Seleção inválida.");
-      return;
-    }
     startTransition(async () => {
       const fd = new FormData();
-      fd.set("page_id", pageId);
-      fd.set("provider", provider);
+      fd.set("page_id", selecionada);
       const res = await selecionarContaMetaAction(fd);
       if (res?.error) {
         toast.error(res.error);
@@ -138,50 +131,39 @@ export function ConectarRedesSociais({
   }
 
   const sel = contasParaSelecionar;
-  // Opções unificadas: cada Página vira uma opção Facebook e, se tiver IG
-  // vinculado, uma opção Instagram. O admin escolhe UMA; para conectar a
-  // outra, clica em Conectar de novo.
-  const igJaConectado = !!conexaoOf("instagram");
-  const fbJaConectado = !!conexaoOf("facebook");
-  const opcoes: Array<{
-    key: string;
-    provider: MetaProvider;
-    titulo: string;
-    sub: string;
-    pictureUrl: string | null;
-    jaConectado: boolean;
-  }> = [];
-  for (const c of sel?.contas ?? []) {
-    opcoes.push({
-      key: `facebook:${c.pageId}`,
-      provider: "facebook",
-      titulo: c.pageName,
-      sub: "Página do Facebook",
-      pictureUrl: c.pagePictureUrl,
-      jaConectado: fbJaConectado,
-    });
-    if (c.igUserId) {
-      opcoes.push({
-        key: `instagram:${c.pageId}`,
-        provider: "instagram",
-        titulo: c.igUsername ? `@${c.igUsername}` : c.pageName,
-        sub: c.igUsername ? "Instagram" : "Instagram vinculado (sem handle)",
-        pictureUrl: c.igPictureUrl ?? c.pagePictureUrl,
-        jaConectado: igJaConectado,
-      });
-    }
-  }
-  const opcoesSelecionaveis = opcoes.filter((o) => !o.jaConectado);
+  const selProvider = sel?.provider;
+  const selLabel =
+    selProvider === "instagram" ? "Instagram" : selProvider === "facebook" ? "Facebook" : "conta";
+  // No fluxo de Instagram, só faz sentido conectar Páginas com conta IG vinculada.
+  const contasVisiveis =
+    sel && selProvider === "instagram"
+      ? sel.contas.filter((c) => c.igUserId)
+      : sel?.contas ?? [];
+  const contaSelecionada = contasVisiveis.find((c) => c.pageId === selecionada) ?? null;
+  // Caixinha de pesquisa: filtra as opções do dropdown por nome/handle.
+  const termo = busca.trim().toLowerCase();
+  const contasFiltradas = termo
+    ? contasVisiveis.filter(
+        (c) =>
+          c.pageName.toLowerCase().includes(termo) ||
+          (c.igUsername ?? "").toLowerCase().includes(termo)
+      )
+    : contasVisiveis;
+  const selPictureUrl =
+    selProvider === "instagram"
+      ? contaSelecionada?.igPictureUrl ?? contaSelecionada?.pagePictureUrl ?? null
+      : contaSelecionada?.pagePictureUrl ?? null;
+  const SelIcon = selProvider === "instagram" ? Instagram : Facebook;
 
   return (
     <div className="space-y-4">
-      {/* Seletor pós-OAuth unificado: escolhe qual conta conectar (IG ou FB) */}
+      {/* Seletor pós-OAuth: escolhe qual conta conectar (caixa de seleção) */}
       {sel && (
         <Card className="border-royal-500/40">
           <div className="flex items-center gap-2 mb-3">
             <Plug className="h-4 w-4 text-royal-300" />
             <h3 className="text-base font-semibold text-slate-100">
-              Selecionar conta da Meta
+              Selecionar {selLabel}
             </h3>
           </div>
 
@@ -190,71 +172,64 @@ export function ConectarRedesSociais({
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
               <span>{sel.erro}</span>
             </div>
-          ) : opcoes.length === 0 ? (
+          ) : contasVisiveis.length === 0 ? (
             <p className="text-sm text-slate-400">
-              Nenhuma conta encontrada. Vincule uma conta comercial do Instagram
-              a uma das suas Páginas do Facebook e tente de novo.
+              {selProvider === "instagram"
+                ? "Nenhuma Página com conta comercial do Instagram vinculada foi encontrada. Vincule uma conta comercial do Instagram a uma das suas Páginas do Facebook e tente de novo."
+                : "Nenhuma Página do Facebook encontrada para esta conta."}
             </p>
           ) : (
-            <>
-              <p className="text-sm text-slate-400 mb-3">
-                Escolha qual conta conectar a este cliente. Para conectar tanto o
-                Instagram quanto o Facebook, conecte um agora e o outro depois.
+            <div className="space-y-3">
+              <p className="text-sm text-slate-400">
+                Escolha qual {selProvider === "instagram" ? "conta do Instagram" : "Página do Facebook"} conectar a este cliente.
               </p>
-              <div className="space-y-2">
-                {opcoes.map((o) => {
-                  const checked = selecionada === o.key;
-                  const disabled = o.jaConectado;
-                  const Icon = o.provider === "instagram" ? Instagram : Facebook;
-                  return (
-                    <label
-                      key={o.key}
-                      className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition ${
-                        disabled
-                          ? "border-border bg-bg-elevated/20 opacity-60 cursor-not-allowed"
-                          : checked
-                          ? "border-royal-500/60 bg-royal-500/10 cursor-pointer"
-                          : "border-border bg-bg-elevated/40 hover:border-royal-500/30 cursor-pointer"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="conta_meta"
-                        value={o.key}
-                        checked={checked}
-                        disabled={disabled}
-                        onChange={() => setSelecionada(o.key)}
-                        className="h-4 w-4 accent-royal-500"
-                      />
-                      <div className="h-9 w-9 rounded-full bg-bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                        {o.pictureUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={o.pictureUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <Icon className="h-4 w-4 text-slate-200" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-100 truncate">
-                          {o.titulo}
-                        </p>
-                        <p className="text-xs text-slate-400 truncate">{o.sub}</p>
-                      </div>
-                      {disabled ? (
-                        <Badge variant="success" className="shrink-0">Conectado</Badge>
-                      ) : checked ? (
-                        <CheckCircle2 className="h-4 w-4 text-royal-300 shrink-0" />
-                      ) : null}
-                    </label>
-                  );
-                })}
+
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+                <input
+                  type="text"
+                  className="input text-sm pl-8"
+                  placeholder="Buscar conta…"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                />
               </div>
-            </>
+
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                  {selPictureUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={selPictureUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <SelIcon className="h-4 w-4 text-slate-200" />
+                  )}
+                </div>
+                <select
+                  className="input text-sm flex-1 min-w-0"
+                  value={selecionada ?? ""}
+                  onChange={(e) => setSelecionada(e.target.value || null)}
+                >
+                  <option value="">Selecione uma conta…</option>
+                  {contasFiltradas.map((c) => (
+                    <option key={c.pageId} value={c.pageId}>
+                      {selProvider === "instagram"
+                        ? c.igUsername
+                          ? `@${c.igUsername} — ${c.pageName}`
+                          : c.pageName
+                        : c.pageName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {busca && contasFiltradas.length === 0 && (
+                <p className="text-xs text-slate-500">Nenhuma conta encontrada para "{busca}".</p>
+              )}
+            </div>
           )}
 
           <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-border">
@@ -266,7 +241,7 @@ export function ConectarRedesSociais({
             >
               Cancelar
             </Button>
-            {!sel.erro && opcoesSelecionaveis.length > 0 && (
+            {!sel.erro && contasVisiveis.length > 0 && (
               <Button
                 size="sm"
                 loading={pending}
@@ -333,13 +308,13 @@ export function ConectarRedesSociais({
                       </p>
                     ) : (
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Conecte pelo botão abaixo.
+                        Toque em conectar para autorizar.
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="shrink-0">
-                  {conectado && (
+                  {conectado ? (
                     <Button
                       size="sm"
                       variant="secondary"
@@ -349,25 +324,20 @@ export function ConectarRedesSociais({
                     >
                       Desconectar
                     </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      loading={pending && busyProvider === provider}
+                      onClick={() => conectar(provider)}
+                      iconLeft={<Plug className="h-3.5 w-3.5" />}
+                    >
+                      Conectar
+                    </Button>
                   )}
                 </div>
               </div>
             );
           })}
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-border">
-          <Button
-            className="w-full sm:w-auto"
-            loading={pending && busyProvider === "unified"}
-            onClick={conectar}
-            iconLeft={<Plug className="h-4 w-4" />}
-          >
-            Conectar conta da Meta
-          </Button>
-          <p className="text-xs text-slate-500 mt-2">
-            Um login autoriza Instagram e Facebook; depois você escolhe qual conta conectar.
-          </p>
         </div>
       </Card>
     </div>

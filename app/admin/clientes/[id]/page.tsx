@@ -118,7 +118,7 @@ export default async function ClienteDetalhePage({
         ) {
           const contas = await listAccounts(ctx.token);
           contasParaSelecionar = {
-            provider: ctx.provider as MetaProvider | "unified",
+            provider: ctx.provider as MetaProvider,
             contas: contas.map((p) => ({
               pageId: p.pageId,
               pageName: p.pageName,
