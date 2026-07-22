@@ -318,11 +318,11 @@ export default async function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-24 pb-14 sm:pb-20 text-center">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 lg:pt-20 pb-14 sm:pb-20 text-center">
         <Hero3D />
         <div className="relative z-10">
-        <div className="flex justify-center mb-8 animate-logo-in">
-          <Logo variant="full" className="!h-32 sm:!h-40 animate-logo-float" />
+        <div className="flex justify-center mb-10 animate-logo-in">
+          <Logo variant="full" className="!h-20 sm:!h-24 animate-logo-float" />
         </div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-royal-500/10 border border-royal-500/30 text-xs text-royal-200 mb-6 animate-fade-in pulse-ring">
           <Sparkles className="h-3.5 w-3.5 icon-bob" />

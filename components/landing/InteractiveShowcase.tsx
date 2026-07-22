@@ -205,7 +205,7 @@ export function InteractiveShowcase() {
                 onClick={() => setActive(i)}
                 aria-label={m.title}
                 tabIndex={visible ? 0 : -1}
-                className="absolute left-1/2 top-[42%] w-[300px] max-w-[88vw] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-90"
+                className="absolute left-1/2 top-1/2 w-[300px] max-w-[88vw] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-90"
                 style={{
                   transform,
                   opacity: !visible ? 0 : isActive ? 1 : 0.4,
@@ -215,25 +215,25 @@ export function InteractiveShowcase() {
                   backfaceVisibility: "hidden",
                 }}
               >
-                <div className="card group h-full p-6 flex flex-col gap-4 spotlight">
+                <div className="card group h-full p-5 flex flex-col gap-3 spotlight">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`h-11 w-11 rounded-xl border flex items-center justify-center ${m.accent}`}
+                      className={`h-10 w-10 rounded-xl border flex items-center justify-center ${m.accent}`}
                     >
                       <Icon className="h-5 w-5 icon-pop" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-slate-100">
+                      <h3 className="text-base font-semibold text-slate-100 leading-tight">
                         {m.title}
                       </h3>
-                      <p className="text-xs text-slate-400">{m.tagline}</p>
+                      <p className="text-xs text-slate-400 leading-tight">{m.tagline}</p>
                     </div>
                   </div>
-                  <ul className="space-y-2 flex-1">
+                  <ul className="space-y-1.5 flex-1">
                     {m.bullets.map((b) => (
                       <li
                         key={b}
-                        className="flex items-start gap-2 text-sm text-slate-300"
+                        className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
                       >
                         <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-royal-400 shrink-0" />
                         {b}

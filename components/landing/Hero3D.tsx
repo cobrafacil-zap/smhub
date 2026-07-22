@@ -116,29 +116,9 @@ export function Hero3D() {
       const universe = new THREE.Group();
       scene.add(universe);
 
-      // --- Núcleo central (o Hub) ---
-      const coreGeo = new THREE.IcosahedronGeometry(0.5, 1);
-      const coreMat = new THREE.MeshStandardMaterial({
-        color: 0x3d5afe,
-        emissive: 0x3d5afe,
-        emissiveIntensity: 0.9,
-        metalness: 0.4,
-        roughness: 0.3,
-        flatShading: true,
-      });
-      const core = new THREE.Mesh(coreGeo, coreMat);
-      universe.add(core);
-
-      const haloGeo = new THREE.IcosahedronGeometry(0.66, 0);
-      const haloMat = new THREE.MeshBasicMaterial({
-        color: 0x8797ff,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.25,
-      });
-      const halo = new THREE.Mesh(haloGeo, haloMat);
-      universe.add(halo);
-
+      // --- Centro = o Hub (o logo SM Hub, que está no DOM por cima, é o núcleo).
+      //    Sem mesh 3D no centro: as linhas convergem pra (0,0,0) = o logo.
+      //    Uma point light dá um brilho suave atrás do logo. ---
       scene.add(new THREE.AmbientLight(0x0a1a40, 1.3));
       const coreLight = new THREE.PointLight(0x3d5afe, 16, 30);
       coreLight.position.set(0, 0, 0);
@@ -164,7 +144,7 @@ export function Hero3D() {
         phase: number;
       };
       const nodes: Node[] = [];
-      const glowGeo = new THREE.SphereGeometry(0.2, 16, 16);
+      const glowGeo = new THREE.SphereGeometry(0.16, 16, 16);
       for (let i = 0; i < ICON_SVGS.length; i++) {
         const spriteMat = new THREE.SpriteMaterial({
           map: textures[i],
@@ -172,26 +152,29 @@ export function Hero3D() {
           depthWrite: false,
         });
         const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(0.6, 0.6, 1);
+        sprite.scale.set(0.58, 0.58, 1);
         universe.add(sprite);
 
         const glowMat = new THREE.MeshBasicMaterial({
           color: ICON_SVGS[i].color,
           transparent: true,
-          opacity: 0.22,
+          opacity: 0.18,
         });
         const glow = new THREE.Mesh(glowGeo, glowMat);
         universe.add(glow);
 
+        // Órbitas ESPALHADAS: cada ícone num raio distinto (sem amontoar) e num
+        // plano inclinado diferente (sem ficar um atras do outro). phase
+        // distribuído pelo círculo. Nenhum tilt em 90° (ficaria fora da faixa).
         nodes.push({
           sprite,
           spriteMat,
           glow,
           glowMat,
-          r: 1.5 + (i % 3) * 0.42,
-          speed: 0.16 + (i % 3) * 0.06,
-          tilt: (i / ICON_SVGS.length) * Math.PI,
-          phase: (i / ICON_SVGS.length) * Math.PI * 2,
+          r: 2.0 + i * 0.24,
+          speed: 0.13 + (i % 3) * 0.05,
+          tilt: i * 0.7,
+          phase: i * 1.25,
         });
       }
 
@@ -260,10 +243,6 @@ export function Hero3D() {
         universe.rotation.x = cur.rx;
         universe.rotation.y = cur.ry + t * 0.05;
 
-        core.rotation.y = t * 0.3;
-        core.rotation.x = t * 0.18;
-        halo.rotation.y = -t * 0.12;
-
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
           const a = n.phase + t * n.speed;
@@ -311,10 +290,6 @@ export function Hero3D() {
         window.removeEventListener("resize", onResize);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
-        coreGeo.dispose();
-        coreMat.dispose();
-        haloGeo.dispose();
-        haloMat.dispose();
         glowGeo.dispose();
         nodes.forEach((n) => {
           n.spriteMat.map?.dispose();
