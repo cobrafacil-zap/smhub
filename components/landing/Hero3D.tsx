@@ -99,7 +99,7 @@ export function Hero3D() {
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-      camera.position.set(0, 0, 6.5);
+      camera.position.set(0, 0, 7.5);
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -171,9 +171,9 @@ export function Hero3D() {
           spriteMat,
           glow,
           glowMat,
-          r: 2.0 + i * 0.24,
-          speed: 0.13 + (i % 3) * 0.05,
-          tilt: i * 0.7,
+          r: 2.25 + i * 0.28,
+          speed: 0.08 + (i % 3) * 0.03,
+          tilt: i * 0.65,
           phase: i * 1.25,
         });
       }
@@ -185,7 +185,7 @@ export function Hero3D() {
       const lineMat = new THREE.LineBasicMaterial({
         color: 0x8797ff,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.14,
       });
       const lines = new THREE.LineSegments(lineGeo, lineMat);
       universe.add(lines);
@@ -205,9 +205,9 @@ export function Hero3D() {
       starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
       const starMat = new THREE.PointsMaterial({
         color: 0x8797ff,
-        size: 0.03,
+        size: 0.025,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.4,
         sizeAttenuation: true,
       });
       const stars = new THREE.Points(starGeo, starMat);
@@ -241,7 +241,7 @@ export function Hero3D() {
         cur.rx += (target.rx - cur.rx) * 0.05;
         cur.ry += (target.ry - cur.ry) * 0.05;
         universe.rotation.x = cur.rx;
-        universe.rotation.y = cur.ry + t * 0.05;
+        universe.rotation.y = cur.ry + t * 0.03;
 
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
