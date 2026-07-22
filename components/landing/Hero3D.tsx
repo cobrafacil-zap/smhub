@@ -217,7 +217,7 @@ export function Hero3D() {
       const starMat = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
-          uColor: { value: new THREE.Color(0x8ba0e6) },
+          uColor: { value: new THREE.Color(0x9aaae0) },
         },
         vertexShader: `
           attribute float phase;
@@ -230,10 +230,10 @@ export function Hero3D() {
           void main() {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.12 + 0.35 * sin(uTime * speed + phase);
+            float twinkle = 0.15 + 0.4 * sin(uTime * speed + phase);
             vAlpha = twinkle;
             vBrightness = brightness;
-            gl_PointSize = size * (1.6 + 1.3 * twinkle) * (100.0 / -mvPosition.z);
+            gl_PointSize = size * (1.7 + 1.4 * twinkle) * (100.0 / -mvPosition.z);
           }
         `,
         fragmentShader: `
@@ -244,7 +244,7 @@ export function Hero3D() {
             float dist = length(gl_PointCoord - vec2(0.5));
             if (dist > 0.5) discard;
             float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow * vBrightness * 0.55);
+            gl_FragColor = vec4(uColor, vAlpha * glow * vBrightness * 0.6);
           }
         `,
         transparent: true,

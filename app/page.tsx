@@ -334,7 +334,7 @@ export default async function LandingPage() {
               key={s.label}
               as="div"
               delay={i * 80}
-              className="rounded-xl border border-border/60 bg-bg-surface/60 px-4 py-4 sm:py-5 text-left"
+              className="rounded-xl border border-border/60 bg-bg-surface/60 px-4 py-4 sm:py-5 text-left card-hover"
             >
               <s.icon className="h-5 w-5 text-royal-300 mb-2" />
               <p className="text-xl sm:text-2xl font-bold text-slate-100 leading-tight">
@@ -362,8 +362,8 @@ export default async function LandingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 70}>
-              <Card className="h-full group spotlight">
-                <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3 transition-all duration-300 group-hover:bg-royal-500/20 group-hover:shadow-[0_0_20px_-6px_rgba(88,108,240,0.35)]">
+              <Card className="h-full group card-hover">
+                <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3 transition-colors duration-300 group-hover:bg-royal-500/20">
                   <f.icon className="h-5 w-5 text-royal-300" />
                 </div>
                 <h3 className="text-base font-semibold text-slate-100">{f.title}</h3>
@@ -399,8 +399,8 @@ export default async function LandingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 90}>
-              <Card className="h-full group spotlight">
-                <div className="h-9 w-9 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center text-xs font-semibold text-royal-300 mb-4 transition-all duration-300 group-hover:bg-royal-500/20 group-hover:shadow-[0_0_20px_-6px_rgba(88,108,240,0.35)]">
+              <Card className="h-full group card-hover">
+                <div className="h-9 w-9 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center text-xs font-semibold text-royal-300 mb-4 transition-colors duration-300 group-hover:bg-royal-500/20">
                   {s.n}
                 </div>
                 <h3 className="text-base font-semibold text-slate-100">{s.title}</h3>
@@ -499,27 +499,24 @@ export default async function LandingPage() {
 
       {/* CTA Final */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-        <Card className="text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-royal-500/5 via-transparent to-royal-500/5 pointer-events-none" />
-          <div className="relative">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
-              Pronto pra organizar sua agência?
-            </h2>
-            <p className="text-slate-300 mt-2 max-w-xl mx-auto text-sm sm:text-base">
-              Teste a SM Hub por 7 dias. Sem cartão e sem compromisso.
-            </p>
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto glow-hover" iconRight={<ArrowRight className="h-4 w-4" />}>
-                  Começar grátis
-                </Button>
-              </Link>
-              <Link href="/login" className="w-full sm:w-auto">
-                <Button size="lg" variant="ghost" className="w-full sm:w-auto">
-                  Entrar
-                </Button>
-              </Link>
-            </div>
+        <Card className="text-center card-hover">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
+            Pronto pra organizar sua agência?
+          </h2>
+          <p className="text-slate-300 mt-2 max-w-xl mx-auto text-sm sm:text-base">
+            Teste a SM Hub por 7 dias. Sem cartão e sem compromisso.
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto glow-hover" iconRight={<ArrowRight className="h-4 w-4" />}>
+                Começar grátis
+              </Button>
+            </Link>
+            <Link href="/login" className="w-full sm:w-auto">
+              <Button size="lg" variant="ghost" className="w-full sm:w-auto">
+                Entrar
+              </Button>
+            </Link>
           </div>
         </Card>
       </section>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const EMOJIS = ["✨", "🚀", "💡", "⚡", "🔥", "🎯", "📈", "💼"];
+const EMOJIS = ["✨", "💡", "⚡", "🔥"];
 
 interface Particle {
   el: HTMLSpanElement;
@@ -15,8 +15,8 @@ interface Particle {
 }
 
 /**
- * HeroEmojiField — pequenos emojis/flares que surgem perto do cursor no hero,
- * flutuam para cima e desaparecem. Efeito sutil, sem roubar atenção do conteúdo.
+ * HeroEmojiField — flares bem esparsos que surgem perto do cursor no hero.
+ * Poucos, pequenos, longe do texto. Só desktop.
  */
 export function HeroEmojiField() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -24,8 +24,6 @@ export function HeroEmojiField() {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
-    // Só ativa em dispositivos com mouse preciso.
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
     const particles: Particle[] = [];
@@ -36,15 +34,15 @@ export function HeroEmojiField() {
     const spawn = (x: number, y: number) => {
       const el = document.createElement("span");
       el.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-      el.className = "absolute text-base pointer-events-none select-none";
+      el.className = "absolute text-sm pointer-events-none select-none";
       el.style.left = "0";
       el.style.top = "0";
-      el.style.filter = "drop-shadow(0 0 6px rgba(88,108,240,0.6))";
+      el.style.filter = "drop-shadow(0 0 5px rgba(88,108,240,0.45))";
       el.style.opacity = "0";
       container.appendChild(el);
 
-      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.2;
-      const speed = 0.6 + Math.random() * 1.2;
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.9;
+      const speed = 0.5 + Math.random() * 0.9;
 
       particles.push({
         el,
@@ -53,7 +51,7 @@ export function HeroEmojiField() {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: 40 + Math.random() * 40,
+        maxLife: 35 + Math.random() * 30,
       });
     };
 
@@ -63,9 +61,15 @@ export function HeroEmojiField() {
       const y = e.clientY - rect.top;
 
       const now = performance.now();
-      if (now - lastSpawn > 80) {
+      if (now - lastSpawn > 160) {
         lastSpawn = now;
-        spawn(x, y);
+        // Só cria se estiver na área de fundo (evita poluir o texto central).
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const distFromCenter = Math.hypot(x - centerX, y - centerY);
+        if (distFromCenter > Math.min(rect.width, rect.height) * 0.25) {
+          spawn(x, y);
+        }
       }
     };
 
@@ -82,12 +86,12 @@ export function HeroEmojiField() {
         p.vy *= 0.96;
 
         const progress = p.life / p.maxLife;
-        const opacity = progress < 0.15
-          ? progress / 0.15
-          : Math.max(0, 1 - (progress - 0.15) / 0.85);
+        const opacity = progress < 0.12
+          ? progress / 0.12
+          : Math.max(0, 1 - (progress - 0.12) / 0.88);
 
-        p.el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${1 - progress * 0.3})`;
-        p.el.style.opacity = String(opacity * 0.85);
+        p.el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${1 - progress * 0.25})`;
+        p.el.style.opacity = String(opacity * 0.7);
 
         if (p.life >= p.maxLife) {
           p.el.remove();

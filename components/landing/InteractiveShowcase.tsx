@@ -167,7 +167,7 @@ export function InteractiveShowcase() {
               )}
               style={{
                 transform,
-                opacity: !visible ? 0 : isActive ? 1 : 0.35,
+                opacity: !visible ? 0 : isActive ? 1 : 0.4,
                 zIndex: isActive ? 30 : 20 - abs,
                 transformStyle: "preserve-3d",
                 backfaceVisibility: "hidden",
@@ -178,8 +178,8 @@ export function InteractiveShowcase() {
                 className={cn(
                   "rounded-[1.5rem] border p-4 sm:p-5 flex flex-col gap-3 transition-all duration-300",
                   isActive
-                    ? "border-royal-500/50 bg-bg-surface shadow-[0_0_40px_-12px_rgba(88,108,240,0.35)]"
-                    : "border-border/60 bg-bg-surface/60 group-hover:border-royal-500/30 group-hover:bg-bg-surface group-hover:shadow-[0_0_30px_-14px_rgba(88,108,240,0.2)]"
+                    ? "border-royal-500/45 bg-bg-surface shadow-[0_0_48px_-10px_rgba(88,108,240,0.32)]"
+                    : "border-border/60 bg-bg-surface/60 group-hover:border-royal-400/40 group-hover:bg-bg-surface/80"
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -229,8 +229,8 @@ export function InteractiveShowcase() {
               onClick={() => setActive(i)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
                 isActive
-                  ? "bg-royal-500 text-white border-royal-500 shadow-[0_0_16px_-4px_rgba(88,108,240,0.45)]"
-                  : "bg-bg-surface/60 border-border text-slate-400 hover:text-slate-200 hover:border-royal-500/40 hover:bg-bg-elevated"
+                  ? "bg-royal-500 text-white border-royal-500 shadow-[0_0_12px_-2px_rgba(88,108,240,0.4)]"
+                  : "bg-bg-surface/60 border-border text-slate-400 hover:text-slate-200 hover:border-royal-400/40 hover:bg-bg-elevated"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
