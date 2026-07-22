@@ -124,6 +124,39 @@ const config: Config = {
           "0%,100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-6px)" },
         },
+        // Micro-interações (menos "cara de IA") ---------------------------
+        "icon-pop": {
+          "0%": { transform: "scale(1)" },
+          "40%": { transform: "scale(1.18) rotate(-4deg)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "icon-bob": {
+          "0%,100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-3px)" },
+        },
+        "icon-wiggle": {
+          "0%,100%": { transform: "rotate(0deg)" },
+          "25%": { transform: "rotate(-10deg)" },
+          "75%": { transform: "rotate(10deg)" },
+        },
+        "float-slow": {
+          "0%,100%": { transform: "translate(0,0) scale(1)" },
+          "33%": { transform: "translate(2%, -3%) scale(1.04)" },
+          "66%": { transform: "translate(-2%, 2%) scale(0.98)" },
+        },
+        "gradient-pan": {
+          "0%,100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "pulse-ring": {
+          "0%": { boxShadow: "0 0 0 0 rgba(61,90,254,0.45)" },
+          "70%": { boxShadow: "0 0 0 8px rgba(61,90,254,0)" },
+          "100%": { boxShadow: "0 0 0 0 rgba(61,90,254,0)" },
+        },
+        "shine-sweep": {
+          "0%": { transform: "translateX(-130%) skewX(-12deg)" },
+          "100%": { transform: "translateX(130%) skewX(-12deg)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 200ms ease-out both",
@@ -132,6 +165,14 @@ const config: Config = {
         "shimmer": "shimmer 2s linear infinite",
         "logo-in": "logo-in 700ms cubic-bezier(0.16, 1, 0.3, 1) both",
         "logo-float": "logo-float 4s ease-in-out infinite",
+        // Micro-interações ------------------------------------------------
+        "icon-pop": "icon-pop 0.5s ease both",
+        "icon-bob": "icon-bob 1.4s ease-in-out infinite",
+        "icon-wiggle": "icon-wiggle 0.5s ease-in-out both",
+        "float-slow": "float-slow 18s ease-in-out infinite",
+        "gradient-pan": "gradient-pan 6s ease-in-out infinite",
+        "pulse-ring": "pulse-ring 2s ease-out infinite",
+        "shine-sweep": "shine-sweep 0.9s ease-out both",
       },
     },
   },

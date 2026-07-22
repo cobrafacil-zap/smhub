@@ -14,6 +14,7 @@ import {
   Zap,
   Clock,
   Star,
+  Plus,
 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +25,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
 import { EcossistemaMarquee } from "@/components/landing/EcossistemaMarquee";
+import { Reveal } from "@/components/ui/motion/Reveal";
+import { TiltCard } from "@/components/ui/motion/TiltCard";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 import type { Plano, PlanoConfig, UserRole } from "@/types/database";
@@ -237,9 +240,22 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
 
-      {/* Gradiente decorativo de fundo */}
+      {/* Aurora decorativa de fundo — blobs animados (mais "vivo" que gradiente estático) */}
       <div className="absolute inset-0 bg-gradient-radial pointer-events-none" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] max-w-[160vw] h-[600px] bg-royal-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div
+        aria-hidden
+        className="aurora-blob top-[-10%] left-1/2 -translate-x-1/2 w-[1100px] max-w-[160vw] h-[560px] bg-royal-500/15 animate-float-slow"
+      />
+      <div
+        aria-hidden
+        className="aurora-blob top-[20%] right-[-10%] w-[520px] h-[520px] bg-accent-500/10 animate-float-slow"
+        style={{ animationDelay: "-6s" }}
+      />
+      <div
+        aria-hidden
+        className="aurora-blob top-[40%] left-[-8%] w-[480px] h-[480px] bg-royal-700/12 animate-float-slow"
+        style={{ animationDelay: "-12s" }}
+      />
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none opacity-[0.04]"
@@ -288,7 +304,7 @@ export default async function LandingPage() {
                   </Button>
                 </Link>
                 <Link href="/checkout?plano=pro">
-                  <Button size="sm" iconRight={<ArrowRight className="h-4 w-4" />}>
+                  <Button size="sm" magnetic iconRight={<ArrowRight className="h-4 w-4" />}>
                     <span className="hidden sm:inline">Começar grátis</span>
                     <span className="sm:hidden">Começar</span>
                   </Button>
@@ -304,8 +320,8 @@ export default async function LandingPage() {
         <div className="flex justify-center mb-8 animate-logo-in">
           <Logo variant="full" className="!h-32 sm:!h-40 animate-logo-float" />
         </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-royal-500/10 border border-royal-500/30 text-xs text-royal-200 mb-6 animate-fade-in">
-          <Sparkles className="h-3.5 w-3.5" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-royal-500/10 border border-royal-500/30 text-xs text-royal-200 mb-6 animate-fade-in pulse-ring">
+          <Sparkles className="h-3.5 w-3.5 icon-bob" />
           7 dias grátis. Sem cartão de crédito.
         </div>
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] animate-slide-up">
@@ -321,7 +337,7 @@ export default async function LandingPage() {
         </p>
         <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 animate-slide-up">
           <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto" iconRight={<ArrowRight className="h-4 w-4" />}>
+            <Button size="lg" className="w-full sm:w-auto" magnetic iconRight={<ArrowRight className="h-4 w-4" />}>
               Começar grátis
             </Button>
           </Link>
@@ -337,17 +353,19 @@ export default async function LandingPage() {
 
         {/* Prova social / stats */}
         <div className="mt-12 sm:mt-16 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {STATS.map((s) => (
-            <div
+          {STATS.map((s, i) => (
+            <Reveal
               key={s.label}
-              className="rounded-xl border border-border/60 bg-bg-surface/60 px-4 py-4 sm:py-5 text-left backdrop-blur-sm"
+              as="div"
+              delay={i * 80}
+              className="group lift rounded-xl border border-border/60 bg-bg-surface/60 px-4 py-4 sm:py-5 text-left backdrop-blur-sm"
             >
-              <s.icon className="h-5 w-5 text-royal-300 mb-2" />
+              <s.icon className="h-5 w-5 text-royal-300 mb-2 icon-pop" />
               <p className="text-xl sm:text-2xl font-bold text-slate-100 leading-tight">
                 {s.value}
               </p>
               <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{s.label}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -367,17 +385,18 @@ export default async function LandingPage() {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {FEATURES.map((f) => (
-            <Card
-              key={f.title}
-              className="hover:border-royal-500/50 hover:-translate-y-1 hover:shadow-elevated transition-all duration-200"
-            >
-              <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3">
-                <f.icon className="h-5 w-5 text-royal-300" />
-              </div>
-              <h3 className="text-base font-semibold text-slate-100">{f.title}</h3>
-              <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{f.desc}</p>
-            </Card>
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={i * 70}>
+              <TiltCard className="h-full rounded-2xl">
+                <Card hoverable shine className="h-full group">
+                  <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3">
+                    <f.icon className="h-5 w-5 text-royal-300 icon-pop" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-100">{f.title}</h3>
+                  <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{f.desc}</p>
+                </Card>
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -409,19 +428,23 @@ export default async function LandingPage() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-          {STEPS.map((s) => (
-            <Card key={s.n} className="relative overflow-hidden">
-              <span className="absolute -top-2 -right-2 text-6xl font-extrabold text-royal-500/10 select-none">
-                {s.n}
-              </span>
-              <div className="relative">
-                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-sm font-bold mb-4">
-                  {s.n}
-                </div>
-                <h3 className="text-base font-semibold text-slate-100">{s.title}</h3>
-                <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{s.desc}</p>
-              </div>
-            </Card>
+          {STEPS.map((s, i) => (
+            <Reveal key={s.n} delay={i * 90}>
+              <TiltCard max={4} className="h-full rounded-2xl">
+                <Card className="relative overflow-hidden h-full group">
+                  <span className="absolute -top-2 -right-2 text-6xl font-extrabold text-royal-500/10 select-none">
+                    {s.n}
+                  </span>
+                  <div className="relative">
+                    <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-sm font-bold mb-4 icon-pop">
+                      {s.n}
+                    </div>
+                    <h3 className="text-base font-semibold text-slate-100">{s.title}</h3>
+                    <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{s.desc}</p>
+                  </div>
+                </Card>
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -468,19 +491,21 @@ export default async function LandingPage() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-          {DEPOIMENTOS.map((d) => (
-            <Card key={d.nome}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                  {d.iniciais}
+          {DEPOIMENTOS.map((d, i) => (
+            <Reveal key={d.nome} delay={i * 90}>
+              <Card hoverable className="h-full">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                    {d.iniciais}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-100">{d.nome}</p>
+                    <p className="text-xs text-slate-400">{d.cargo}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-100">{d.nome}</p>
-                  <p className="text-xs text-slate-400">{d.cargo}</p>
-                </div>
-              </div>
-              <p className="text-sm text-slate-300 leading-relaxed">&ldquo;{d.texto}&rdquo;</p>
-            </Card>
+                <p className="text-sm text-slate-300 leading-relaxed">&ldquo;{d.texto}&rdquo;</p>
+              </Card>
+            </Reveal>
           ))}
         </div>
         <p className="text-center text-xs text-slate-600 mt-4">
@@ -497,19 +522,18 @@ export default async function LandingPage() {
           <h2 className="text-2xl sm:text-4xl font-bold mt-2">Perguntas e respostas</h2>
         </div>
         <div className="space-y-3">
-          {FAQ.map((f) => (
-            <details
-              key={f.q}
-              className="group rounded-xl border border-border bg-bg-surface/60 px-4 sm:px-5 py-4 open:bg-bg-surface"
-            >
-              <summary className="flex items-center justify-between gap-4 text-sm sm:text-base font-semibold text-slate-100 cursor-pointer list-none">
-                {f.q}
-                <span className="text-royal-300 transition-transform group-open:rotate-45 text-xl leading-none select-none">
-                  +
-                </span>
-              </summary>
-              <p className="mt-3 text-sm text-slate-400 leading-relaxed">{f.a}</p>
-            </details>
+          {FAQ.map((f, i) => (
+            <Reveal key={f.q} delay={i * 50}>
+              <details
+                className="group rounded-xl border border-border bg-bg-surface/60 px-4 sm:px-5 py-4 open:bg-bg-surface transition-colors"
+              >
+                <summary className="flex items-center justify-between gap-4 text-sm sm:text-base font-semibold text-slate-100 cursor-pointer list-none">
+                  {f.q}
+                  <Plus className="h-5 w-5 shrink-0 text-royal-300 icon-wiggle-hover transition-transform duration-300 group-open:rotate-45" />
+                </summary>
+                <p className="mt-3 text-sm text-slate-400 leading-relaxed">{f.a}</p>
+              </details>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -527,7 +551,7 @@ export default async function LandingPage() {
             </p>
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto" iconRight={<ArrowRight className="h-4 w-4" />}>
+                <Button size="lg" className="w-full sm:w-auto" magnetic iconRight={<ArrowRight className="h-4 w-4" />}>
                   Começar grátis agora
                 </Button>
               </Link>

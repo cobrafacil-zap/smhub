@@ -55,15 +55,22 @@ export function SidebarClient({ userName }: { userName: string }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition",
+                "group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                 active
                   ? "bg-royal-500/15 text-royal-200"
-                  : "text-slate-400 hover:bg-bg-elevated hover:text-slate-100"
+                  : "text-slate-400 hover:bg-bg-elevated hover:text-slate-100 hover:translate-x-0.5"
               )}
             >
               <span
+                aria-hidden
                 className={cn(
-                  "inline-flex items-center justify-center h-7 w-7 rounded-md text-sm transition",
+                  "absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-royal-500 origin-center transition-transform duration-300",
+                  active ? "scale-y-100" : "scale-y-0"
+                )}
+              />
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center h-7 w-7 rounded-md text-sm transition-transform group-hover:scale-110",
                   active
                     ? "bg-royal-500/20 text-royal-200"
                     : "bg-bg-elevated text-slate-400 group-hover:text-slate-200"

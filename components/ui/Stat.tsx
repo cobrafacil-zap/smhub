@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Minus, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { Reveal } from "./motion/Reveal";
 
 export type StatTone = "default" | "brand" | "success" | "warn" | "danger";
 
@@ -53,9 +54,10 @@ export function Stat({
 }: StatProps) {
   const styles = toneStyles[tone];
   return (
-    <div
+    <Reveal
+      as="div"
       className={cn(
-        "card border flex flex-col gap-3",
+        "card group lift border flex flex-col gap-3",
         styles.bg,
         tone === "default" && "border-border"
       )}
@@ -65,7 +67,12 @@ export function Stat({
           {label}
         </p>
         {icon && (
-          <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", styles.iconBg)}>
+          <div
+            className={cn(
+              "h-9 w-9 rounded-lg flex items-center justify-center icon-pop",
+              styles.iconBg
+            )}
+          >
             {icon}
           </div>
         )}
@@ -92,7 +99,7 @@ export function Stat({
         )}
         {hint && <span className="text-slate-500">{hint}</span>}
       </div>
-    </div>
+    </Reveal>
   );
 }
 

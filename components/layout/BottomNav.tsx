@@ -83,11 +83,23 @@ export function BottomNav({
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium",
-                active ? "text-royal-300" : "text-slate-500"
+                "group relative flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors",
+                active ? "text-royal-300" : "text-slate-500 hover:text-slate-300"
               )}
             >
-              <Icon className="h-5 w-5" />
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute top-1 h-1 w-1 rounded-full bg-royal-400 transition-transform duration-300",
+                  active ? "scale-100" : "scale-0"
+                )}
+              />
+              <Icon
+                className={cn(
+                  "h-5 w-5 transition-transform duration-300",
+                  active ? "scale-110" : "group-hover:scale-110"
+                )}
+              />
               {item.label}
             </Link>
           );

@@ -83,13 +83,27 @@
 }
 
 @layer components {
-  /* Card base — SM Hub (funciona em claro e escuro via tokens) */
+  /* Card base — SM Hub (funciona em claro e escuro via tokens).
+     Profundidade real: sombra em camadas + highlight interno no topo
+     (tira o "card plano" que denuncia IA) e transição suave de transform/border. */
   .card {
-    @apply rounded-2xl shadow-soft border border-border bg-bg-surface
-      transition-shadow p-6;
+    @apply rounded-2xl border border-border bg-bg-surface p-6;
+    box-shadow:
+      var(--shadow-card),
+      inset 0 1px 0 rgb(255 255 255 / 0.04);
+    transition:
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
   }
   .card-hover {
-    @apply hover:shadow-elevated;
+    @apply hover:-translate-y-1;
+    box-shadow:
+      var(--shadow-elevated),
+      inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+  .card-hover:hover {
+    @apply border-royal-500/40;
   }
   .surface {
     @apply rounded-xl border border-border bg-bg-elevated/60 px-4 py-3;
@@ -152,5 +166,253 @@
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+/* Keyframes de micro-interação — definidos aqui (e no tailwind.config) para
+   garantir disponibilidade quando usados via CSS puro (ex.: .gradient-border).
+   Duplicação inofensiva com os do config. */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes icon-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18) rotate(-4deg); }
+  100% { transform: scale(1); }
+}
+@keyframes icon-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes icon-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(2%, -3%) scale(1.04); }
+  66% { transform: translate(-2%, 2%) scale(0.98); }
+}
+@keyframes gradient-pan {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(61, 90, 254, 0.45); }
+  70% { box-shadow: 0 0 0 8px rgba(61, 90, 254, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(61, 90, 254, 0); }
+}
+@keyframes shine-sweep {
+  0% { transform: translateX(-130%) skewX(-12deg); }
+  100% { transform: translateX(130%) skewX(-12deg); }
+}
+
+/* ===========================================================================
+  Micro-interações — menos "cara de IA" (3D, ícones animados, reveal, brilho).
+  Tudo usa transform/opacity/filter (GPU). Variáveis CSS (--rx/--ry/--gx/--gy)
+  são setadas por JS nos micro-componentes. Guarda de prefers-reduced-motion e
+  print no final do arquivo.
+  =========================================================================== */
+@layer utilities {
+  /* 3D ----------------------------------------------------------------- */
+  .tilt-3d {
+    transform: perspective(800px)
+      rotateX(var(--rx, 0deg))
+      rotateY(var(--ry, 0deg))
+      translateZ(0);
+    transform-style: preserve-3d;
+    transition: transform 0.2s ease-out;
+    will-change: transform;
+  }
+  .tilt-3d-leave {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* Overlay de brilho que segue o cursor (posicionado relativo ao parente) */
+  .glare {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      280px circle at var(--gx, 50%) var(--gy, 50%),
+      rgb(255 255 255 / 0.10),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    mix-blend-mode: screen;
+  }
+  .group\/tilt:hover .glare,
+  .tilt-3d:hover .glare {
+    opacity: 1;
+  }
+
+  /* Lift (hover de cards/stats sem tilt) ------------------------------ */
+  .lift {
+    transition:
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+    will-change: transform;
+  }
+  .lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Shine — varredura diagonal sutil no hover (cards/botões primários) */
+  .shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-130%) skewX(-12deg);
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      rgb(255 255 255 / 0.12) 50%,
+      transparent 70%
+    );
+    pointer-events: none;
+  }
+  .shine:hover::after {
+    animation: shine-sweep 0.9s ease-out both;
+  }
+
+  /* Ícones animados (lucide) — aplicados no ícone, acionados pelo
+     `group` do parente. Uso: parente com `group`, ícone com a classe. */
+  .icon-pop {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .group:hover .icon-pop {
+    animation: icon-pop 0.5s ease both;
+  }
+  .icon-bob {
+    animation: icon-bob 1.6s ease-in-out infinite;
+  }
+  .icon-wiggle-hover {
+    transition: transform 0.2s ease;
+  }
+  .group:hover .icon-wiggle-hover,
+  .group-open .icon-wiggle-hover {
+    animation: icon-wiggle 0.5s ease-in-out both;
+  }
+  .icon-spin-hover {
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .group:hover .icon-spin-hover {
+    transform: rotate(360deg);
+  }
+
+  /* Borda de gradiente animado — SÓ em destaques (plano destaque, CTA,
+     item ativo de nav). Nunca em todos os cards. */
+  .gradient-border {
+    position: relative;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+  }
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--gb-angle, 0deg),
+      #3D5AFE,
+      #8797FF,
+      #0A1A40,
+      #3D5AFE
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: spin 6s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Texto com gradiente animado */
+  .text-gradient-anim {
+    background-size: 200% auto;
+    animation: gradient-pan 6s ease-in-out infinite;
+  }
+
+  /* Reveal on scroll -------------------------------------------------- */
+  .reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  .reveal-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Ambiente — blobs de aurora (LP) ---------------------------------- */
+  .aurora-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(64px);
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  /* Pulse ring — badges/CTA de destaque */
+  .pulse-ring {
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  /* Marquee: pausa no hover */
+  .pause-on-hover:hover {
+    animation-play-state: paused;
+  }
+}
+
+/* Guards --------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .tilt-3d {
+    transform: none !important;
+  }
+}
+
+@media print {
+  .tilt-3d,
+  .lift,
+  .shine,
+  .glare,
+  .gradient-border::before,
+  .aurora-blob,
+  .pulse-ring {
+    all: unset !important;
+    animation: none !important;
+  }
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .card {
+    box-shadow: none !important;
   }
 }

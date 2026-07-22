@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import { Reveal } from "./motion/Reveal";
 
 export interface BreadcrumbItem {
   href?: string;
@@ -21,7 +22,10 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-start justify-between gap-3 flex-wrap", className)}>
+    <Reveal
+      as="div"
+      className={cn("flex items-start justify-between gap-3 flex-wrap", className)}
+    >
       <div className="min-w-0">
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav
@@ -51,6 +55,6 @@ export function PageHeader({
         )}
       </div>
       {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
-    </div>
+    </Reveal>
   );
 }

@@ -26,14 +26,14 @@ export function Topbar({ userName, contextLabel, homeHref }: TopbarProps) {
           {homeHref && (
             <Link
               href={homeHref}
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-bg-elevated transition"
+              className="group p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-bg-elevated transition"
               aria-label="Notificações"
             >
-              <Bell className="h-4 w-4" />
+              <Bell className="h-4 w-4 icon-wiggle-hover" />
             </Link>
           )}
           <div className="flex items-center gap-2 pl-2 border-l border-border">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-xs font-semibold">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-xs font-semibold transition-transform duration-200 hover:scale-105">
               {initials(userName)}
             </div>
             <span className="hidden sm:block text-sm text-slate-200 max-w-[120px] truncate">

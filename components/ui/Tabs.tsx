@@ -37,10 +37,11 @@ export function Tabs({
             aria-selected={active}
             onClick={() => onChange(item.key)}
             className={cn(
-              "px-3.5 py-2 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap inline-flex items-center gap-2",
+              "relative px-3.5 py-2 text-sm font-medium -mb-px transition-colors whitespace-nowrap inline-flex items-center gap-2",
+              "after:absolute after:left-0 after:-bottom-px after:h-0.5 after:w-full after:origin-left after:bg-royal-500 after:transition-transform after:duration-300 after:ease-out",
               active
-                ? "border-royal-500 text-royal-300"
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                ? "text-royal-300 after:scale-x-100"
+                : "text-slate-400 hover:text-slate-200 after:scale-x-0"
             )}
           >
             {item.icon}
@@ -90,10 +91,11 @@ export function TabsLink({
             role="tab"
             aria-selected={active}
             className={cn(
-              "px-3.5 py-2 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap inline-flex items-center gap-2",
+              "relative px-3.5 py-2 text-sm font-medium -mb-px transition-colors whitespace-nowrap inline-flex items-center gap-2",
+              "after:absolute after:left-0 after:-bottom-px after:h-0.5 after:w-full after:origin-left after:bg-royal-500 after:transition-transform after:duration-300 after:ease-out",
               active
-                ? "border-royal-500 text-royal-300"
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                ? "text-royal-300 after:scale-x-100"
+                : "text-slate-400 hover:text-slate-200 after:scale-x-0"
             )}
           >
             {item.icon}

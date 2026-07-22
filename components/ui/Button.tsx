@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Spinner } from "./Spinner";
+import { Magnetic } from "./motion/Magnetic";
 
 type Variant = "primary" | "secondary" | "danger" | "ghost" | "outline";
 type Size = "sm" | "md" | "lg";
@@ -13,11 +14,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
   iconLeft?: ReactNode;
   iconRight?: ReactNode;
+  /** Efeito magnético sutil (translate em direção ao cursor) — para CTAs. */
+  magnetic?: boolean;
 }
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-gradient-to-r from-royal-500 to-royal-700 text-white shadow-sm hover:from-royal-400 hover:to-royal-600 active:from-royal-700 active:to-royal-800",
+    "bg-gradient-to-r from-royal-500 to-royal-700 text-white shadow-sm hover:from-royal-400 hover:to-royal-600 active:from-royal-700 active:to-royal-800 shine",
   secondary:
     "bg-bg-elevated border border-border text-slate-200 hover:bg-bg-muted hover:border-border-muted shadow-sm",
   outline:
@@ -41,6 +44,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       loading = false,
       iconLeft,
       iconRight,
+      magnetic = false,
       disabled,
       children,
       type,
@@ -49,15 +53,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const isDisabled = disabled || loading;
-    return (
+    const button = (
       <button
         ref={ref}
         type={type ?? "button"}
         disabled={isDisabled}
         aria-busy={loading || undefined}
         className={cn(
-          "inline-flex items-center justify-center gap-2 font-semibold transition",
-          "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
+          "group inline-flex items-center justify-center gap-2 font-semibold transition active:scale-[0.97]",
+          "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
           variants[variant],
           sizes[size],
@@ -68,14 +72,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {loading ? (
           <Spinner className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
         ) : (
-          iconLeft && <span className="-ml-0.5 inline-flex">{iconLeft}</span>
+          iconLeft && (
+            <span className="-ml-0.5 inline-flex transition-transform group-hover:scale-110">
+              {iconLeft}
+            </span>
+          )
         )}
         {children}
         {iconRight && !loading && (
-          <span className="-mr-0.5 inline-flex">{iconRight}</span>
+          <span className="-mr-0.5 inline-flex transition-transform duration-200 group-hover:translate-x-0.5">
+            {iconRight}
+          </span>
         )}
       </button>
     );
+
+    if (magnetic && !isDisabled) {
+      return <Magnetic>{button}</Magnetic>;
+    }
+    return button;
   }
 );
 Button.displayName = "Button";

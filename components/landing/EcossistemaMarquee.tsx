@@ -55,8 +55,8 @@ export function EcossistemaMarquee() {
 
 function LogoPill({ item }: { item: LogoItem }) {
   return (
-    <div className="flex items-center gap-2 px-5 py-3 rounded-lg bg-bg-elevated/40 border border-border/60 shrink-0 min-w-[180px] justify-center">
-      <item.Icon className={`h-6 w-6 ${item.cor}`} />
+    <div className="group flex items-center gap-2 px-5 py-3 rounded-lg bg-bg-elevated/40 border border-border/60 shrink-0 min-w-[180px] justify-center lift hover:border-royal-500/40 opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition-[filter,opacity] duration-300">
+      <item.Icon className={`h-6 w-6 ${item.cor} transition-transform duration-300 group-hover:scale-110`} />
       <span className="text-sm font-semibold text-slate-300 whitespace-nowrap">
         {item.nome}
       </span>

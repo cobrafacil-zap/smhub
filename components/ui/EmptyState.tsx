@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import { Reveal } from "./motion/Reveal";
 
 interface EmptyStateProps {
   title: string;
@@ -19,9 +20,10 @@ export function EmptyState({
   compact = false,
 }: EmptyStateProps) {
   return (
-    <div
+    <Reveal
+      as="div"
       className={cn(
-        "text-center animate-fade-in",
+        "text-center",
         compact ? "py-6 px-3" : "py-10 px-6",
         className
       )}
@@ -29,7 +31,7 @@ export function EmptyState({
       {icon && (
         <div
           className={cn(
-            "mx-auto mb-3 text-slate-500",
+            "mx-auto mb-3 text-slate-500 icon-bob",
             compact ? "text-2xl" : "text-4xl"
           )}
         >
@@ -55,6 +57,6 @@ export function EmptyState({
         </p>
       )}
       {action && <div className="mt-4">{action}</div>}
-    </div>
+    </Reveal>
   );
 }

@@ -4,11 +4,17 @@ import type { HTMLAttributes } from "react";
 export function Card({
   className,
   hoverable,
+  shine,
   ...props
-}: HTMLAttributes<HTMLDivElement> & { hoverable?: boolean }) {
+}: HTMLAttributes<HTMLDivElement> & { hoverable?: boolean; shine?: boolean }) {
   return (
     <div
-      className={cn("card", hoverable && "card-hover", className)}
+      className={cn(
+        "card",
+        hoverable && "card-hover",
+        shine && "shine",
+        className
+      )}
       {...props}
     />
   );
