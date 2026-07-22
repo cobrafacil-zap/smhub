@@ -412,12 +412,12 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 58%;
+    height: 62%;
     z-index: 0;
-    pointer-events: none;
-    opacity: 0.4;
-    -webkit-mask: linear-gradient(#000 0%, #000 55%, transparent 100%);
-    mask: linear-gradient(#000 0%, #000 55%, transparent 100%);
+    pointer-events: auto;
+    opacity: 0.45;
+    -webkit-mask: linear-gradient(#000 0%, #000 50%, transparent 100%);
+    mask: linear-gradient(#000 0%, #000 50%, transparent 100%);
   }
 
   /* Spotlight — radial suave que segue o cursor (premium em cards).

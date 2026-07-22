@@ -26,6 +26,7 @@ import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
 import { EcossistemaMarquee } from "@/components/landing/EcossistemaMarquee";
 import { Hero3D } from "@/components/landing/Hero3D";
 import { InteractiveShowcase } from "@/components/landing/InteractiveShowcase";
+import { HeroEmojiField } from "@/components/landing/HeroEmojiField";
 import { Reveal } from "@/components/ui/motion/Reveal";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
@@ -294,21 +295,25 @@ export default async function LandingPage() {
       {/* Hero */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 text-center">
         <Hero3D />
-        <div className="relative z-10">
+        <HeroEmojiField />
+        <div className="relative z-10 pointer-events-none">
         <div className="flex justify-center mb-8">
-          <Logo variant="full" className="!h-16 sm:!h-20" />
+          <Logo variant="full" className="!h-16 sm:!h-20 drop-shadow-[0_0_24px_rgba(88,108,240,0.18)]" />
         </div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
-          Menos ferramenta, mais resultado
+          Menos ferramenta,{" "}
+          <span className="bg-gradient-to-r from-royal-300 via-royal-400 to-royal-500 bg-clip-text text-transparent">
+            mais resultado
+          </span>
         </h1>
         <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto">
           A SM Hub reúne clientes, planejamento editorial, relatórios, financeiro e
           contratos digitais em um só fluxo. Sua agência ganha tempo para criar
           enquanto a operação roda organizada.
         </p>
-        <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 pointer-events-auto">
           <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto" iconRight={<ArrowRight className="h-4 w-4" />}>
+            <Button size="lg" className="w-full sm:w-auto glow-hover" iconRight={<ArrowRight className="h-4 w-4" />}>
               Testar 7 dias grátis
             </Button>
           </Link>
@@ -357,8 +362,8 @@ export default async function LandingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 70}>
-              <Card className="h-full group">
-                <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3">
+              <Card className="h-full group spotlight">
+                <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3 transition-all duration-300 group-hover:bg-royal-500/20 group-hover:shadow-[0_0_20px_-6px_rgba(88,108,240,0.35)]">
                   <f.icon className="h-5 w-5 text-royal-300" />
                 </div>
                 <h3 className="text-base font-semibold text-slate-100">{f.title}</h3>
@@ -394,9 +399,11 @@ export default async function LandingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 90}>
-              <Card className="h-full">
-                <span className="text-xs font-medium text-slate-500">Passo {s.n}</span>
-                <h3 className="text-base font-semibold text-slate-100 mt-3">{s.title}</h3>
+              <Card className="h-full group spotlight">
+                <div className="h-9 w-9 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center text-xs font-semibold text-royal-300 mb-4 transition-all duration-300 group-hover:bg-royal-500/20 group-hover:shadow-[0_0_20px_-6px_rgba(88,108,240,0.35)]">
+                  {s.n}
+                </div>
+                <h3 className="text-base font-semibold text-slate-100">{s.title}</h3>
                 <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{s.desc}</p>
               </Card>
             </Reveal>
@@ -492,24 +499,27 @@ export default async function LandingPage() {
 
       {/* CTA Final */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-        <Card className="text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
-            Pronto pra organizar sua agência?
-          </h2>
-          <p className="text-slate-300 mt-2 max-w-xl mx-auto text-sm sm:text-base">
-            Teste a SM Hub por 7 dias. Sem cartão e sem compromisso.
-          </p>
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto" iconRight={<ArrowRight className="h-4 w-4" />}>
-                Começar grátis
-              </Button>
-            </Link>
-            <Link href="/login" className="w-full sm:w-auto">
-              <Button size="lg" variant="ghost" className="w-full sm:w-auto">
-                Entrar
-              </Button>
-            </Link>
+        <Card className="text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-royal-500/5 via-transparent to-royal-500/5 pointer-events-none" />
+          <div className="relative">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
+              Pronto pra organizar sua agência?
+            </h2>
+            <p className="text-slate-300 mt-2 max-w-xl mx-auto text-sm sm:text-base">
+              Teste a SM Hub por 7 dias. Sem cartão e sem compromisso.
+            </p>
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto glow-hover" iconRight={<ArrowRight className="h-4 w-4" />}>
+                  Começar grátis
+                </Button>
+              </Link>
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button size="lg" variant="ghost" className="w-full sm:w-auto">
+                  Entrar
+                </Button>
+              </Link>
+            </div>
           </div>
         </Card>
       </section>

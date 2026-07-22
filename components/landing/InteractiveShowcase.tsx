@@ -162,7 +162,7 @@ export function InteractiveShowcase() {
               aria-label={m.title}
               tabIndex={visible ? 0 : -1}
               className={cn(
-                "absolute left-1/2 top-1/2 w-[min(88vw,360px)] sm:w-[420px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
+                "group absolute left-1/2 top-1/2 w-[min(88vw,360px)] sm:w-[420px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
                 visible ? "pointer-events-auto" : "pointer-events-none"
               )}
               style={{
@@ -176,10 +176,10 @@ export function InteractiveShowcase() {
             >
               <div
                 className={cn(
-                  "rounded-[1.5rem] border p-4 sm:p-5 flex flex-col gap-3",
+                  "rounded-[1.5rem] border p-4 sm:p-5 flex flex-col gap-3 transition-all duration-300",
                   isActive
-                    ? "border-royal-500/40 bg-bg-surface shadow-card"
-                    : "border-border/60 bg-bg-surface/60"
+                    ? "border-royal-500/50 bg-bg-surface shadow-[0_0_40px_-12px_rgba(88,108,240,0.35)]"
+                    : "border-border/60 bg-bg-surface/60 group-hover:border-royal-500/30 group-hover:bg-bg-surface group-hover:shadow-[0_0_30px_-14px_rgba(88,108,240,0.2)]"
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -229,8 +229,8 @@ export function InteractiveShowcase() {
               onClick={() => setActive(i)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
                 isActive
-                  ? "bg-royal-500 text-white border-royal-500"
-                  : "bg-bg-surface/60 border-border text-slate-400 hover:text-slate-200 hover:border-royal-500/30 hover:bg-bg-elevated"
+                  ? "bg-royal-500 text-white border-royal-500 shadow-[0_0_16px_-4px_rgba(88,108,240,0.45)]"
+                  : "bg-bg-surface/60 border-border text-slate-400 hover:text-slate-200 hover:border-royal-500/40 hover:bg-bg-elevated"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />

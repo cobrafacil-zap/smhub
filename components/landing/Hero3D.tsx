@@ -91,18 +91,21 @@ export function Hero3D() {
       universe.position.set(0, -2.1, -0.8);
       scene.add(universe);
 
-      // Iluminação ambiente muito suave
+      // Iluminação ambiente + neon sutil
       scene.add(new THREE.AmbientLight(0x0b0f19, 1.2));
-      const coreLight = new THREE.PointLight(0x586cf0, 10, 30);
+      const coreLight = new THREE.PointLight(0x586cf0, 14, 30);
       coreLight.position.set(0, 0, 0);
       scene.add(coreLight);
+      const neonLight = new THREE.PointLight(0x8797ff, 6, 25);
+      neonLight.position.set(0, -2, 2);
+      scene.add(neonLight);
 
       // Anel central
       const ringGeo = new THREE.TorusGeometry(1.6, 0.035, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
-        color: 0x586cf0,
+        color: 0x7486ff,
         transparent: true,
-        opacity: 0.22,
+        opacity: 0.28,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -175,34 +178,34 @@ export function Hero3D() {
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
       const lineMat = new THREE.LineBasicMaterial({
-        color: 0x586cf0,
+        color: 0x7486ff,
         transparent: true,
-        opacity: 0.15,
+        opacity: 0.22,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
       const lines = new THREE.LineSegments(lineGeo, lineMat);
       universe.add(lines);
 
-      // Starfield longínquo e sutil
-      const STAR_N = 280;
+      // Starfield mais denso e visível
+      const STAR_N = 360;
       const starPos = new Float32Array(STAR_N * 3);
       const starPhase = new Float32Array(STAR_N);
       const starSpeed = new Float32Array(STAR_N);
       const starSize = new Float32Array(STAR_N);
       const starBrightness = new Float32Array(STAR_N);
       for (let i = 0; i < STAR_N; i++) {
-        const r = 8 + Math.pow(Math.random(), 0.5) * 28;
+        const r = 7 + Math.pow(Math.random(), 0.5) * 32;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
         starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
         starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
         starPos[i * 3 + 2] = r * Math.cos(phi) - 5;
         starPhase[i] = Math.random() * Math.PI * 2;
-        starSpeed[i] = 0.15 + Math.random() * 1.4;
-        starSize[i] = 0.2 + Math.random() * 0.5;
-        // 20% brilham mais, 80% ficam bem discretas
-        starBrightness[i] = Math.random() < 0.2 ? 0.75 + Math.random() * 0.45 : 0.15 + Math.random() * 0.25;
+        starSpeed[i] = 0.2 + Math.random() * 1.6;
+        starSize[i] = 0.25 + Math.random() * 0.7;
+        // 30% brilham mais, 70% ficam discretas
+        starBrightness[i] = Math.random() < 0.3 ? 0.9 + Math.random() * 0.5 : 0.25 + Math.random() * 0.35;
       }
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
@@ -214,7 +217,7 @@ export function Hero3D() {
       const starMat = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
-          uColor: { value: new THREE.Color(0x7b8cc7) },
+          uColor: { value: new THREE.Color(0x8ba0e6) },
         },
         vertexShader: `
           attribute float phase;
@@ -227,10 +230,10 @@ export function Hero3D() {
           void main() {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.1 + 0.25 * sin(uTime * speed + phase);
+            float twinkle = 0.12 + 0.35 * sin(uTime * speed + phase);
             vAlpha = twinkle;
             vBrightness = brightness;
-            gl_PointSize = size * (1.4 + 1.0 * twinkle) * (100.0 / -mvPosition.z);
+            gl_PointSize = size * (1.6 + 1.3 * twinkle) * (100.0 / -mvPosition.z);
           }
         `,
         fragmentShader: `
@@ -241,7 +244,7 @@ export function Hero3D() {
             float dist = length(gl_PointCoord - vec2(0.5));
             if (dist > 0.5) discard;
             float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow * vBrightness * 0.4);
+            gl_FragColor = vec4(uColor, vAlpha * glow * vBrightness * 0.55);
           }
         `,
         transparent: true,
@@ -250,6 +253,28 @@ export function Hero3D() {
       });
       const stars = new THREE.Points(starGeo, starMat);
       scene.add(stars);
+
+      // Interação: parallax + hover nos nós
+      const mouse = { x: 0, y: 0, active: false };
+      const targetRot = { x: 0, y: 0 };
+      const curRot = { x: 0, y: 0 };
+      const onPointerMove = (e: PointerEvent) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        mouse.active = true;
+        targetRot.y = mouse.x * 0.35;
+        targetRot.x = mouse.y * 0.22;
+      };
+      const onPointerLeave = () => {
+        mouse.active = false;
+        targetRot.x = 0;
+        targetRot.y = 0;
+      };
+      if (!reduce) {
+        mount.addEventListener("pointermove", onPointerMove, { passive: true });
+        mount.addEventListener("pointerleave", onPointerLeave, { passive: true });
+      }
 
       let visible = true;
       const io = new IntersectionObserver(
@@ -267,7 +292,13 @@ export function Hero3D() {
       const clock = new THREE.Clock();
       const renderFrame = () => {
         const t = clock.getElapsedTime();
-        universe.rotation.y = t * 0.015;
+        curRot.x += (targetRot.x - curRot.x) * 0.05;
+        curRot.y += (targetRot.y - curRot.y) * 0.05;
+        universe.rotation.x = curRot.x;
+        universe.rotation.y = curRot.y + t * 0.015;
+
+        // Pulsar do anel central
+        ringMat.opacity = 0.25 + Math.sin(t * 0.8) * 0.05;
 
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
@@ -277,6 +308,18 @@ export function Hero3D() {
           const z = Math.cos(n.tilt) * n.r * Math.sin(a);
           n.sprite.position.set(x, y, z);
           n.glow.position.set(x, y, z);
+
+          // Hover nos nós: se mouse ativo, aumenta glow de quem está perto
+          const worldPos = n.sprite.position.clone().applyMatrix4(universe.matrixWorld);
+          const projected = worldPos.project(camera);
+          const dx = projected.x - mouse.x;
+          const dy = projected.y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const hover = mouse.active && dist < 0.18 ? 1 : 0;
+          const targetOpacity = 0.14 + hover * 0.4;
+          const glowMat = n.glow.material as ThreeTypes.MeshBasicMaterial;
+          glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.12;
+
           linePositions[i * 6] = 0;
           linePositions[i * 6 + 1] = 0;
           linePositions[i * 6 + 2] = 0;
@@ -313,6 +356,8 @@ export function Hero3D() {
 
       cleanup = () => {
         cancelAnimationFrame(raf);
+        mount.removeEventListener("pointermove", onPointerMove);
+        mount.removeEventListener("pointerleave", onPointerLeave);
         window.removeEventListener("resize", onResize);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
