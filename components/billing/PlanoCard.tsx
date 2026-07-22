@@ -40,7 +40,7 @@ export function PlanoCard({
           "group relative rounded-[1.5rem] border p-6 flex flex-col h-full",
           "bg-bg-surface shadow-soft",
           destaque
-            ? "gradient-border border-transparent shadow-elevated ring-1 ring-royal-500/25 md:-translate-y-3 md:scale-[1.02]"
+            ? "gradient-border border-transparent shadow-elevated ring-1 ring-royal-500/25 relative"
             : "border-white/[0.07] lift hover:shadow-elevated"
         )}
       >

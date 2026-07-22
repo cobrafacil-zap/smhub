@@ -38,8 +38,8 @@ const LOGOS: LogoItem[] = [
 
 export function EcossistemaMarquee() {
   return (
-    <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-      <div className="flex w-max animate-marquee gap-12 hover:[animation-play-state:paused]">
+    <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_14%,black_86%,transparent)] sm:[mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+      <div className="flex w-max animate-marquee gap-6 sm:gap-12 pause-on-hover">
         {/* primeira passada */}
         {LOGOS.map((l) => (
           <LogoPill key={`a-${l.nome}`} item={l} />
@@ -55,7 +55,7 @@ export function EcossistemaMarquee() {
 
 function LogoPill({ item }: { item: LogoItem }) {
   return (
-    <div className="group flex items-center gap-2 px-5 py-3 rounded-lg bg-bg-elevated/40 border border-border/60 shrink-0 min-w-[180px] justify-center lift hover:border-royal-500/40 opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition-[filter,opacity] duration-300">
+    <div className="group flex items-center gap-2 px-4 sm:px-5 py-3 rounded-lg bg-bg-elevated/40 border border-border/60 shrink-0 min-w-[150px] sm:min-w-[180px] justify-center lift hover:border-royal-500/40 opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition-[filter,opacity] duration-300">
       <item.Icon className={`h-6 w-6 ${item.cor} transition-transform duration-300 group-hover:scale-110`} />
       <span className="text-sm font-semibold text-slate-300 whitespace-nowrap">
         {item.nome}

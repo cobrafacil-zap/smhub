@@ -124,7 +124,9 @@ export function InteractiveShowcase() {
     const measure = () => {
       const w = stageRef.current?.clientWidth ?? 600;
       // painel ~300px; espaçamento cresce com a tela, com teto.
-      setSpacing(Math.max(170, Math.min(260, w * 0.3)));
+      const cardW = window.innerWidth < 640 ? 320 : 360;
+      const maxSpacing = Math.max(140, (w - cardW) / 2 * 0.85);
+      setSpacing(Math.max(150, Math.min(240, Math.min(maxSpacing, w * 0.3))));
     };
     const onDesk = () => setIsDesktop(deskMq.matches);
     measure();
@@ -168,7 +170,7 @@ export function InteractiveShowcase() {
         ref={stageRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="relative h-[260px] sm:h-[320px] flex items-center justify-center overflow-hidden"
+        className="relative h-[300px] sm:h-[360px] flex items-center justify-center overflow-hidden"
         style={{ perspective: "1200px", touchAction: "pan-y" }}
       >
         {/* Painéis */}
@@ -193,7 +195,7 @@ export function InteractiveShowcase() {
             // transform: empurra vizinhos pra fora, gira em perspectiva, recua
             // em Z e diminui. reduced-motion → só translada em X, sem 3D.
             const transform = reduce
-              ? `translateX(${offset * 18}px) scale(${isActive ? 1 : 0.92})`
+              ? `translateX(${offset * (isActive ? 0 : 120)}%) scale(${isActive ? 1 : 0.92})`
               : `translateX(${offset * spacing}px) translateZ(${
                   -abs * 90
                 }px) rotateY(${offset * -42}deg) scale(${
@@ -207,17 +209,17 @@ export function InteractiveShowcase() {
                 onClick={() => setActive(i)}
                 aria-label={m.title}
                 tabIndex={visible ? 0 : -1}
-                className="absolute left-1/2 top-1/2 w-[320px] max-w-[90vw] sm:w-[360px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-95"
+                className="absolute left-1/2 top-1/2 w-[min(90vw,320px)] sm:w-[360px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-95"
                 style={{
                   transform,
                   opacity: !visible ? 0 : isActive ? 1 : 0.35,
-                  zIndex: isActive ? 20 : 19,
+                  zIndex: isActive ? 20 : 19 - abs,
                   pointerEvents: visible ? "auto" : "none",
                   transformStyle: "preserve-3d",
                   backfaceVisibility: "hidden",
                 }}
               >
-                <div className={`card group h-full p-5 sm:p-6 flex flex-col gap-4 spotlight ${isActive ? "border-royal-500/40 shadow-elevated" : ""}`}>
+                <div className={`card group h-full p-5 sm:p-6 flex flex-col gap-4 spotlight max-h-[240px] sm:max-h-[300px] overflow-y-auto ${isActive ? "border-royal-500/40 shadow-elevated" : ""}`}>
                   <div className="flex items-start gap-3">
                     <div
                       className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}

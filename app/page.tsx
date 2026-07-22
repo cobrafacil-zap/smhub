@@ -389,10 +389,10 @@ export default async function LandingPage() {
             ferramentas.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 70}>
-              <TiltCard className="h-full rounded-2xl">
+              <TiltCard className="h-full rounded-[1.5rem]">
                 <Card hoverable shine className="h-full group">
                   <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3">
                     <f.icon className="h-5 w-5 text-royal-300 icon-pop" />
@@ -432,10 +432,10 @@ export default async function LandingPage() {
             Comece em 3 passos simples
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 90}>
-              <TiltCard max={4} className="h-full rounded-2xl">
+              <TiltCard max={4} className="h-full rounded-[1.5rem]">
                 <Card className="relative overflow-hidden h-full group">
                   <span className="absolute -top-2 -right-2 text-6xl font-extrabold text-royal-500/10 select-none">
                     {s.n}
@@ -470,7 +470,7 @@ export default async function LandingPage() {
             Comece com 7 dias grátis. Cancele a qualquer momento.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-5 lg:gap-6 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 items-stretch">
           {planosList.map((p) => (
             <PlanoCard
               key={p.id}
@@ -498,7 +498,7 @@ export default async function LandingPage() {
             Agências que confiam na SM Hub
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
           {DEPOIMENTOS.map((d, i) => (
             <Reveal key={d.nome} delay={i * 90}>
               <Card hoverable className="h-full">
@@ -548,7 +548,7 @@ export default async function LandingPage() {
 
       {/* CTA Final */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-        <Card className="text-center bg-gradient-to-br from-royal-500/15 to-bg-surface border-royal-500/30 relative overflow-hidden">
+        <Card className="text-center bg-gradient-to-br from-royal-500/15 to-bg-surface border-royal-500/30 relative overflow-visible">
           <div className="absolute -top-24 -right-24 w-72 h-72 bg-royal-500/20 rounded-full blur-3xl pointer-events-none" />
           <div className="relative">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
@@ -575,8 +575,8 @@ export default async function LandingPage() {
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-border mt-6">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="sm:col-span-2 lg:col-span-1">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="col-span-2 lg:col-span-1">
             <Logo variant="full" className="!h-12" />
             <p className="text-sm text-slate-400 mt-3 max-w-xs">
               A plataforma completa para agências de marketing gerenciarem clientes,
