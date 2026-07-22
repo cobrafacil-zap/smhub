@@ -6,21 +6,11 @@ import type * as ThreeTypes from "three";
 /**
  * Hero3D — "universo" da SM Hub no hero da LP.
  *
- * Tendência 2026: profundidade 3D imersiva, COM SENTIDO. Um cosmos da marca:
- * o núcleo central é o Hub; ao redor orbitam os 5 módulos da plataforma, cada
- * um com seu ícone (Clientes, Planejamento, Relatórios, Financeiro, Contratos)
- * desenhado como textura, ligados ao núcleo por linhas, sobre um starfield.
- * "SM Hub" = centro de um universo de marketing conectado.
- *
- * Posicionamento: a faixa de cima do hero (atrás do logo) — NÃO atrás do
- * título, pra não sobrepor o texto.
- *
- * Performance: three num chunk async só na LP (import() no useEffect), rAF
- * único, pausa fora da viewport/aba oculta, respeita reduced-motion (frame
- * estático), cleanup total (dispose).
+ * Cosmos da marca: o núcleo central é o Hub; ao redor orbitam os 5 módulos da
+ * plataforma, cada um com seu ícone, ligados ao núcleo por linhas. O efeito é
+ * estático e elegante, sem interação de hover, servindo como fundo luminoso.
  */
 
-// SVG interno de cada ícone lucide (viewBox 24x24, traço).
 const ICON_SVGS: { inner: string; color: number }[] = [
   {
     // Clientes
@@ -99,7 +89,7 @@ export function Hero3D() {
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-      camera.position.set(0, 0, 7.5);
+      camera.position.set(0, 0, 6.8);
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -116,21 +106,21 @@ export function Hero3D() {
       const universe = new THREE.Group();
       scene.add(universe);
 
-      // --- Centro = o Hub (o logo SM Hub, que está no DOM por cima, é o núcleo).
-      //    Um anel neon sutil ao redor do centro representa o contorno do logo.
-      scene.add(new THREE.AmbientLight(0x0a1a40, 1.3));
-      const coreLight = new THREE.PointLight(0x3d5afe, 16, 30);
+      // --- Iluminação ambiente suave ---
+      scene.add(new THREE.AmbientLight(0x0a1a40, 1.4));
+      const coreLight = new THREE.PointLight(0x3d5afe, 18, 30);
       coreLight.position.set(0, 0, 0);
       scene.add(coreLight);
-      const rim = new THREE.PointLight(0x22d3ee, 7, 30);
+      const rim = new THREE.PointLight(0x22d3ee, 8, 30);
       rim.position.set(4, 3, 3);
       scene.add(rim);
 
-      const ringGeo = new THREE.TorusGeometry(1.25, 0.045, 20, 120);
+      // --- Anel grande ao redor do logo central ---
+      const ringGeo = new THREE.TorusGeometry(1.55, 0.05, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x8797ff,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.35,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -138,18 +128,18 @@ export function Hero3D() {
       ring.rotation.x = Math.PI / 2;
       universe.add(ring);
 
-      const coreGlowGeo = new THREE.SphereGeometry(0.55, 32, 32);
+      const coreGlowGeo = new THREE.SphereGeometry(0.75, 32, 32);
       const coreGlowMat = new THREE.MeshBasicMaterial({
         color: 0x3d5afe,
         transparent: true,
-        opacity: 0.22,
+        opacity: 0.2,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
       const coreGlow = new THREE.Mesh(coreGlowGeo, coreGlowMat);
       universe.add(coreGlow);
 
-      // --- Nós = ícones dos módulos orbitando (Sprites, sempre de frente) ---
+      // --- Nós = ícones dos módulos orbitando ---
       const textures = await Promise.all(
         ICON_SVGS.map((ic) => makeIconTexture(THREE, ic.inner))
       );
@@ -166,37 +156,35 @@ export function Hero3D() {
         phase: number;
       };
       const nodes: Node[] = [];
-      const glowGeo = new THREE.SphereGeometry(0.22, 24, 24);
+      const glowGeo = new THREE.SphereGeometry(0.24, 24, 24);
       for (let i = 0; i < ICON_SVGS.length; i++) {
         const spriteMat = new THREE.SpriteMaterial({
           map: textures[i],
           transparent: true,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
+          opacity: 0.8,
         });
         const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(0.58, 0.58, 1);
+        sprite.scale.set(0.62, 0.62, 1);
         universe.add(sprite);
 
         const glowMat = new THREE.MeshBasicMaterial({
           color: ICON_SVGS[i].color,
           transparent: true,
-          opacity: 0.35,
+          opacity: 0.28,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         });
         const glow = new THREE.Mesh(glowGeo, glowMat);
         universe.add(glow);
 
-        // Órbitas ESPALHADAS: cada ícone num raio distinto (sem amontoar) e num
-        // plano inclinado diferente (sem ficar um atras do outro). phase
-        // distribuído pelo círculo. Nenhum tilt em 90° (ficaria fora da faixa).
         nodes.push({
           sprite,
           spriteMat,
           glow,
           glowMat,
-          r: 2.25 + i * 0.28,
+          r: 2.4 + i * 0.28,
           speed: 0.08 + (i % 3) * 0.03,
           tilt: i * 0.65,
           phase: i * 1.25,
@@ -208,36 +196,22 @@ export function Hero3D() {
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
       const lineMat = new THREE.LineBasicMaterial({
-        color: 0x8797ff,
+        color: 0x5e74ff,
         transparent: true,
-        opacity: 0.32,
+        opacity: 0.28,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
       const lines = new THREE.LineSegments(lineGeo, lineMat);
       universe.add(lines);
 
-      // --- Efeito neon no hover: raycaster detecta ícone sob o cursor ---
-      const raycaster = new THREE.Raycaster();
-      const pointer = new THREE.Vector2();
-      let hovered: number | null = null;
-      const onMove = (e: PointerEvent) => {
-        const rect = renderer.domElement.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        pointer.x = (x / rect.width) * 2 - 1;
-        pointer.y = -(y / rect.height) * 2 + 1;
-      };
-      mount.addEventListener("pointermove", onMove, { passive: true });
-
-      // --- Starfield piscante sutil (fundo distante) ---
-      const STAR_N = 180;
+      // --- Starfield piscante sutil ---
+      const STAR_N = 160;
       const starPos = new Float32Array(STAR_N * 3);
       const starPhase = new Float32Array(STAR_N);
       const starSpeed = new Float32Array(STAR_N);
       const starSize = new Float32Array(STAR_N);
       for (let i = 0; i < STAR_N; i++) {
-        // Mantém estrelas apenas no fundo, longe do universo central.
         const r = 7 + Math.random() * 8;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
@@ -268,9 +242,9 @@ export function Hero3D() {
           void main() {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.25 + 0.35 * sin(uTime * speed + phase);
+            float twinkle = 0.2 + 0.3 * sin(uTime * speed + phase);
             vAlpha = twinkle;
-            gl_PointSize = size * (2.5 + 1.5 * twinkle) * (100.0 / -mvPosition.z);
+            gl_PointSize = size * (2.2 + 1.2 * twinkle) * (100.0 / -mvPosition.z);
           }
         `,
         fragmentShader: `
@@ -280,7 +254,7 @@ export function Hero3D() {
             float dist = length(gl_PointCoord - vec2(0.5));
             if (dist > 0.5) discard;
             float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow * 0.6);
+            gl_FragColor = vec4(uColor, vAlpha * glow * 0.5);
           }
         `,
         transparent: true,
@@ -290,8 +264,8 @@ export function Hero3D() {
       const stars = new THREE.Points(starGeo, starMat);
       scene.add(stars);
 
-      // --- Luzes menores piscantes (fireflies) próximas ao universo ---
-      const FIREFLY_N = 18;
+      // --- Luzes menores piscantes próximas ao universo ---
+      const FIREFLY_N = 16;
       const flyPos = new Float32Array(FIREFLY_N * 3);
       const flyPhase = new Float32Array(FIREFLY_N);
       const flySpeed = new Float32Array(FIREFLY_N);
@@ -322,9 +296,9 @@ export function Hero3D() {
           void main() {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.15 + 0.55 * sin(uTime * speed + phase);
+            float twinkle = 0.12 + 0.45 * sin(uTime * speed + phase);
             vAlpha = twinkle;
-            gl_PointSize = (2.0 + 2.0 * twinkle) * (100.0 / -mvPosition.z);
+            gl_PointSize = (1.8 + 1.5 * twinkle) * (100.0 / -mvPosition.z);
           }
         `,
         fragmentShader: `
@@ -334,7 +308,7 @@ export function Hero3D() {
             float dist = length(gl_PointCoord - vec2(0.5));
             if (dist > 0.5) discard;
             float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow * 0.6);
+            gl_FragColor = vec4(uColor, vAlpha * glow * 0.5);
           }
         `,
         transparent: true,
@@ -344,7 +318,7 @@ export function Hero3D() {
       const fireflies = new THREE.Points(flyGeo, flyMat);
       scene.add(fireflies);
 
-      // --- Parallax/tilt do universo seguindo o mouse dentro do canvas ---
+      // --- Parallax/tilt do universo seguindo o mouse ---
       const target = { rx: 0, ry: 0 };
       const cur = { rx: 0, ry: 0 };
       const onPointer = (e: PointerEvent) => {
@@ -377,19 +351,6 @@ export function Hero3D() {
         universe.rotation.x = cur.rx;
         universe.rotation.y = cur.ry + t * 0.03;
 
-        // Raycast contra os sprites pra saber qual ícone está sob o cursor.
-        raycaster.setFromCamera(pointer, camera);
-        const hits = raycaster.intersectObjects(nodes.map((n) => n.sprite));
-        const hitIndex = hits.length > 0 ? nodes.findIndex((n) => n.sprite === hits[0].object) : null;
-        hovered = hitIndex ?? null;
-
-        // Se hover em qualquer ícone, anel do logo também acende neon.
-        const anyHover = hovered !== null;
-        ringMat.opacity = anyHover ? 0.95 + Math.sin(t * 6) * 0.05 : 0.45;
-        ringMat.color.setHex(anyHover ? 0xb0bbff : 0x8797ff);
-        coreGlowMat.opacity = anyHover ? 0.45 + Math.sin(t * 6) * 0.15 : 0.18;
-        coreGlowMat.color.setHex(anyHover ? 0x8797ff : 0x3d5afe);
-
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
           const a = n.phase + t * n.speed;
@@ -404,21 +365,7 @@ export function Hero3D() {
           linePositions[i * 6 + 3] = x;
           linePositions[i * 6 + 4] = y;
           linePositions[i * 6 + 5] = z;
-
-          // Neon intenso só no ícone hover; outros ficam apagados.
-          const isHovered = hovered === i;
-          const neonPulse = isHovered ? 0.9 + Math.sin(t * 10) * 0.1 : 0;
-          n.spriteMat.opacity = isHovered ? 1 : 0.5;
-          n.sprite.scale.setScalar(isHovered ? 0.88 : 0.58);
-          n.glow.scale.setScalar(isHovered ? 4.0 : 1.0);
-          n.glowMat.opacity = isHovered ? 0.8 + neonPulse : 0.25;
-          n.glowMat.color.setHex(isHovered ? ICON_SVGS[i].color : 0x5e74ff);
         }
-
-        // Linhas conectadas ao ícone hover ganham neon; outras ficam sutis.
-        lineMat.color.setHex(anyHover ? 0x8797ff : 0x5e74ff);
-        lineMat.opacity = anyHover ? 0.55 : 0.28;
-
         lineGeo.attributes.position.needsUpdate = true;
 
         stars.rotation.y = t * 0.02;
@@ -450,7 +397,6 @@ export function Hero3D() {
       cleanup = () => {
         cancelAnimationFrame(raf);
         mount.removeEventListener("pointermove", onPointer);
-        mount.removeEventListener("pointermove", onMove);
         window.removeEventListener("resize", onResize);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
