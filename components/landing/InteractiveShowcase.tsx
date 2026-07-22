@@ -146,8 +146,8 @@ export function InteractiveShowcase() {
   }, []);
 
   return (
-    <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-      <div className="text-center mb-10 sm:mb-12">
+    <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+      <div className="text-center mb-6 sm:mb-8">
         <p className="text-xs uppercase tracking-wider text-royal-300 font-semibold">
           Como a SM Hub ajuda
         </p>
@@ -166,7 +166,7 @@ export function InteractiveShowcase() {
         ref={stageRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="relative h-[300px] sm:h-[360px] flex items-center justify-center overflow-hidden"
+        className="relative h-[260px] sm:h-[300px] flex items-center justify-center overflow-hidden"
         style={{ perspective: "1200px", touchAction: "pan-y" }}
       >
         {/* Painéis */}
@@ -205,7 +205,7 @@ export function InteractiveShowcase() {
                 onClick={() => setActive(i)}
                 aria-label={m.title}
                 tabIndex={visible ? 0 : -1}
-                className="absolute left-1/2 top-1/2 w-[300px] max-w-[88vw] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-90"
+                className="absolute left-1/2 top-[42%] w-[300px] max-w-[88vw] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-90"
                 style={{
                   transform,
                   opacity: !visible ? 0 : isActive ? 1 : 0.4,

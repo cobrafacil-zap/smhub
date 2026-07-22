@@ -404,18 +404,20 @@
     );
   }
 
-  /* Hero 3D (WebGL) — camada de fundo do hero da LP. Atrás do conteúdo (z-0),
-     não bloqueia cliques. Opacidade baixa + fade só nas bordas: o 3D vira um
-     halo sutil atrás do texto (profundidade ambiente), nunca poluição sobre
-     o título. */
+  /* Hero 3D (WebGL) — universo da marca. Fica só na FAIXA DE CIMA do hero
+     (atrás do logo), nunca atrás do título → não sobrepõe o texto. Atrás do
+     conteúdo (z-0), não bloqueia cliques, opacidade baixa + fade nas bordas. */
   .hero-3d {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.32;
-    -webkit-mask: radial-gradient(72% 72% at 50% 46%, #000 62%, transparent 92%);
-    mask: radial-gradient(72% 72% at 50% 46%, #000 62%, transparent 92%);
+    opacity: 0.7;
+    -webkit-mask: linear-gradient(#000 55%, transparent 100%);
+    mask: linear-gradient(#000 55%, transparent 100%);
   }
 
   /* Spotlight — radial suave que segue o cursor (premium em cards).
