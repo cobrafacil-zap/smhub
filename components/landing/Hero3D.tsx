@@ -117,8 +117,7 @@ export function Hero3D() {
       scene.add(universe);
 
       // --- Centro = o Hub (o logo SM Hub, que está no DOM por cima, é o núcleo).
-      //    Sem mesh 3D no centro: as linhas convergem pra (0,0,0) = o logo.
-      //    Uma point light dá um brilho suave atrás do logo. ---
+      //    Um anel neon sutil ao redor do centro representa o contorno do logo.
       scene.add(new THREE.AmbientLight(0x0a1a40, 1.3));
       const coreLight = new THREE.PointLight(0x3d5afe, 16, 30);
       coreLight.position.set(0, 0, 0);
@@ -126,6 +125,18 @@ export function Hero3D() {
       const rim = new THREE.PointLight(0x22d3ee, 7, 30);
       rim.position.set(4, 3, 3);
       scene.add(rim);
+
+      const ringGeo = new THREE.TorusGeometry(0.62, 0.018, 16, 100);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x5e74ff,
+        transparent: true,
+        opacity: 0.25,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      universe.add(ring);
 
       // --- Nós = ícones dos módulos orbitando (Sprites, sempre de frente) ---
       const textures = await Promise.all(
@@ -195,15 +206,18 @@ export function Hero3D() {
       const lines = new THREE.LineSegments(lineGeo, lineMat);
       universe.add(lines);
 
-      // --- Efeito neon no hover: raycaster detecta ícone próximo do cursor ---
+      // --- Efeito neon no hover: raycaster detecta ícone sob o cursor ---
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
       let hovered: number | null = null;
       const onMove = (e: PointerEvent) => {
-        pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
-        pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        const rect = renderer.domElement.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        pointer.x = (x / rect.width) * 2 - 1;
+        pointer.y = -(y / rect.height) * 2 + 1;
       };
-      window.addEventListener("pointermove", onMove, { passive: true });
+      mount.addEventListener("pointermove", onMove, { passive: true });
 
       // --- Starfield ---
       const STAR_N = 600;
@@ -228,14 +242,17 @@ export function Hero3D() {
       const stars = new THREE.Points(starGeo, starMat);
       scene.add(stars);
 
-      // --- Parallax/tilt do universo seguindo o mouse ---
+      // --- Parallax/tilt do universo seguindo o mouse dentro do canvas ---
       const target = { rx: 0, ry: 0 };
       const cur = { rx: 0, ry: 0 };
       const onPointer = (e: PointerEvent) => {
-        target.ry = (e.clientX / window.innerWidth - 0.5) * 0.55;
-        target.rx = (e.clientY / window.innerHeight - 0.5) * 0.35;
+        const rect = renderer.domElement.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        target.ry = (x / rect.width - 0.5) * 0.55;
+        target.rx = (y / rect.height - 0.5) * 0.35;
       };
-      if (!reduce) window.addEventListener("pointermove", onPointer, { passive: true });
+      if (!reduce) mount.addEventListener("pointermove", onPointer, { passive: true });
 
       let visible = true;
       const io = new IntersectionObserver(
@@ -264,6 +281,11 @@ export function Hero3D() {
         const hitIndex = hits.length > 0 ? nodes.findIndex((n) => n.sprite === hits[0].object) : null;
         hovered = hitIndex ?? null;
 
+        // Se hover em qualquer ícone, anel do logo também acende neon.
+        const anyHover = hovered !== null;
+        ringMat.opacity = anyHover ? 0.65 + Math.sin(t * 6) * 0.25 : 0.25;
+        ringMat.color.setHex(anyHover ? 0x8797ff : 0x5e74ff);
+
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
           const a = n.phase + t * n.speed;
@@ -279,18 +301,19 @@ export function Hero3D() {
           linePositions[i * 6 + 4] = y;
           linePositions[i * 6 + 5] = z;
 
-          // Neon no hover: ícone e glow ganham brilho; linha conectada pisca.
+          // Neon intenso só no ícone hover; outros ficam apagados.
           const isHovered = hovered === i;
-          const pulse = isHovered ? 0.65 + Math.sin(t * 8) * 0.35 : 0;
-          n.spriteMat.opacity = isHovered ? 1 : 0.85;
-          n.sprite.scale.setScalar(isHovered ? 0.72 : 0.58);
-          n.glow.scale.setScalar(isHovered ? 2.4 : 1);
-          n.glowMat.opacity = 0.18 + pulse;
+          const neonPulse = isHovered ? 0.85 + Math.sin(t * 10) * 0.15 : 0;
+          n.spriteMat.opacity = isHovered ? 1 : 0.55;
+          n.sprite.scale.setScalar(isHovered ? 0.82 : 0.58);
+          n.glow.scale.setScalar(isHovered ? 3.2 : 0.8);
+          n.glowMat.opacity = isHovered ? 0.55 + neonPulse : 0.12;
+          n.glowMat.color.setHex(isHovered ? ICON_SVGS[i].color : 0x5e74ff);
         }
 
-        // Cor neon das linhas quando algum ícone está em hover.
-        lineMat.color.setHex(hovered !== null ? 0x8797ff : 0x5e74ff);
-        lineMat.opacity = hovered !== null ? 0.55 + Math.sin(t * 10) * 0.25 : 0.35;
+        // Linhas permanecem sutis e sem pulsação.
+        lineMat.color.setHex(0x5e74ff);
+        lineMat.opacity = anyHover ? 0.45 : 0.22;
 
         lineGeo.attributes.position.needsUpdate = true;
 
@@ -320,12 +343,14 @@ export function Hero3D() {
 
       cleanup = () => {
         cancelAnimationFrame(raf);
-        window.removeEventListener("pointermove", onPointer);
-        window.removeEventListener("pointermove", onMove);
+        mount.removeEventListener("pointermove", onPointer);
+        mount.removeEventListener("pointermove", onMove);
         window.removeEventListener("resize", onResize);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
         glowGeo.dispose();
+        ringGeo.dispose();
+        ringMat.dispose();
         nodes.forEach((n) => {
           n.spriteMat.map?.dispose();
           n.spriteMat.dispose();
