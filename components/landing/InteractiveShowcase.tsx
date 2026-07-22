@@ -170,7 +170,7 @@ export function InteractiveShowcase() {
         ref={stageRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="relative h-[300px] sm:h-[360px] flex items-center justify-center overflow-hidden"
+        className="relative h-[340px] sm:h-[400px] flex items-center justify-center overflow-visible"
         style={{ perspective: "1200px", touchAction: "pan-y" }}
       >
         {/* Painéis */}
@@ -219,7 +219,7 @@ export function InteractiveShowcase() {
                   backfaceVisibility: "hidden",
                 }}
               >
-                <div className={`card group h-full p-5 sm:p-6 flex flex-col gap-4 spotlight max-h-[240px] sm:max-h-[300px] overflow-y-auto ${isActive ? "border-royal-500/40 shadow-elevated" : ""}`}>
+                <div className={`card group h-full p-4 sm:p-5 flex flex-col gap-3 spotlight ${isActive ? "border-royal-500/40 shadow-elevated" : ""}`}>
                   <div className="flex items-start gap-3">
                     <div
                       className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}
@@ -227,19 +227,19 @@ export function InteractiveShowcase() {
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-lg font-semibold text-slate-100 leading-tight">
+                      <h3 className="text-base sm:text-lg font-semibold text-slate-100 leading-tight">
                         {m.title}
                       </h3>
-                      <p className="text-xs text-slate-400 leading-snug mt-0.5">
+                      <p className="text-[11px] sm:text-xs text-slate-400 leading-snug mt-0.5">
                         {m.tagline}
                       </p>
                     </div>
                   </div>
-                  <ul className="space-y-2 flex-1">
+                  <ul className="space-y-1.5 flex-1">
                     {m.bullets.map((b) => (
                       <li
                         key={b}
-                        className="flex items-start gap-2 text-sm leading-relaxed text-slate-300"
+                        className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
                       >
                         <Check
                           className={cn(
