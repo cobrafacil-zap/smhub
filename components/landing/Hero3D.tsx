@@ -150,6 +150,7 @@ export function Hero3D() {
           map: textures[i],
           transparent: true,
           depthWrite: false,
+          blending: THREE.AdditiveBlending,
         });
         const sprite = new THREE.Sprite(spriteMat);
         sprite.scale.set(0.58, 0.58, 1);
@@ -159,6 +160,8 @@ export function Hero3D() {
           color: ICON_SVGS[i].color,
           transparent: true,
           opacity: 0.18,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
         });
         const glow = new THREE.Mesh(glowGeo, glowMat);
         universe.add(glow);
@@ -183,12 +186,24 @@ export function Hero3D() {
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
       const lineMat = new THREE.LineBasicMaterial({
-        color: 0x8797ff,
+        color: 0x5e74ff,
         transparent: true,
-        opacity: 0.14,
+        opacity: 0.35,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
       });
       const lines = new THREE.LineSegments(lineGeo, lineMat);
       universe.add(lines);
+
+      // --- Efeito neon no hover: raycaster detecta ícone próximo do cursor ---
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      let hovered: number | null = null;
+      const onMove = (e: PointerEvent) => {
+        pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      };
+      window.addEventListener("pointermove", onMove, { passive: true });
 
       // --- Starfield ---
       const STAR_N = 600;
@@ -243,6 +258,12 @@ export function Hero3D() {
         universe.rotation.x = cur.rx;
         universe.rotation.y = cur.ry + t * 0.03;
 
+        // Raycast contra os sprites pra saber qual ícone está sob o cursor.
+        raycaster.setFromCamera(pointer, camera);
+        const hits = raycaster.intersectObjects(nodes.map((n) => n.sprite));
+        const hitIndex = hits.length > 0 ? nodes.findIndex((n) => n.sprite === hits[0].object) : null;
+        hovered = hitIndex ?? null;
+
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
           const a = n.phase + t * n.speed;
@@ -257,7 +278,20 @@ export function Hero3D() {
           linePositions[i * 6 + 3] = x;
           linePositions[i * 6 + 4] = y;
           linePositions[i * 6 + 5] = z;
+
+          // Neon no hover: ícone e glow ganham brilho; linha conectada pisca.
+          const isHovered = hovered === i;
+          const pulse = isHovered ? 0.65 + Math.sin(t * 8) * 0.35 : 0;
+          n.spriteMat.opacity = isHovered ? 1 : 0.85;
+          n.sprite.scale.setScalar(isHovered ? 0.72 : 0.58);
+          n.glow.scale.setScalar(isHovered ? 2.4 : 1);
+          n.glowMat.opacity = 0.18 + pulse;
         }
+
+        // Cor neon das linhas quando algum ícone está em hover.
+        lineMat.color.setHex(hovered !== null ? 0x8797ff : 0x5e74ff);
+        lineMat.opacity = hovered !== null ? 0.55 + Math.sin(t * 10) * 0.25 : 0.35;
+
         lineGeo.attributes.position.needsUpdate = true;
 
         stars.rotation.y = t * 0.02;
@@ -287,6 +321,7 @@ export function Hero3D() {
       cleanup = () => {
         cancelAnimationFrame(raf);
         window.removeEventListener("pointermove", onPointer);
+        window.removeEventListener("pointermove", onMove);
         window.removeEventListener("resize", onResize);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
