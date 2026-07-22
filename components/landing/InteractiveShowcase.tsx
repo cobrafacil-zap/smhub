@@ -9,15 +9,16 @@ import {
   Wallet,
   FileText,
   Check,
-  ChevronLeft,
-  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 
 /**
- * InteractiveShowcase — módulos da plataforma em carrossel limpo.
- * Mobile: um card por vez, centralizado, com setas.
- * Desktop: cards alinhados horizontalmente, ativo em destaque.
+ * InteractiveShowcase — carrossel 3D de um card por vez.
+ *
+ * Mobile e desktop compartilham a mesma experiência:
+ * - um card ativo no centro;
+ * - arraste para o lado ou clique nos chips para navegar;
+ * - vizinhos laterais visíveis no desktop, apenas sombra no mobile.
  */
 
 interface Mod {
@@ -127,77 +128,97 @@ export function InteractiveShowcase() {
           Uma plataforma, todas as etapas
         </h2>
         <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
-          Clique em cada módulo e veja como a SM Hub tira peso do dia a dia da sua agência.
+          Arraste para o lado ou clique nos módulos abaixo para explorar.
         </p>
       </div>
 
-      {/* Mobile carousel */}
+      {/* Carrossel 3D: sempre um card ativo no centro. */}
       <div
-        className="sm:hidden relative h-[360px] flex items-center justify-center px-10"
+        className="relative h-[380px] sm:h-[420px] flex items-center justify-center overflow-visible"
+        style={{ perspective: "1200px", perspectiveOrigin: "center center" }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
         {MODS.map((m, i) => {
-          const isActive = i === active;
-          if (!isActive) return null;
+          const N = MODS.length;
+          const offset =
+            ((i - active + N + Math.floor(N / 2)) % N) - Math.floor(N / 2);
+          const abs = Math.abs(offset);
+          const isActive = offset === 0;
+          const isNeighbor = abs === 1;
+          const showSide = isDesktop && isNeighbor;
+          const visible = isActive || showSide;
           const Icon = m.icon;
+
+          const transform = isDesktop
+            ? `translate(-50%, -50%) translateX(${offset * 340}px) translateZ(${-abs * 80}px) rotateY(${offset * -22}deg) scale(${isActive ? 1 : 0.82})`
+            : `translate(-50%, -50%) translateX(${offset * 90}%) scale(${isActive ? 1 : 0.85})`;
+
           return (
             <button
               type="button"
               key={m.title}
               onClick={() => setActive(i)}
-              className="relative w-full max-w-[320px] text-left transition-opacity duration-300"
-            >
-              <Card active>
-                <ModuleContent m={m} Icon={Icon} />
-              </Card>
-            </button>
-          );
-        })}
-
-        <button
-          type="button"
-          onClick={prev}
-          aria-label="Módulo anterior"
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-border/70 bg-bg-surface/80 text-slate-300 flex items-center justify-center active:scale-95 transition"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          onClick={next}
-          aria-label="Próximo módulo"
-          className="absolute right-0 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-border/70 bg-bg-surface/80 text-slate-300 flex items-center justify-center active:scale-95 transition"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-
-      {/* Desktop layout */}
-      <div className="hidden sm:grid sm:grid-cols-3 gap-4 lg:gap-5 items-stretch">
-        {MODS.map((m, i) => {
-          const isActive = i === active;
-          const Icon = m.icon;
-          return (
-            <button
-              type="button"
-              key={m.title}
-              onClick={() => setActive(i)}
+              aria-label={m.title}
+              tabIndex={visible ? 0 : -1}
               className={cn(
-                "text-left transition-all duration-300 rounded-[1.5rem] border p-5",
-                isActive
-                  ? "border-royal-500/40 bg-bg-surface shadow-card"
-                  : "border-border/60 bg-bg-surface/50 hover:border-royal-500/30 hover:bg-bg-surface"
+                "absolute left-1/2 top-1/2 w-[min(88vw,360px)] sm:w-[420px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
+                visible ? "pointer-events-auto" : "pointer-events-none"
               )}
+              style={{
+                transform,
+                opacity: !visible ? 0 : isActive ? 1 : 0.35,
+                zIndex: isActive ? 30 : 20 - abs,
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+                transformOrigin: "center center",
+              }}
             >
-              <ModuleContent m={m} Icon={Icon} />
+              <div
+                className={cn(
+                  "rounded-[1.5rem] border p-4 sm:p-5 flex flex-col gap-3",
+                  isActive
+                    ? "border-royal-500/40 bg-bg-surface shadow-card"
+                    : "border-border/60 bg-bg-surface/60"
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-11 w-11 rounded-xl border border-royal-500/20 bg-royal-500/10 flex items-center justify-center shrink-0">
+                    <Icon className="h-5 w-5 text-royal-300" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-slate-100 leading-tight">
+                      {m.title}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-slate-400 leading-snug mt-0.5">
+                      {m.tagline}
+                    </p>
+                  </div>
+                </div>
+                <ul className="space-y-1.5">
+                  {m.bullets.map((b) => (
+                    <li
+                      key={b}
+                      className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
+                    >
+                      <Check className="h-4 w-4 shrink-0 mt-0.5 text-royal-300" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+                {!isActive && (
+                  <p className="text-[11px] text-royal-300/80 font-medium pt-1">
+                    Clique pra ver →
+                  </p>
+                )}
+              </div>
             </button>
           );
         })}
       </div>
 
       {/* Chips de navegação */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
         {MODS.map((m, i) => {
           const Icon = m.icon;
           const isActive = i === active;
@@ -220,54 +241,8 @@ export function InteractiveShowcase() {
       </div>
 
       <p className="text-center text-xs text-slate-500 mt-4">
-        {active + 1} de {MODS.length} · {isDesktop ? "clique em um card" : "arraste o card ← →"}
+        {active + 1} de {MODS.length} · arraste o card ← →
       </p>
     </section>
-  );
-}
-
-function Card({ children, active }: { children: React.ReactNode; active?: boolean }) {
-  return (
-    <div
-      className={cn(
-        "rounded-[1.5rem] border p-4 sm:p-5 flex flex-col gap-3",
-        active
-          ? "border-royal-500/40 bg-bg-surface shadow-card"
-          : "border-border/60 bg-bg-surface/50"
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-function ModuleContent({ m, Icon }: { m: Mod; Icon: LucideIcon }) {
-  return (
-    <>
-      <div className="flex items-start gap-3">
-        <div className="h-11 w-11 rounded-xl border border-royal-500/20 bg-royal-500/10 flex items-center justify-center shrink-0">
-          <Icon className="h-5 w-5 text-royal-300" />
-        </div>
-        <div className="min-w-0">
-          <h3 className="text-base sm:text-lg font-semibold text-slate-100 leading-tight">
-            {m.title}
-          </h3>
-          <p className="text-[11px] sm:text-xs text-slate-400 leading-snug mt-0.5">
-            {m.tagline}
-          </p>
-        </div>
-      </div>
-      <ul className="space-y-1.5">
-        {m.bullets.map((b) => (
-          <li
-            key={b}
-            className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
-          >
-            <Check className="h-4 w-4 shrink-0 mt-0.5 text-royal-300" />
-            <span>{b}</span>
-          </li>
-        ))}
-      </ul>
-    </>
   );
 }
