@@ -125,8 +125,9 @@ export function InteractiveShowcase() {
       const w = stageRef.current?.clientWidth ?? 600;
       // painel ~300px; espaçamento cresce com a tela, com teto.
       const cardW = window.innerWidth < 640 ? 320 : 360;
-      const maxSpacing = Math.max(140, (w - cardW) / 2 * 0.85);
-      setSpacing(Math.max(150, Math.min(240, Math.min(maxSpacing, w * 0.3))));
+      // Espaçamento menor = cards mais juntos e centralizados.
+      const maxSpacing = Math.max(120, (w - cardW) / 2 * 0.6);
+      setSpacing(Math.max(130, Math.min(200, Math.min(maxSpacing, w * 0.24))));
     };
     const onDesk = () => setIsDesktop(deskMq.matches);
     measure();
@@ -197,9 +198,9 @@ export function InteractiveShowcase() {
             const transform = reduce
               ? `translateX(${offset * (isActive ? 0 : 120)}%) scale(${isActive ? 1 : 0.92})`
               : `translateX(${offset * spacing}px) translateZ(${
-                  -abs * 90
-                }px) rotateY(${offset * -42}deg) scale(${
-                  isActive ? 1 : 0.82
+                  -abs * 70
+                }px) rotateY(${offset * -38}deg) scale(${
+                  isActive ? 1 : 0.85
                 })`;
 
             return (
@@ -212,7 +213,7 @@ export function InteractiveShowcase() {
                 className="absolute left-1/2 top-1/2 w-[min(90vw,320px)] sm:w-[360px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-95"
                 style={{
                   transform,
-                  opacity: !visible ? 0 : isActive ? 1 : 0.35,
+                  opacity: !visible ? 0 : isActive ? 1 : 0.45,
                   zIndex: isActive ? 20 : 19 - abs,
                   pointerEvents: visible ? "auto" : "none",
                   transformStyle: "preserve-3d",
