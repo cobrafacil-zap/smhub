@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type * as ThreeTypes from "three";
 
 /**
- * Hero3D — cena WebGL procedural (three.js puro) para o hero da LP.
+ * Hero3D — "universo" da SM Hub no hero da LP.
  *
- * Tendência 2026: profundidade 3D e interação imersiva. Aqui vira um
- * icosaedro iridescente que flutua + campo de partículas, reagindo ao mouse
- * (parallax) e ao scroll (tilt). Sem assets externos — tudo procedural.
+ * Tendência 2026: profundidade 3D imersiva, mas com SENTIDO. Aqui vira um
+ * cosmos da marca: um núcleo central (o Hub) com módulos orbitando em órbitas
+ * inclinadas, linhas de conexão até o núcleo e um starfield de fundo. "SM Hub"
+ * = centro de um universo de marketing conectado (clientes, redes, conteúdo,
+ * financeiro, contratos girando em torno da agência).
+ *
+ * Tudo procedural (sem assets). Reage ao mouse (parallax/tilt do universo).
  *
  * Performance:
- *  - Carregado só na LP via next/dynamic (não vai pros painéis).
- *  - pixelRatio capado em 2, rAF único, pausa quando a viewport sai/aba oculta.
+ *  - Carregado só na LP via import() no useEffect (three num chunk separado).
+ *  - pixelRatio capado em 2, rAF único, pausa fora da viewport/aba oculta.
  *  - Respeita prefers-reduced-motion (frame estático, sem loop).
  *  - Cleanup total (dispose de geometrias/materiais/renderer).
  */
@@ -22,7 +27,6 @@ export function Hero3D() {
     const mount = mountRef.current;
     if (!mount) return;
 
-    // Import dinâmico: three fica num chunk separado, só baixado na LP.
     let cancelled = false;
     let cleanup = () => {};
     let raf = 0;
@@ -39,8 +43,8 @@ export function Hero3D() {
       const height = mount.clientHeight || 1;
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-      camera.position.set(0, 0, 6);
+      const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+      camera.position.set(0, 0, 6.5);
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -54,93 +58,119 @@ export function Hero3D() {
       renderer.domElement.style.height = "100%";
       renderer.domElement.style.display = "block";
 
-      // --- Objeto central: icosaedro sólido + wireframe sobreposto ---
-      const group = new THREE.Group();
-      scene.add(group);
+      const universe = new THREE.Group();
+      scene.add(universe);
 
-      const icoGeo = new THREE.IcosahedronGeometry(1.2, 1);
-      const solidMat = new THREE.MeshStandardMaterial({
+      // --- Núcleo central (o Hub) ---
+      const coreGeo = new THREE.IcosahedronGeometry(0.55, 1);
+      const coreMat = new THREE.MeshStandardMaterial({
         color: 0x3d5afe,
-        metalness: 0.55,
-        roughness: 0.25,
+        emissive: 0x3d5afe,
+        emissiveIntensity: 0.9,
+        metalness: 0.4,
+        roughness: 0.3,
         flatShading: true,
-        transparent: true,
-        opacity: 0.92,
       });
-      const solid = new THREE.Mesh(icoGeo, solidMat);
-      group.add(solid);
+      const core = new THREE.Mesh(coreGeo, coreMat);
+      universe.add(core);
 
-      const wireGeo = new THREE.IcosahedronGeometry(1.23, 1);
-      const wireMat = new THREE.MeshBasicMaterial({
+      // Halo do núcleo (wire sutil).
+      const haloGeo = new THREE.IcosahedronGeometry(0.72, 0);
+      const haloMat = new THREE.MeshBasicMaterial({
         color: 0x8797ff,
         wireframe: true,
         transparent: true,
-        opacity: 0.35,
-      });
-      const wire = new THREE.Mesh(wireGeo, wireMat);
-      group.add(wire);
-
-      // Halo maior, bem sutil, pra dar profundidade.
-      const haloGeo = new THREE.IcosahedronGeometry(1.7, 0);
-      const haloMat = new THREE.MeshBasicMaterial({
-        color: 0x22d3ee,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.08,
+        opacity: 0.25,
       });
       const halo = new THREE.Mesh(haloGeo, haloMat);
-      group.add(halo);
+      universe.add(halo);
 
-      // --- Luzes (rim light royal + cyan) ---
-      scene.add(new THREE.AmbientLight(0x0a1a40, 1.4));
-      const l1 = new THREE.PointLight(0x3d5afe, 22, 50);
-      l1.position.set(3.5, 2.5, 3);
-      const l2 = new THREE.PointLight(0x22d3ee, 16, 50);
-      l2.position.set(-3.5, -1.5, 2);
-      scene.add(l1, l2);
+      // Luz no núcleo (brilho central).
+      const coreLight = new THREE.PointLight(0x3d5afe, 14, 30);
+      coreLight.position.set(0, 0, 0);
+      scene.add(coreLight);
+      scene.add(new THREE.AmbientLight(0x0a1a40, 1.2));
+      const rim = new THREE.PointLight(0x22d3ee, 8, 30);
+      rim.position.set(4, 3, 3);
+      scene.add(rim);
 
-      // --- Partículas (casca esférica dispersa) ---
-      const N = 520;
-      const positions = new Float32Array(N * 3);
-      for (let i = 0; i < N; i++) {
-        // distribuição numa casca de raio ~3.2
-        const r = 2.6 + Math.random() * 1.4;
+      // --- Nós orbitando (os módulos) ---
+      type Node = {
+        mesh: ThreeTypes.Mesh;
+        r: number;
+        speed: number;
+        tilt: number;
+        phase: number;
+        mat: ThreeTypes.MeshStandardMaterial;
+      };
+      const ORBIT_COLORS = [0x8797ff, 0x22d3ee, 0x3d5afe, 0x8797ff, 0x22d3ee, 0x3d5afe];
+      const nodes: Node[] = [];
+      const nodeGeo = new THREE.SphereGeometry(0.09, 16, 16);
+      for (let i = 0; i < ORBIT_COLORS.length; i++) {
+        const mat = new THREE.MeshStandardMaterial({
+          color: ORBIT_COLORS[i],
+          emissive: ORBIT_COLORS[i],
+          emissiveIntensity: 0.6,
+          metalness: 0.3,
+          roughness: 0.4,
+        });
+        const mesh = new THREE.Mesh(nodeGeo, mat);
+        universe.add(mesh);
+        nodes.push({
+          mesh,
+          r: 1.5 + (i % 3) * 0.45,
+          speed: 0.18 + (i % 3) * 0.07,
+          tilt: (i / ORBIT_COLORS.length) * Math.PI,
+          phase: (i / ORBIT_COLORS.length) * Math.PI * 2,
+          mat,
+        });
+      }
+
+      // --- Linhas de conexão núcleo <-> nós (atualizadas por frame) ---
+      const linePositions = new Float32Array(nodes.length * 6); // [center,node] p/ cada
+      const lineGeo = new THREE.BufferGeometry();
+      lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0x8797ff,
+        transparent: true,
+        opacity: 0.22,
+      });
+      const lines = new THREE.LineSegments(lineGeo, lineMat);
+      universe.add(lines);
+
+      // --- Starfield (fundo cósmico) ---
+      const STAR_N = 700;
+      const starPos = new Float32Array(STAR_N * 3);
+      for (let i = 0; i < STAR_N; i++) {
+        const r = 6 + Math.random() * 10;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
-        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-        positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        positions[i * 3 + 2] = r * Math.cos(phi);
+        starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        starPos[i * 3 + 2] = r * Math.cos(phi) - 2; // empurra um pouco pra trás
       }
-      const pGeo = new THREE.BufferGeometry();
-      pGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      const pMat = new THREE.PointsMaterial({
+      const starGeo = new THREE.BufferGeometry();
+      starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
+      const starMat = new THREE.PointsMaterial({
         color: 0x8797ff,
-        size: 0.035,
+        size: 0.03,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.65,
         sizeAttenuation: true,
       });
-      const points = new THREE.Points(pGeo, pMat);
-      scene.add(points);
+      const stars = new THREE.Points(starGeo, starMat);
+      scene.add(stars);
 
-      // --- Estado de interação (mouse + scroll), com lerp suave ---
+      // --- Interação: parallax/tilt do universo seguindo o mouse ---
       const target = { rx: 0, ry: 0 };
       const cur = { rx: 0, ry: 0 };
       const onPointer = (e: PointerEvent) => {
-        const px = (e.clientX / window.innerWidth - 0.5) * 2; // -1..1
-        const py = (e.clientY / window.innerHeight - 0.5) * 2;
-        target.ry = px * 0.5;
-        target.rx = py * 0.35;
+        target.ry = (e.clientX / window.innerWidth - 0.5) * 0.6;
+        target.rx = (e.clientY / window.innerHeight - 0.5) * 0.4;
       };
-      const onScroll = () => {
-        target.rx += 0; // scroll só influencia via rotação contínua abaixo
-      };
-      if (!reduce) {
-        window.addEventListener("pointermove", onPointer, { passive: true });
-        window.addEventListener("scroll", onScroll, { passive: true });
-      }
+      if (!reduce) window.addEventListener("pointermove", onPointer, { passive: true });
 
-      // Pausa quando fora da viewport ou aba oculta → economia de bateria.
+      // Pausa fora da viewport/aba oculta.
       let visible = true;
       const io = new IntersectionObserver(
         (entries) => {
@@ -157,20 +187,38 @@ export function Hero3D() {
       const clock = new THREE.Clock();
       const renderFrame = () => {
         const t = clock.getElapsedTime();
-        // Rotação contínua lenta + parallax do mouse (lerp)
         cur.rx += (target.rx - cur.rx) * 0.05;
         cur.ry += (target.ry - cur.ry) * 0.05;
-        group.rotation.x = cur.rx + Math.sin(t * 0.25) * 0.12;
-        group.rotation.y = cur.ry + t * 0.18;
-        halo.rotation.x = t * 0.1;
-        halo.rotation.y = -t * 0.14;
-        points.rotation.y = t * 0.04;
-        points.rotation.x = Math.sin(t * 0.15) * 0.1;
+        universe.rotation.x = cur.rx;
+        universe.rotation.y = cur.ry + t * 0.05;
+
+        core.rotation.y = t * 0.3;
+        core.rotation.x = t * 0.18;
+        halo.rotation.y = -t * 0.12;
+
+        // Atualiza órbitas + linhas.
+        for (let i = 0; i < nodes.length; i++) {
+          const n = nodes[i];
+          const a = n.phase + t * n.speed;
+          const x = n.r * Math.cos(a);
+          const y = Math.sin(n.tilt) * n.r * Math.sin(a);
+          const z = Math.cos(n.tilt) * n.r * Math.sin(a);
+          n.mesh.position.set(x, y, z);
+          linePositions[i * 6] = 0;
+          linePositions[i * 6 + 1] = 0;
+          linePositions[i * 6 + 2] = 0;
+          linePositions[i * 6 + 3] = x;
+          linePositions[i * 6 + 4] = y;
+          linePositions[i * 6 + 5] = z;
+        }
+        lineGeo.attributes.position.needsUpdate = true;
+
+        stars.rotation.y = t * 0.02;
         renderer.render(scene, camera);
       };
 
       if (reduce) {
-        renderFrame(); // frame estático
+        renderFrame();
       } else {
         const loop = () => {
           raf = requestAnimationFrame(loop);
@@ -192,18 +240,19 @@ export function Hero3D() {
       cleanup = () => {
         cancelAnimationFrame(raf);
         window.removeEventListener("pointermove", onPointer);
-        window.removeEventListener("scroll", onScroll);
         window.removeEventListener("resize", onResize);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
-        icoGeo.dispose();
-        solidMat.dispose();
-        wireGeo.dispose();
-        wireMat.dispose();
+        coreGeo.dispose();
+        coreMat.dispose();
         haloGeo.dispose();
         haloMat.dispose();
-        pGeo.dispose();
-        pMat.dispose();
+        nodeGeo.dispose();
+        nodes.forEach((n) => n.mat.dispose());
+        lineGeo.dispose();
+        lineMat.dispose();
+        starGeo.dispose();
+        starMat.dispose();
         renderer.dispose();
         if (renderer.domElement.parentNode === mount) {
           mount.removeChild(renderer.domElement);

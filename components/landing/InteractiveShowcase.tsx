@@ -95,6 +95,23 @@ export function InteractiveShowcase() {
   const [reduce, setReduce] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart.current) return;
+    const dx = e.changedTouches[0].clientX - touchStart.current.x;
+    const dy = e.changedTouches[0].clientY - touchStart.current.y;
+    // Só age no swipe horizontal (não rouba o scroll vertical da página).
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      setActive((a) =>
+        dx < 0 ? (a + 1) % MODS.length : (a - 1 + MODS.length) % MODS.length
+      );
+    }
+    touchStart.current = null;
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -143,11 +160,14 @@ export function InteractiveShowcase() {
         </p>
       </div>
 
-      {/* Stage 3D (anel/coverflow) — sempre dos dois lados (centralizado) */}
+      {/* Stage 3D (anel/coverflow) — overflow-hidden pra NÃO derramar sobre
+          os chips. Só o ativo + vizinhos imediatos (±1) = centralizado. */}
       <div
         ref={stageRef}
-        className="relative h-[300px] sm:h-[380px] flex items-center justify-center"
-        style={{ perspective: "1200px" }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        className="relative h-[300px] sm:h-[360px] flex items-center justify-center overflow-hidden"
+        style={{ perspective: "1200px", touchAction: "pan-y" }}
       >
         {/* Painéis */}
         <div
@@ -156,25 +176,26 @@ export function InteractiveShowcase() {
         >
           {MODS.map((m, i) => {
             // Anel contínuo: offset pelo caminho mais curto (-2..2 p/ 5 itens)
-            // → sempre há painéis dos dois lados = centralizado, nunca vazio de
-            // um lado. No mobile (isDesktop=false) só o ativo aparece.
+            // → sempre há painel dos dois lados = centralizado. Só ±1 aparece
+            // (vizinhos clicáveis). No mobile só o ativo.
             const N = MODS.length;
             const offset =
               ((i - active + N + Math.floor(N / 2)) % N) - Math.floor(N / 2);
             const abs = Math.abs(offset);
             const isActive = offset === 0;
-            const showSide = isDesktop && abs <= 2;
+            const isNeighbor = abs === 1;
+            const showSide = isDesktop && isNeighbor;
             const visible = isActive || showSide;
             const Icon = m.icon;
 
-            // transform: empurra laterais pra fora, gira em perspectiva, recua
+            // transform: empurra vizinhos pra fora, gira em perspectiva, recua
             // em Z e diminui. reduced-motion → só translada em X, sem 3D.
             const transform = reduce
               ? `translateX(${offset * 18}px) scale(${isActive ? 1 : 0.92})`
               : `translateX(${offset * spacing}px) translateZ(${
-                  -abs * 80
-                }px) rotateY(${offset * -42}deg) scale(${
-                  isActive ? 1 : 0.78
+                  -abs * 90
+                }px) rotateY(${offset * -46}deg) scale(${
+                  isActive ? 1 : 0.8
                 })`;
 
             return (
@@ -184,11 +205,11 @@ export function InteractiveShowcase() {
                 onClick={() => setActive(i)}
                 aria-label={m.title}
                 tabIndex={visible ? 0 : -1}
-                className="absolute left-1/2 top-1/2 w-[300px] max-w-[88vw] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer"
+                className="absolute left-1/2 top-1/2 w-[300px] max-w-[88vw] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-90"
                 style={{
                   transform,
-                  opacity: !visible ? 0 : isActive ? 1 : Math.max(0.16, 0.5 - abs * 0.16),
-                  zIndex: 20 - abs,
+                  opacity: !visible ? 0 : isActive ? 1 : 0.4,
+                  zIndex: isActive ? 20 : 19,
                   pointerEvents: visible ? "auto" : "none",
                   transformStyle: "preserve-3d",
                   backfaceVisibility: "hidden",
@@ -255,7 +276,10 @@ export function InteractiveShowcase() {
       </div>
 
       <p className="text-center text-xs text-slate-500 mt-4">
-        {active + 1} de {MODS.length} · clique num módulo ou nos cards laterais
+        {active + 1} de {MODS.length} ·{" "}
+        {isDesktop
+          ? "clique num módulo ou nos cards laterais"
+          : "arraste o card ← →"}
       </p>
     </section>
   );
