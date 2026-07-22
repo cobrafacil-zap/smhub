@@ -126,17 +126,28 @@ export function Hero3D() {
       rim.position.set(4, 3, 3);
       scene.add(rim);
 
-      const ringGeo = new THREE.TorusGeometry(0.62, 0.018, 16, 100);
+      const ringGeo = new THREE.TorusGeometry(0.92, 0.035, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x5e74ff,
         transparent: true,
-        opacity: 0.25,
+        opacity: 0.45,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       ring.rotation.x = Math.PI / 2;
       universe.add(ring);
+
+      const coreGlowGeo = new THREE.SphereGeometry(0.35, 32, 32);
+      const coreGlowMat = new THREE.MeshBasicMaterial({
+        color: 0x3d5afe,
+        transparent: true,
+        opacity: 0.18,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const coreGlow = new THREE.Mesh(coreGlowGeo, coreGlowMat);
+      universe.add(coreGlow);
 
       // --- Nós = ícones dos módulos orbitando (Sprites, sempre de frente) ---
       const textures = await Promise.all(
@@ -155,7 +166,7 @@ export function Hero3D() {
         phase: number;
       };
       const nodes: Node[] = [];
-      const glowGeo = new THREE.SphereGeometry(0.16, 16, 16);
+      const glowGeo = new THREE.SphereGeometry(0.22, 24, 24);
       for (let i = 0; i < ICON_SVGS.length; i++) {
         const spriteMat = new THREE.SpriteMaterial({
           map: textures[i],
@@ -170,7 +181,7 @@ export function Hero3D() {
         const glowMat = new THREE.MeshBasicMaterial({
           color: ICON_SVGS[i].color,
           transparent: true,
-          opacity: 0.18,
+          opacity: 0.35,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         });
@@ -197,9 +208,9 @@ export function Hero3D() {
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
       const lineMat = new THREE.LineBasicMaterial({
-        color: 0x5e74ff,
+        color: 0x8797ff,
         transparent: true,
-        opacity: 0.35,
+        opacity: 0.5,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -283,8 +294,10 @@ export function Hero3D() {
 
         // Se hover em qualquer ícone, anel do logo também acende neon.
         const anyHover = hovered !== null;
-        ringMat.opacity = anyHover ? 0.65 + Math.sin(t * 6) * 0.25 : 0.25;
-        ringMat.color.setHex(anyHover ? 0x8797ff : 0x5e74ff);
+        ringMat.opacity = anyHover ? 0.95 + Math.sin(t * 6) * 0.05 : 0.45;
+        ringMat.color.setHex(anyHover ? 0xb0bbff : 0x8797ff);
+        coreGlowMat.opacity = anyHover ? 0.45 + Math.sin(t * 6) * 0.15 : 0.18;
+        coreGlowMat.color.setHex(anyHover ? 0x8797ff : 0x3d5afe);
 
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
@@ -303,17 +316,17 @@ export function Hero3D() {
 
           // Neon intenso só no ícone hover; outros ficam apagados.
           const isHovered = hovered === i;
-          const neonPulse = isHovered ? 0.85 + Math.sin(t * 10) * 0.15 : 0;
-          n.spriteMat.opacity = isHovered ? 1 : 0.55;
-          n.sprite.scale.setScalar(isHovered ? 0.82 : 0.58);
-          n.glow.scale.setScalar(isHovered ? 3.2 : 0.8);
-          n.glowMat.opacity = isHovered ? 0.55 + neonPulse : 0.12;
+          const neonPulse = isHovered ? 0.9 + Math.sin(t * 10) * 0.1 : 0;
+          n.spriteMat.opacity = isHovered ? 1 : 0.5;
+          n.sprite.scale.setScalar(isHovered ? 0.88 : 0.58);
+          n.glow.scale.setScalar(isHovered ? 4.0 : 1.0);
+          n.glowMat.opacity = isHovered ? 0.8 + neonPulse : 0.25;
           n.glowMat.color.setHex(isHovered ? ICON_SVGS[i].color : 0x5e74ff);
         }
 
-        // Linhas permanecem sutis e sem pulsação.
-        lineMat.color.setHex(0x5e74ff);
-        lineMat.opacity = anyHover ? 0.45 : 0.22;
+        // Linhas conectadas ao ícone hover ganham neon; outras ficam sutis.
+        lineMat.color.setHex(anyHover ? 0xb0bbff : 0x8797ff);
+        lineMat.opacity = anyHover ? 0.7 : 0.35;
 
         lineGeo.attributes.position.needsUpdate = true;
 
@@ -351,6 +364,8 @@ export function Hero3D() {
         glowGeo.dispose();
         ringGeo.dispose();
         ringMat.dispose();
+        coreGlowGeo.dispose();
+        coreGlowMat.dispose();
         nodes.forEach((n) => {
           n.spriteMat.map?.dispose();
           n.spriteMat.dispose();
