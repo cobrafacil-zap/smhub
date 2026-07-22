@@ -102,6 +102,11 @@ export function buildAuthUrl(args: {
     scope: scopesForProvider(args.provider).join(","),
     state,
     response_type: "code",
+    // Força a Meta a re-pedir permissões que o usuário tenha recusado antes.
+    // Sem isso, se `business_management` (necessário p/ /me/accounts listar
+    // Páginas de Business Manager) foi recusado num login anterior, ele fica
+    // "declined" pra sempre e Páginas de Business somem do seletor.
+    auth_type: "rerequest",
   });
   return `${DIALOG_URL}?${params.toString()}`;
 }
