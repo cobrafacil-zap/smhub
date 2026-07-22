@@ -258,6 +258,29 @@ export default async function LandingPage() {
         className="aurora-blob top-[40%] left-[-8%] w-[480px] h-[480px] bg-royal-700/12 animate-float-slow"
         style={{ animationDelay: "-12s" }}
       />
+
+      {/* Luz ambiente extra ao longo da página — mantém o fundo vivo sem roubar foco. */}
+      <div
+        aria-hidden
+        className="aurora-blob top-[8%] left-[-14%] w-[420px] h-[420px] bg-royal-400/10 animate-float-slow"
+        style={{ animationDelay: "-4s" }}
+      />
+      <div
+        aria-hidden
+        className="aurora-blob top-[58%] left-1/2 -translate-x-1/2 w-[900px] h-[420px] bg-royal-500/10 animate-float-slow"
+        style={{ animationDelay: "-9s" }}
+      />
+      <div
+        aria-hidden
+        className="aurora-blob top-[76%] right-[-12%] w-[520px] h-[520px] bg-accent-500/10 animate-float-slow"
+        style={{ animationDelay: "-15s" }}
+      />
+      <div
+        aria-hidden
+        className="aurora-blob top-[92%] left-[-10%] w-[480px] h-[480px] bg-royal-700/12 animate-float-slow"
+        style={{ animationDelay: "-20s" }}
+      />
+
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none opacity-[0.04]"

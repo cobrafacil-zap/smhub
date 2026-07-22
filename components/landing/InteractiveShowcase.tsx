@@ -15,14 +15,12 @@ import {
 /**
  * InteractiveShowcase — seção "clicando você vê como a plataforma ajuda".
  *
- * Tendência 2026: exploração não-linear + estrutura 3D que gira. Aqui vira um
- * coverflow: o painel do módulo ativo fica de frente; os laterais giram em
- * perspectiva (rotateY) e ficam clicáveis pra trazer pra frente. Leve — só
- * transforms CSS (GPU), sem libs.
+ * Layout centralizado e robusto: o card ativo fica sempre no meio exato do
+ * palco. Os cards laterais (desktop) são posicionados a partir desse centro,
+ * com transformações 3D suaves. Em mobile mostra apenas o card ativo, com swipe.
  *
- * - seta ativo via chips, setas ←/→, teclado (←/→) e clique no painel lateral.
- * - responsivo: espaçamento medido pela largura do container.
- * - reduced-motion: sem rotação 3D (mostra painel ativo sem perspectiva).
+ * - navegação por chips, setas do teclado (←/→) e clique no card lateral.
+ * - reduced-motion: cards deslizam lateralmente sem perspectiva 3D.
  */
 
 interface Mod {
@@ -93,7 +91,7 @@ const MODS: Mod[] = [
 
 export function InteractiveShowcase() {
   const [active, setActive] = useState(0);
-  const [spacing, setSpacing] = useState(220);
+  const [spacing, setSpacing] = useState(260);
   const [reduce, setReduce] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -121,15 +119,22 @@ export function InteractiveShowcase() {
     const deskMq = window.matchMedia("(min-width: 640px)");
     setReduce(reduceMq.matches);
     setIsDesktop(deskMq.matches);
+
     const measure = () => {
-      const w = stageRef.current?.clientWidth ?? 600;
-      // painel ~300px; espaçamento cresce com a tela, com teto.
-      const cardW = window.innerWidth < 640 ? 340 : 400;
-      // Cards laterais ficam logo ao lado do ativo, mantendo o trio centralizado.
-      const maxSpacing = Math.max(140, (w - cardW) / 2 * 0.55);
-      setSpacing(Math.max(150, Math.min(220, Math.min(maxSpacing, w * 0.22))));
+      const containerW = stageRef.current?.clientWidth ?? 800;
+      const cardW = deskMq.matches ? 420 : Math.min(340, window.innerWidth - 64);
+      // Espaçamento: card lateral fica parcialmente visível, mas o trio
+      // permanece centrado. Calculado a partir do espaço sobrando.
+      const available = Math.max(0, containerW - cardW);
+      const ideal = available * 0.38; // ~75% do espaço livre de cada lado
+      setSpacing(Math.max(180, Math.min(360, ideal)));
     };
-    const onDesk = () => setIsDesktop(deskMq.matches);
+
+    const onDesk = () => {
+      setIsDesktop(deskMq.matches);
+      measure();
+    };
+
     measure();
     window.addEventListener("resize", measure);
     deskMq.addEventListener("change", onDesk);
@@ -139,7 +144,7 @@ export function InteractiveShowcase() {
     };
   }, []);
 
-  // Navegação por teclado (←/→) quando a seção está em foco via clique.
+  // Navegação por teclado (←/→).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") setActive((a) => (a + 1) % MODS.length);
@@ -165,25 +170,25 @@ export function InteractiveShowcase() {
         </p>
       </div>
 
-      {/* Stage 3D (anel/coverflow) — overflow-hidden pra NÃO derramar sobre
-          os chips. Só o ativo + vizinhos imediatos (±1) = centralizado. */}
+      {/* Palco 3D: cards posicionados a partir do centro exato. */}
       <div
         ref={stageRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="relative h-[360px] sm:h-[420px] flex items-center justify-center overflow-visible"
-        style={{ perspective: "1200px", perspectiveOrigin: "center center", touchAction: "pan-y" }}
+        className="relative h-[400px] sm:h-[460px] flex items-center justify-center overflow-visible py-6"
+        style={{
+          perspective: "1200px",
+          perspectiveOrigin: "center center",
+          touchAction: "pan-y",
+        }}
       >
-        {/* Painéis */}
         <div
           className="relative w-full h-full"
           style={{ transformStyle: "preserve-3d" }}
         >
           {MODS.map((m, i) => {
-            // Anel contínuo: offset pelo caminho mais curto (-2..2 p/ 5 itens)
-            // → sempre há painel dos dois lados = centralizado. Só ±1 aparece
-            // (vizinhos clicáveis). No mobile só o ativo.
             const N = MODS.length;
+            // Caminho mais curto no anel, para que sempre haja vizinhos dos dois lados.
             const offset =
               ((i - active + N + Math.floor(N / 2)) % N) - Math.floor(N / 2);
             const abs = Math.abs(offset);
@@ -193,15 +198,17 @@ export function InteractiveShowcase() {
             const visible = isActive || showSide;
             const Icon = m.icon;
 
-            // transform: empurra vizinhos pra fora, gira em perspectiva, recua
-            // em Z e diminui. reduced-motion → só translada em X, sem 3D.
+            // translate(-50%, -50%) corrige o posicionamento left-1/2 top-1/2,
+            // mantendo o centro do card exatamente no centro do palco.
             const transform = reduce
-              ? `translateX(${offset * (isActive ? 0 : 120)}%) scale(${isActive ? 1 : 0.92})`
-              : `translateX(${offset * spacing}px) translateZ(${
-                  -abs * 60
-                }px) rotateY(${offset * -35}deg) scale(${
-                  isActive ? 1 : 0.88
-                })`;
+              ? `translate(-50%, -50%) translateX(${
+                  isActive ? 0 : offset * 110
+                }%) scale(${isActive ? 1 : 0.92})`
+              : `translate(-50%, -50%) translateX(${
+                  offset * spacing
+                }px) translateZ(${-abs * 50}px) rotateY(${
+                  offset * -22
+                }deg) scale(${isActive ? 1 : 0.86})`;
 
             return (
               <button
@@ -210,19 +217,27 @@ export function InteractiveShowcase() {
                 onClick={() => setActive(i)}
                 aria-label={m.title}
                 tabIndex={visible ? 0 : -1}
-                className="absolute left-1/2 top-1/2 w-[min(92vw,340px)] sm:w-[400px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-95"
+                className={cn(
+                  "absolute left-1/2 top-1/2 w-[min(88vw,340px)] sm:w-[420px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
+                  visible ? "pointer-events-auto" : "pointer-events-none"
+                )}
                 style={{
                   transform,
-                  opacity: !visible ? 0 : isActive ? 1 : 0.5,
+                  opacity: !visible ? 0 : isActive ? 1 : 0.42,
                   zIndex: isActive ? 30 : 20 - abs,
-                  pointerEvents: visible ? "auto" : "none",
                   transformStyle: "preserve-3d",
                   backfaceVisibility: "hidden",
-                  WebkitTransformOrigin: "center center",
                   transformOrigin: "center center",
                 }}
               >
-                <div className={`card group h-full p-4 sm:p-5 flex flex-col gap-3 spotlight ${isActive ? "border-royal-500/40 shadow-elevated" : ""}`}>
+                <div
+                  className={cn(
+                    "card group p-4 sm:p-5 flex flex-col gap-3 spotlight",
+                    isActive
+                      ? "border-royal-500/40 shadow-elevated bg-gradient-to-b from-bg-elevated to-bg-surface"
+                      : "border-border/70 bg-bg-surface/80"
+                  )}
+                >
                   <div className="flex items-start gap-3">
                     <div
                       className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}
@@ -238,7 +253,7 @@ export function InteractiveShowcase() {
                       </p>
                     </div>
                   </div>
-                  <ul className="space-y-1.5 flex-1">
+                  <ul className="space-y-1.5">
                     {m.bullets.map((b) => (
                       <li
                         key={b}
@@ -267,7 +282,7 @@ export function InteractiveShowcase() {
       </div>
 
       {/* Chips de navegação */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
         {MODS.map((m, i) => {
           const Icon = m.icon;
           const isActive = i === active;
