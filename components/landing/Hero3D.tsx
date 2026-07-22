@@ -210,7 +210,7 @@ export function Hero3D() {
       const lineMat = new THREE.LineBasicMaterial({
         color: 0x8797ff,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.32,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -230,22 +230,23 @@ export function Hero3D() {
       };
       mount.addEventListener("pointermove", onMove, { passive: true });
 
-      // --- Starfield piscante ---
-      const STAR_N = 700;
+      // --- Starfield piscante sutil (fundo distante) ---
+      const STAR_N = 180;
       const starPos = new Float32Array(STAR_N * 3);
       const starPhase = new Float32Array(STAR_N);
       const starSpeed = new Float32Array(STAR_N);
       const starSize = new Float32Array(STAR_N);
       for (let i = 0; i < STAR_N; i++) {
-        const r = 6 + Math.random() * 12;
+        // Mantém estrelas apenas no fundo, longe do universo central.
+        const r = 7 + Math.random() * 8;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
         starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
         starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        starPos[i * 3 + 2] = r * Math.cos(phi) - 2;
+        starPos[i * 3 + 2] = r * Math.cos(phi) - 3;
         starPhase[i] = Math.random() * Math.PI * 2;
-        starSpeed[i] = 0.5 + Math.random() * 2.5;
-        starSize[i] = 0.5 + Math.random() * 1.5;
+        starSpeed[i] = 0.3 + Math.random() * 1.2;
+        starSize[i] = 0.4 + Math.random() * 0.6;
       }
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
@@ -267,9 +268,9 @@ export function Hero3D() {
           void main() {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.45 + 0.55 * sin(uTime * speed + phase);
+            float twinkle = 0.25 + 0.35 * sin(uTime * speed + phase);
             vAlpha = twinkle;
-            gl_PointSize = size * (8.0 + 4.0 * twinkle) * (100.0 / -mvPosition.z);
+            gl_PointSize = size * (2.5 + 1.5 * twinkle) * (100.0 / -mvPosition.z);
           }
         `,
         fragmentShader: `
@@ -279,7 +280,7 @@ export function Hero3D() {
             float dist = length(gl_PointCoord - vec2(0.5));
             if (dist > 0.5) discard;
             float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow);
+            gl_FragColor = vec4(uColor, vAlpha * glow * 0.6);
           }
         `,
         transparent: true,
@@ -290,19 +291,19 @@ export function Hero3D() {
       scene.add(stars);
 
       // --- Luzes menores piscantes (fireflies) próximas ao universo ---
-      const FIREFLY_N = 40;
+      const FIREFLY_N = 18;
       const flyPos = new Float32Array(FIREFLY_N * 3);
       const flyPhase = new Float32Array(FIREFLY_N);
       const flySpeed = new Float32Array(FIREFLY_N);
       for (let i = 0; i < FIREFLY_N; i++) {
-        const r = 2.5 + Math.random() * 3.5;
+        const r = 3 + Math.random() * 2.5;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
         flyPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
         flyPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
         flyPos[i * 3 + 2] = r * Math.cos(phi);
         flyPhase[i] = Math.random() * Math.PI * 2;
-        flySpeed[i] = 0.8 + Math.random() * 2.2;
+        flySpeed[i] = 0.5 + Math.random() * 1.5;
       }
       const flyGeo = new THREE.BufferGeometry();
       flyGeo.setAttribute("position", new THREE.BufferAttribute(flyPos, 3));
@@ -321,9 +322,9 @@ export function Hero3D() {
           void main() {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.2 + 0.8 * sin(uTime * speed + phase);
+            float twinkle = 0.15 + 0.55 * sin(uTime * speed + phase);
             vAlpha = twinkle;
-            gl_PointSize = (6.0 + 5.0 * twinkle) * (100.0 / -mvPosition.z);
+            gl_PointSize = (2.0 + 2.0 * twinkle) * (100.0 / -mvPosition.z);
           }
         `,
         fragmentShader: `
@@ -333,7 +334,7 @@ export function Hero3D() {
             float dist = length(gl_PointCoord - vec2(0.5));
             if (dist > 0.5) discard;
             float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow);
+            gl_FragColor = vec4(uColor, vAlpha * glow * 0.6);
           }
         `,
         transparent: true,
@@ -415,8 +416,8 @@ export function Hero3D() {
         }
 
         // Linhas conectadas ao ícone hover ganham neon; outras ficam sutis.
-        lineMat.color.setHex(anyHover ? 0xb0bbff : 0x8797ff);
-        lineMat.opacity = anyHover ? 0.7 : 0.35;
+        lineMat.color.setHex(anyHover ? 0x8797ff : 0x5e74ff);
+        lineMat.opacity = anyHover ? 0.55 : 0.28;
 
         lineGeo.attributes.position.needsUpdate = true;
 
