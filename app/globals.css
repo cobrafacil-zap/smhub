@@ -87,9 +87,10 @@
      Profundidade real: sombra em camadas + highlight interno no topo
      (tira o "card plano" que denuncia IA) e transição suave de transform/border. */
   .card {
-    /* Raio maior + borda hairline = menos "caixa quadrada de IA". A sombra
-       em camadas + highlight interno no topo dá material, não planicidade. */
-    @apply rounded-[1.5rem] border border-white/[0.07] bg-bg-surface p-6;
+    /* Raio maior + borda hairline (token, funciona em claro e escuro) = menos
+       "caixa quadrada de IA". Sombra em camadas + highlight interno no topo dá
+       material, não planicidade. */
+    @apply rounded-[1.5rem] border border-border/60 bg-bg-surface p-6;
     box-shadow:
       var(--shadow-card),
       inset 0 1px 0 rgb(255 255 255 / 0.04);

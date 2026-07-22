@@ -7,8 +7,6 @@ import {
   BarChart3,
   Wallet,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 
@@ -54,7 +52,7 @@ const MODS: Mod[] = [
       "Aprovação de conteúdo com o cliente in-app",
       "Datas comemorativas e ideias sugeridas automaticamente",
     ],
-    accent: "text-cyan-300 bg-cyan-500/15 border-cyan-500/30",
+    accent: "text-cyan-600 bg-cyan-500/15 border-cyan-500/30",
   },
   {
     icon: BarChart3,
@@ -65,7 +63,7 @@ const MODS: Mod[] = [
       "Exportação em PDF com a sua marca",
       "Leads e alcance por período, prontos pra apresentar",
     ],
-    accent: "text-emerald-300 bg-emerald-500/15 border-emerald-500/30",
+    accent: "text-emerald-600 bg-emerald-500/15 border-emerald-500/30",
   },
   {
     icon: Wallet,
@@ -76,7 +74,7 @@ const MODS: Mod[] = [
       "Cobrança recorrente e recibos automáticos",
       "Saldo do mês e inadimplência num olhar",
     ],
-    accent: "text-amber-300 bg-amber-500/15 border-amber-500/30",
+    accent: "text-amber-600 bg-amber-500/15 border-amber-500/30",
   },
   {
     icon: FileText,
@@ -87,7 +85,7 @@ const MODS: Mod[] = [
       "Assinatura eletrônica com validade jurídica",
       "Portal do cliente pra assinar e acompanhar",
     ],
-    accent: "text-rose-300 bg-rose-500/15 border-rose-500/30",
+    accent: "text-rose-600 bg-rose-500/15 border-rose-500/30",
   },
 ];
 
@@ -95,21 +93,28 @@ export function InteractiveShowcase() {
   const [active, setActive] = useState(0);
   const [spacing, setSpacing] = useState(220);
   const [reduce, setReduce] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const stageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setReduce(
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    );
+    const reduceMq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const deskMq = window.matchMedia("(min-width: 640px)");
+    setReduce(reduceMq.matches);
+    setIsDesktop(deskMq.matches);
     const measure = () => {
       const w = stageRef.current?.clientWidth ?? 600;
       // painel ~300px; espaçamento cresce com a tela, com teto.
-      setSpacing(Math.max(120, Math.min(240, w * 0.34)));
+      setSpacing(Math.max(150, Math.min(220, w * 0.3)));
     };
+    const onDesk = () => setIsDesktop(deskMq.matches);
     measure();
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    deskMq.addEventListener("change", onDesk);
+    return () => {
+      window.removeEventListener("resize", measure);
+      deskMq.removeEventListener("change", onDesk);
+    };
   }, []);
 
   // Navegação por teclado (←/→) quando a seção está em foco via clique.
@@ -122,11 +127,6 @@ export function InteractiveShowcase() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  const go = (dir: number) =>
-    setActive((a) => (a + dir + MODS.length) % MODS.length);
-
-  const current = MODS[active];
 
   return (
     <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
@@ -143,40 +143,28 @@ export function InteractiveShowcase() {
         </p>
       </div>
 
-      {/* Stage 3D (coverflow) */}
+      {/* Stage 3D (anel/coverflow) — sempre dos dois lados (centralizado) */}
       <div
         ref={stageRef}
-        className="relative h-[340px] sm:h-[380px] flex items-center justify-center"
+        className="relative h-[300px] sm:h-[380px] flex items-center justify-center"
         style={{ perspective: "1200px" }}
       >
-        {/* Setas */}
-        <button
-          type="button"
-          onClick={() => go(-1)}
-          aria-label="Módulo anterior"
-          className="absolute left-0 sm:-left-2 z-30 h-10 w-10 rounded-full border border-border bg-bg-surface/80 hover:bg-bg-elevated hover:border-royal-500/40 flex items-center justify-center text-slate-200 transition active:scale-95"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => go(1)}
-          aria-label="Próximo módulo"
-          className="absolute right-0 sm:-right-2 z-30 h-10 w-10 rounded-full border border-border bg-bg-surface/80 hover:bg-bg-elevated hover:border-royal-500/40 flex items-center justify-center text-slate-200 transition active:scale-95"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-
         {/* Painéis */}
         <div
           className="relative w-full h-full"
           style={{ transformStyle: "preserve-3d" }}
         >
           {MODS.map((m, i) => {
-            const offset = i - active;
+            // Anel contínuo: offset pelo caminho mais curto (-2..2 p/ 5 itens)
+            // → sempre há painéis dos dois lados = centralizado, nunca vazio de
+            // um lado. No mobile (isDesktop=false) só o ativo aparece.
+            const N = MODS.length;
+            const offset =
+              ((i - active + N + Math.floor(N / 2)) % N) - Math.floor(N / 2);
             const abs = Math.abs(offset);
-            const visible = abs <= 2;
             const isActive = offset === 0;
+            const showSide = isDesktop && abs <= 2;
+            const visible = isActive || showSide;
             const Icon = m.icon;
 
             // transform: empurra laterais pra fora, gira em perspectiva, recua
@@ -267,7 +255,7 @@ export function InteractiveShowcase() {
       </div>
 
       <p className="text-center text-xs text-slate-500 mt-4">
-        {active + 1} de {MODS.length} · use as setas ← → ou clique num módulo
+        {active + 1} de {MODS.length} · clique num módulo ou nos cards laterais
       </p>
     </section>
   );
