@@ -9,18 +9,17 @@ import {
   Wallet,
   FileText,
   Check,
+  ChevronLeft,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 
 /**
  * InteractiveShowcase — seção "clicando você vê como a plataforma ajuda".
  *
- * Layout centralizado e robusto: o card ativo fica sempre no meio exato do
- * palco. Os cards laterais (desktop) são posicionados a partir desse centro,
- * com transformações 3D suaves. Em mobile mostra apenas o card ativo, com swipe.
- *
- * - navegação por chips, setas do teclado (←/→) e clique no card lateral.
- * - reduced-motion: cards deslizam lateralmente sem perspectiva 3D.
+ * Agora com layout centralizado de verdade:
+ * - Mobile: carrossel simples, um card por vez, centralizado, sem cortes.
+ * - Desktop: coverflow 3D simétrico, card ativo no centro, vizinhos ±1.
  */
 
 interface Mod {
@@ -28,7 +27,7 @@ interface Mod {
   title: string;
   tagline: string;
   bullets: string[];
-  accent: string; // classe de cor do ícone
+  accent: string;
 }
 
 const MODS: Mod[] = [
@@ -91,11 +90,13 @@ const MODS: Mod[] = [
 
 export function InteractiveShowcase() {
   const [active, setActive] = useState(0);
-  const [spacing, setSpacing] = useState(260);
   const [reduce, setReduce] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const prev = () => setActive((a) => (a - 1 + MODS.length) % MODS.length);
+  const next = () => setActive((a) => (a + 1) % MODS.length);
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -104,11 +105,8 @@ export function InteractiveShowcase() {
     if (!touchStart.current) return;
     const dx = e.changedTouches[0].clientX - touchStart.current.x;
     const dy = e.changedTouches[0].clientY - touchStart.current.y;
-    // Só age no swipe horizontal (não rouba o scroll vertical da página).
     if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-      setActive((a) =>
-        dx < 0 ? (a + 1) % MODS.length : (a - 1 + MODS.length) % MODS.length
-      );
+      dx < 0 ? next() : prev();
     }
     touchStart.current = null;
   };
@@ -120,36 +118,15 @@ export function InteractiveShowcase() {
     setReduce(reduceMq.matches);
     setIsDesktop(deskMq.matches);
 
-    const measure = () => {
-      const containerW = stageRef.current?.clientWidth ?? 800;
-      const cardW = deskMq.matches ? 420 : Math.min(340, window.innerWidth - 64);
-      // Espaçamento: card lateral fica parcialmente visível, mas o trio
-      // permanece centrado. Calculado a partir do espaço sobrando.
-      const available = Math.max(0, containerW - cardW);
-      const ideal = available * 0.38; // ~75% do espaço livre de cada lado
-      setSpacing(Math.max(180, Math.min(360, ideal)));
-    };
-
-    const onDesk = () => {
-      setIsDesktop(deskMq.matches);
-      measure();
-    };
-
-    measure();
-    window.addEventListener("resize", measure);
+    const onDesk = () => setIsDesktop(deskMq.matches);
     deskMq.addEventListener("change", onDesk);
-    return () => {
-      window.removeEventListener("resize", measure);
-      deskMq.removeEventListener("change", onDesk);
-    };
+    return () => deskMq.removeEventListener("change", onDesk);
   }, []);
 
-  // Navegação por teclado (←/→).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") setActive((a) => (a + 1) % MODS.length);
-      if (e.key === "ArrowLeft")
-        setActive((a) => (a - 1 + MODS.length) % MODS.length);
+      if (e.key === "ArrowRight") next();
+      if (e.key === "ArrowLeft") prev();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -170,119 +147,158 @@ export function InteractiveShowcase() {
         </p>
       </div>
 
-      {/* Palco 3D: cards posicionados a partir do centro exato. */}
+      {/* MOBILE: carrossel simples e centralizado */}
+      <div
+        className="sm:hidden relative h-[360px] flex items-center justify-center"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        {MODS.map((m, i) => {
+          const isActive = i === active;
+          if (!isActive) return null;
+          const Icon = m.icon;
+          return (
+            <button
+              type="button"
+              key={m.title}
+              onClick={() => setActive(i)}
+              className="absolute left-1/2 top-1/2 w-[min(88vw,340px)] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            >
+              <div className="card group p-4 flex flex-col gap-3 spotlight border-royal-500/40 shadow-elevated bg-gradient-to-b from-bg-elevated to-bg-surface">
+                <div className="flex items-start gap-3">
+                  <div className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-slate-100 leading-tight">
+                      {m.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 leading-snug mt-0.5">
+                      {m.tagline}
+                    </p>
+                  </div>
+                </div>
+                <ul className="space-y-1.5">
+                  {m.bullets.map((b) => (
+                    <li
+                      key={b}
+                      className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
+                    >
+                      <Check className={cn("h-4 w-4 shrink-0 mt-0.5", m.accent.split(" ")[0])} />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </button>
+          );
+        })}
+
+        {/* Setas mobile */}
+        <button
+          type="button"
+          onClick={prev}
+          aria-label="Módulo anterior"
+          className="absolute left-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-border/70 bg-bg-surface/80 text-slate-300 flex items-center justify-center active:scale-95 transition"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={next}
+          aria-label="Próximo módulo"
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-border/70 bg-bg-surface/80 text-slate-300 flex items-center justify-center active:scale-95 transition"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* DESKTOP: coverflow simétrico */}
       <div
         ref={stageRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="relative h-[400px] sm:h-[460px] flex items-center justify-center overflow-visible py-6"
-        style={{
-          perspective: "1200px",
-          perspectiveOrigin: "center center",
-          touchAction: "pan-y",
-        }}
+        className="hidden sm:flex relative h-[440px] items-center justify-center overflow-visible"
+        style={{ perspective: "1200px", perspectiveOrigin: "center center" }}
       >
-        <div
-          className="relative w-full h-full"
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          {MODS.map((m, i) => {
-            const N = MODS.length;
-            // Caminho mais curto no anel, para que sempre haja vizinhos dos dois lados.
-            const offset =
-              ((i - active + N + Math.floor(N / 2)) % N) - Math.floor(N / 2);
-            const abs = Math.abs(offset);
-            const isActive = offset === 0;
-            const isNeighbor = abs === 1;
-            const showSide = isDesktop && isNeighbor;
-            const visible = isActive || showSide;
-            const Icon = m.icon;
+        {MODS.map((m, i) => {
+          const N = MODS.length;
+          const offset =
+            ((i - active + N + Math.floor(N / 2)) % N) - Math.floor(N / 2);
+          const abs = Math.abs(offset);
+          const isActive = offset === 0;
+          const isNeighbor = abs === 1;
+          const visible = isActive || isNeighbor;
+          const Icon = m.icon;
 
-            // translate(-50%, -50%) corrige o posicionamento left-1/2 top-1/2,
-            // mantendo o centro do card exatamente no centro do palco.
-            const transform = reduce
-              ? `translate(-50%, -50%) translateX(${
-                  isActive ? 0 : offset * 110
-                }%) scale(${isActive ? 1 : 0.92})`
-              : `translate(-50%, -50%) translateX(${
-                  offset * spacing
-                }px) translateZ(${-abs * 50}px) rotateY(${
-                  offset * -22
-                }deg) scale(${isActive ? 1 : 0.86})`;
+          const transform = reduce
+            ? `translateX(${offset * 120}%) scale(${isActive ? 1 : 0.9})`
+            : `translateX(${offset * 280}px) translateZ(${-abs * 55}px) rotateY(${offset * -25}deg) scale(${isActive ? 1 : 0.85})`;
 
-            return (
-              <button
-                type="button"
-                key={m.title}
-                onClick={() => setActive(i)}
-                aria-label={m.title}
-                tabIndex={visible ? 0 : -1}
+          return (
+            <button
+              type="button"
+              key={m.title}
+              onClick={() => setActive(i)}
+              aria-label={m.title}
+              tabIndex={visible ? 0 : -1}
+              className={cn(
+                "absolute left-1/2 top-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
+                visible ? "pointer-events-auto" : "pointer-events-none"
+              )}
+              style={{
+                transform,
+                opacity: !visible ? 0 : isActive ? 1 : 0.45,
+                zIndex: isActive ? 30 : 20 - abs,
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+              }}
+            >
+              <div
                 className={cn(
-                  "absolute left-1/2 top-1/2 w-[min(88vw,340px)] sm:w-[420px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
-                  visible ? "pointer-events-auto" : "pointer-events-none"
+                  "card group p-5 flex flex-col gap-3 spotlight",
+                  isActive
+                    ? "border-royal-500/40 shadow-elevated bg-gradient-to-b from-bg-elevated to-bg-surface"
+                    : "border-border/70 bg-bg-surface/80"
                 )}
-                style={{
-                  transform,
-                  opacity: !visible ? 0 : isActive ? 1 : 0.42,
-                  zIndex: isActive ? 30 : 20 - abs,
-                  transformStyle: "preserve-3d",
-                  backfaceVisibility: "hidden",
-                  transformOrigin: "center center",
-                }}
               >
-                <div
-                  className={cn(
-                    "card group p-4 sm:p-5 flex flex-col gap-3 spotlight",
-                    isActive
-                      ? "border-royal-500/40 shadow-elevated bg-gradient-to-b from-bg-elevated to-bg-surface"
-                      : "border-border/70 bg-bg-surface/80"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-semibold text-slate-100 leading-tight">
-                        {m.title}
-                      </h3>
-                      <p className="text-[11px] sm:text-xs text-slate-400 leading-snug mt-0.5">
-                        {m.tagline}
-                      </p>
-                    </div>
+                <div className="flex items-start gap-3">
+                  <div className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}>
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <ul className="space-y-1.5">
-                    {m.bullets.map((b) => (
-                      <li
-                        key={b}
-                        className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
-                      >
-                        <Check
-                          className={cn(
-                            "h-4 w-4 shrink-0 mt-0.5",
-                            m.accent.split(" ")[0]
-                          )}
-                        />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {!isActive && (
-                    <p className="text-[11px] text-royal-300/80 font-medium pt-1">
-                      Clique pra ver →
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-slate-100 leading-tight">
+                      {m.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-snug mt-0.5">
+                      {m.tagline}
                     </p>
-                  )}
+                  </div>
                 </div>
-              </button>
-            );
-          })}
-        </div>
+                <ul className="space-y-1.5">
+                  {m.bullets.map((b) => (
+                    <li
+                      key={b}
+                      className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
+                    >
+                      <Check className={cn("h-4 w-4 shrink-0 mt-0.5", m.accent.split(" ")[0])} />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+                {!isActive && (
+                  <p className="text-[11px] text-royal-300/80 font-medium pt-1">
+                    Clique pra ver →
+                  </p>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Chips de navegação */}
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2">
         {MODS.map((m, i) => {
           const Icon = m.icon;
           const isActive = i === active;
