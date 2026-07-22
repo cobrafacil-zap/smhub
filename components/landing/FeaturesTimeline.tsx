@@ -58,8 +58,6 @@ function useTimelineProgress(sectionRef: React.RefObject<HTMLElement | null>) {
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const vh = window.innerHeight;
-        // progresso 0 quando o topo da seção chega a 80% da viewport
-        // progresso 1 quando a base da seção chega a 20% da viewport
         const start = rect.top - vh * 0.8;
         const end = rect.bottom - vh * 0.2;
         const range = end - start;
@@ -83,9 +81,8 @@ function useTimelineProgress(sectionRef: React.RefObject<HTMLElement | null>) {
 
 export function FeaturesTimeline() {
   const sectionRef = useRef<HTMLElement>(null);
-  const itemsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const progress = useTimelineProgress(sectionRef);
   const [activeCount, setActiveCount] = useState(0);
+  const progress = useTimelineProgress(sectionRef);
 
   useEffect(() => {
     let raf: number | null = null;
@@ -95,9 +92,9 @@ export function FeaturesTimeline() {
         raf = null;
         const vh = window.innerHeight;
         const threshold = vh * 0.55;
+        const items = sectionRef.current?.querySelectorAll("[data-timeline-item]") ?? [];
         let count = 0;
-        itemsRef.current.forEach((el) => {
-          if (!el) return;
+        items.forEach((el) => {
           const top = el.getBoundingClientRect().top;
           if (top < threshold) count++;
         });
@@ -115,8 +112,12 @@ export function FeaturesTimeline() {
     };
   }, []);
 
-  const desktopLineLeft = "left-1/2 -translate-x-1/2";
-  const mobileLineLeft = "left-4";
+  const total = FEATURES.length;
+  const markerPositions = FEATURES.map((_, i) => (i / (total - 1)) * 100);
+
+  // Nó neon: limitado ao centro do último marcador
+  const clampedProgress = Math.min(progress, 1);
+  const nodeTop = `${clampedProgress * markerPositions[markerPositions.length - 1]}%`;
 
   return (
     <section
@@ -136,62 +137,72 @@ export function FeaturesTimeline() {
       </div>
 
       <div className="relative">
-        {/* Track base — desktop: segmentada para não passar dentro dos marcadores */}
-        {FEATURES.map((_, i) => {
-          const top = i === 0 ? "0%" : `${((i - 0.5) / (FEATURES.length - 1)) * 100}%`;
-          const bottom = i === FEATURES.length - 1 ? "100%" : `${((i + 0.5) / (FEATURES.length - 1)) * 100}%`;
+        {/* Track base — segmentos entre marcadores */}
+        {markerPositions.slice(0, -1).map((pos, i) => {
+          const next = markerPositions[i + 1];
+          const gap = 4; // % de espaço reservado ao redor do marcador
+          const top = `${pos + gap}%`;
+          const height = `${next - pos - gap * 2}%`;
           return (
             <div
               key={`track-${i}`}
-              className={`hidden md:block absolute ${desktopLineLeft} w-px`}
-              style={{ top, height: `calc(${bottom} - ${top})` }}
+              className="hidden md:block absolute left-1/2 -translate-x-1/2 w-px"
+              style={{ top, height }}
             >
               <div className="absolute inset-0 bg-royal-500/15" />
             </div>
           );
         })}
 
-        {/* Track base — mobile */}
-        {FEATURES.map((_, i) => {
-          const top = i === 0 ? "0%" : `${((i - 0.5) / (FEATURES.length - 1)) * 100}%`;
-          const bottom = i === FEATURES.length - 1 ? "100%" : `${((i + 0.5) / (FEATURES.length - 1)) * 100}%`;
+        {markerPositions.slice(0, -1).map((pos, i) => {
+          const next = markerPositions[i + 1];
+          const gap = 4;
+          const top = `${pos + gap}%`;
+          const height = `${next - pos - gap * 2}%`;
           return (
             <div
               key={`track-mobile-${i}`}
-              className={`md:hidden absolute ${mobileLineLeft} w-px`}
-              style={{ top, height: `calc(${bottom} - ${top})` }}
+              className="md:hidden absolute left-4 w-px"
+              style={{ top, height }}
             >
               <div className="absolute inset-0 bg-royal-500/15" />
             </div>
           );
         })}
 
-        {/* Progresso neon — segmentado */}
-        {FEATURES.map((_, i) => {
-          const startProgress = i / FEATURES.length;
-          const endProgress = (i + 1) / FEATURES.length;
-          const top = i === 0 ? "0%" : `${((i - 0.5) / (FEATURES.length - 1)) * 100}%`;
-          const bottom = i === FEATURES.length - 1 ? "100%" : `${((i + 0.5) / (FEATURES.length - 1)) * 100}%`;
-          const segProgress = Math.max(0, Math.min(1, (progress - startProgress) / (endProgress - startProgress)));
+        {/* Progresso neon — segmentos entre marcadores */}
+        {markerPositions.slice(0, -1).map((pos, i) => {
+          const next = markerPositions[i + 1];
+          const gap = 4;
+          const segStart = (i / (total - 1));
+          const segEnd = ((i + 1) / (total - 1));
+          const segProgress = Math.max(0, Math.min(1, (progress - segStart) / (segEnd - segStart)));
+          const top = `${pos + gap}%`;
+          const height = `${next - pos - gap * 2}%`;
           return (
-            <div key={`neon-${i}`}
-              className={`hidden md:block absolute ${desktopLineLeft} w-[2px] transition-opacity duration-75`}
-              style={{ top, height: `calc(${bottom} - ${top})`, opacity: segProgress }}
+            <div
+              key={`neon-${i}`}
+              className="hidden md:block absolute left-1/2 -translate-x-1/2 w-[2px] transition-opacity duration-75"
+              style={{ top, height, opacity: segProgress }}
             >
               <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
             </div>
           );
         })}
-        {FEATURES.map((_, i) => {
-          const startProgress = i / FEATURES.length;
-          const endProgress = (i + 1) / FEATURES.length;
-          const top = i === 0 ? "0%" : `${((i - 0.5) / (FEATURES.length - 1)) * 100}%`;
-          const bottom = i === FEATURES.length - 1 ? "100%" : `${((i + 0.5) / (FEATURES.length - 1)) * 100}%`;
-          const segProgress = Math.max(0, Math.min(1, (progress - startProgress) / (endProgress - startProgress)));
+
+        {markerPositions.slice(0, -1).map((pos, i) => {
+          const next = markerPositions[i + 1];
+          const gap = 4;
+          const segStart = (i / (total - 1));
+          const segEnd = ((i + 1) / (total - 1));
+          const segProgress = Math.max(0, Math.min(1, (progress - segStart) / (segEnd - segStart)));
+          const top = `${pos + gap}%`;
+          const height = `${next - pos - gap * 2}%`;
           return (
-            <div key={`neon-mobile-${i}`}
-              className={`md:hidden absolute ${mobileLineLeft} w-[2px] transition-opacity duration-75`}
-              style={{ top, height: `calc(${bottom} - ${top})`, opacity: segProgress }}
+            <div
+              key={`neon-mobile-${i}`}
+              className="md:hidden absolute left-4 w-[2px] transition-opacity duration-75"
+              style={{ top, height, opacity: segProgress }}
             >
               <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
             </div>
@@ -200,25 +211,23 @@ export function FeaturesTimeline() {
 
         {/* Nó neon na ponta do progresso */}
         <div
-          className={`hidden md:block absolute z-20 ${desktopLineLeft} -translate-x-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(116,134,255,0.75)] transition-[top] duration-75 ease-linear pointer-events-none`}
-          style={{ top: `${progress * 100}%` }}
+          className="hidden md:block absolute z-20 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(116,134,255,0.75)] transition-[top] duration-75 ease-linear pointer-events-none"
+          style={{ top: nodeTop }}
         />
         <div
-          className={`md:hidden absolute z-20 ${mobileLineLeft} -translate-x-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(116,134,255,0.75)] transition-[top] duration-75 ease-linear pointer-events-none`}
-          style={{ top: `${progress * 100}%` }}
+          className="md:hidden absolute z-20 left-4 -translate-x-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(116,134,255,0.75)] transition-[top] duration-75 ease-linear pointer-events-none"
+          style={{ top: nodeTop }}
         />
 
-        <div className="space-y-8 md:space-y-12">
+        <div className="space-y-8 md:space-y-0">
           {FEATURES.map((f, i) => {
             const isLeft = i % 2 === 0;
             const isActive = i < activeCount;
             return (
               <Reveal key={f.title} delay={i * 90}>
                 <div
-                  ref={(el) => {
-                    itemsRef.current[i] = el;
-                  }}
-                  className="relative flex items-center md:items-start"
+                  data-timeline-item
+                  className="relative md:grid md:grid-cols-[1fr_auto_1fr] md:items-center min-h-[120px] md:min-h-[140px]"
                 >
                   {/* Marcador */}
                   <div
@@ -235,10 +244,13 @@ export function FeaturesTimeline() {
                     />
                   </div>
 
+                  {/* Espaçador esquerdo no desktop */}
+                  <div className="hidden md:block" />
+
                   {/* Card */}
                   <div
-                    className={`w-full md:w-[45%] pl-16 md:pl-0 ${
-                      isLeft ? "md:pr-12" : "md:ml-auto md:pl-12"
+                    className={`w-full md:w-auto pl-16 md:pl-0 ${
+                      isLeft ? "md:col-start-1 md:row-start-1 md:pr-12" : "md:col-start-3 md:row-start-1 md:pl-12"
                     }`}
                   >
                     <div
