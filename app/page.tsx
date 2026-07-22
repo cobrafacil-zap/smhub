@@ -6,7 +6,6 @@ import {
   Wallet,
   FileText,
   UserCog,
-  Sparkles,
   ArrowRight,
   LayoutDashboard,
   Check,
@@ -28,7 +27,6 @@ import { EcossistemaMarquee } from "@/components/landing/EcossistemaMarquee";
 import { Hero3D } from "@/components/landing/Hero3D";
 import { InteractiveShowcase } from "@/components/landing/InteractiveShowcase";
 import { Reveal } from "@/components/ui/motion/Reveal";
-import { TiltCard } from "@/components/ui/motion/TiltCard";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 import type { Plano, PlanoConfig, UserRole } from "@/types/database";
@@ -242,57 +240,10 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
 
-      {/* Aurora decorativa de fundo — blobs animados (mais "vivo" que gradiente estático) */}
-      <div className="absolute inset-0 bg-gradient-radial pointer-events-none" />
+      {/* Fundo sutil — um único gradiente radial calmo no topo */}
       <div
         aria-hidden
-        className="aurora-blob top-[-10%] left-1/2 -translate-x-1/2 w-[1100px] max-w-[160vw] h-[560px] bg-royal-500/15 animate-float-slow"
-      />
-      <div
-        aria-hidden
-        className="aurora-blob top-[20%] right-[-10%] w-[520px] h-[520px] bg-accent-500/10 animate-float-slow"
-        style={{ animationDelay: "-6s" }}
-      />
-      <div
-        aria-hidden
-        className="aurora-blob top-[40%] left-[-8%] w-[480px] h-[480px] bg-royal-700/12 animate-float-slow"
-        style={{ animationDelay: "-12s" }}
-      />
-
-      {/* Luz ambiente extra ao longo da página — mantém o fundo vivo sem roubar foco. */}
-      <div
-        aria-hidden
-        className="aurora-blob top-[8%] left-[-14%] w-[420px] h-[420px] bg-royal-400/10 animate-float-slow"
-        style={{ animationDelay: "-4s" }}
-      />
-      <div
-        aria-hidden
-        className="aurora-blob top-[58%] left-1/2 -translate-x-1/2 w-[900px] h-[420px] bg-royal-500/10 animate-float-slow"
-        style={{ animationDelay: "-9s" }}
-      />
-      <div
-        aria-hidden
-        className="aurora-blob top-[76%] right-[-12%] w-[520px] h-[520px] bg-accent-500/10 animate-float-slow"
-        style={{ animationDelay: "-15s" }}
-      />
-      <div
-        aria-hidden
-        className="aurora-blob top-[92%] left-[-10%] w-[480px] h-[480px] bg-royal-700/12 animate-float-slow"
-        style={{ animationDelay: "-20s" }}
-      />
-
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none opacity-[0.04]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-          maskImage:
-            "radial-gradient(ellipse at top, black 30%, transparent 70%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse at top, black 30%, transparent 70%)",
-        }}
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-royal-500/[0.07] rounded-full blur-[100px] pointer-events-none"
       />
 
       {/* Navbar — sticky com blur */}
@@ -344,28 +295,21 @@ export default async function LandingPage() {
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 text-center">
         <Hero3D />
         <div className="relative z-10">
-        <div className="flex justify-center mb-8 animate-logo-in">
-          <Logo variant="full" className="!h-16 sm:!h-20 drop-shadow-[0_0_28px_rgba(61,90,254,0.22)]" />
+        <div className="flex justify-center mb-8">
+          <Logo variant="full" className="!h-16 sm:!h-20" />
         </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-royal-500/10 border border-royal-500/30 text-xs text-royal-200 mb-6 animate-fade-in">
-          <Sparkles className="h-3.5 w-3.5 icon-bob" />
-          7 dias grátis. Sem cartão de crédito.
-        </div>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] animate-slide-up">
-          A plataforma completa para{" "}
-          <span className="bg-gradient-to-r from-royal-300 via-royal-400 to-royal-500 bg-clip-text text-transparent">
-            agências de marketing
-          </span>
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
+          Menos ferramenta, mais resultado
         </h1>
-        <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto animate-slide-up">
-          Gerencie clientes, planejamentos editoriais, relatórios de mídias sociais,
-          financeiro e contratos digitais em um só lugar. Mais tempo para o que
-          importa: entregar resultado.
+        <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto">
+          A SM Hub reúne clientes, planejamento editorial, relatórios, financeiro e
+          contratos digitais em um só fluxo. Sua agência ganha tempo para criar
+          enquanto a operação roda organizada.
         </p>
-        <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 animate-slide-up">
+        <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto" magnetic iconRight={<ArrowRight className="h-4 w-4" />}>
-              Começar grátis
+            <Button size="lg" className="w-full sm:w-auto" iconRight={<ArrowRight className="h-4 w-4" />}>
+              Testar 7 dias grátis
             </Button>
           </Link>
           <Link href="#planos" className="w-full sm:w-auto">
@@ -375,7 +319,7 @@ export default async function LandingPage() {
           </Link>
         </div>
         <p className="mt-4 text-xs text-slate-500">
-          Cartão de crédito, PIX ou boleto via Mercado Pago
+          Sem cartão de crédito · Pague com PIX, boleto ou cartão
         </p>
 
         {/* Prova social / stats */}
@@ -385,9 +329,9 @@ export default async function LandingPage() {
               key={s.label}
               as="div"
               delay={i * 80}
-              className="group lift rounded-xl border border-border/60 bg-bg-surface/60 px-4 py-4 sm:py-5 text-left backdrop-blur-sm"
+              className="rounded-xl border border-border/60 bg-bg-surface/60 px-4 py-4 sm:py-5 text-left"
             >
-              <s.icon className="h-5 w-5 text-royal-300 mb-2 icon-pop" />
+              <s.icon className="h-5 w-5 text-royal-300 mb-2" />
               <p className="text-xl sm:text-2xl font-bold text-slate-100 leading-tight">
                 {s.value}
               </p>
@@ -401,29 +345,25 @@ export default async function LandingPage() {
       {/* Features */}
       <section id="funcionalidades" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-20">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs uppercase tracking-wider text-royal-300 font-semibold">
-            Funcionalidades
-          </p>
+          <p className="text-xs text-slate-500 font-medium">Funcionalidades</p>
           <h2 className="text-2xl sm:text-4xl font-bold mt-2">
-            Tudo que sua agência precisa
+            Tudo integrado, do briefing ao fechamento
           </h2>
           <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
-            Uma plataforma integrada, sem integrações complicadas nem dezenas de
-            ferramentas.
+            Cada etapa da operação da sua agência em um só lugar, sem planilhas
+            soltas nem trocas de aba.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 items-stretch">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 70}>
-              <TiltCard className="h-full rounded-[1.5rem]">
-                <Card hoverable shine className="h-full group">
-                  <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3">
-                    <f.icon className="h-5 w-5 text-royal-300 icon-pop" />
-                  </div>
-                  <h3 className="text-base font-semibold text-slate-100">{f.title}</h3>
-                  <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{f.desc}</p>
-                </Card>
-              </TiltCard>
+              <Card className="h-full group">
+                <div className="h-10 w-10 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center mb-3">
+                  <f.icon className="h-5 w-5 text-royal-300" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-100">{f.title}</h3>
+                <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{f.desc}</p>
+              </Card>
             </Reveal>
           ))}
         </div>
@@ -432,14 +372,12 @@ export default async function LandingPage() {
       {/* Nosso Ecossistema — loop infinito de logos */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
         <div className="text-center mb-8">
-          <p className="text-xs uppercase tracking-wider text-royal-300 font-semibold">
-            Nosso Ecossistema
-          </p>
+          <p className="text-xs text-slate-500 font-medium">Integrações</p>
           <h2 className="text-xl sm:text-3xl font-bold mt-2">
-            Integrado com as plataformas que você já usa
+            Conectado com as redes que você já usa
           </h2>
           <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm">
-            Métricas, agendamentos e relatórios das principais redes em um só lugar.
+            Puxe métricas e monte relatórios sem sair da SM Hub.
           </p>
         </div>
         <EcossistemaMarquee />
@@ -448,30 +386,19 @@ export default async function LandingPage() {
       {/* Como funciona */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs uppercase tracking-wider text-royal-300 font-semibold">
-            Como funciona
-          </p>
+          <p className="text-xs text-slate-500 font-medium">Como funciona</p>
           <h2 className="text-2xl sm:text-4xl font-bold mt-2">
-            Comece em 3 passos simples
+            Três passos pra começar
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 90}>
-              <TiltCard max={4} className="h-full rounded-[1.5rem]">
-                <Card className="relative overflow-hidden h-full group">
-                  <span className="absolute -top-2 -right-2 text-6xl font-extrabold text-royal-500/10 select-none">
-                    {s.n}
-                  </span>
-                  <div className="relative">
-                    <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-sm font-bold mb-4 icon-pop">
-                      {s.n}
-                    </div>
-                    <h3 className="text-base font-semibold text-slate-100">{s.title}</h3>
-                    <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{s.desc}</p>
-                  </div>
-                </Card>
-              </TiltCard>
+              <Card className="h-full">
+                <span className="text-xs font-medium text-slate-500">Passo {s.n}</span>
+                <h3 className="text-base font-semibold text-slate-100 mt-3">{s.title}</h3>
+                <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{s.desc}</p>
+              </Card>
             </Reveal>
           ))}
         </div>
@@ -483,14 +410,12 @@ export default async function LandingPage() {
       {/* Planos */}
       <section id="planos" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-20">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs uppercase tracking-wider text-royal-300 font-semibold">
-            Planos
-          </p>
+          <p className="text-xs text-slate-500 font-medium">Planos</p>
           <h2 className="text-2xl sm:text-4xl font-bold mt-2">
-            Escolha o plano ideal para sua agência
+            Escolha o plano ideal
           </h2>
           <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
-            Comece com 7 dias grátis. Cancele a qualquer momento.
+            7 dias grátis em todos. Cancele quando quiser.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 items-stretch">
@@ -514,11 +439,9 @@ export default async function LandingPage() {
       {/* Depoimentos */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs uppercase tracking-wider text-royal-300 font-semibold">
-            Depoimentos
-          </p>
+          <p className="text-xs text-slate-500 font-medium">Depoimentos</p>
           <h2 className="text-2xl sm:text-4xl font-bold mt-2">
-            Agências que confiam na SM Hub
+            O que dizem quem usa
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
@@ -547,9 +470,7 @@ export default async function LandingPage() {
       {/* FAQ */}
       <section id="faq" className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-20">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs uppercase tracking-wider text-royal-300 font-semibold">
-            Dúvidas frequentes
-          </p>
+          <p className="text-xs text-slate-500 font-medium">Dúvidas frequentes</p>
           <h2 className="text-2xl sm:text-4xl font-bold mt-2">Perguntas e respostas</h2>
         </div>
         <div className="space-y-3">
@@ -571,27 +492,24 @@ export default async function LandingPage() {
 
       {/* CTA Final */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-        <Card className="text-center bg-gradient-to-br from-royal-500/15 to-bg-surface border-royal-500/30 relative overflow-visible">
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-royal-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
-              Pronto para transformar sua agência?
-            </h2>
-            <p className="text-slate-300 mt-2 max-w-xl mx-auto text-sm sm:text-base">
-              Comece agora com 7 dias grátis. Sem compromisso.
-            </p>
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto" magnetic iconRight={<ArrowRight className="h-4 w-4" />}>
-                  Começar grátis agora
-                </Button>
-              </Link>
-              <Link href="/login" className="w-full sm:w-auto">
-                <Button size="lg" variant="ghost" className="w-full sm:w-auto">
-                  Entrar
-                </Button>
-              </Link>
-            </div>
+        <Card className="text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
+            Pronto pra organizar sua agência?
+          </h2>
+          <p className="text-slate-300 mt-2 max-w-xl mx-auto text-sm sm:text-base">
+            Teste a SM Hub por 7 dias. Sem cartão e sem compromisso.
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto" iconRight={<ArrowRight className="h-4 w-4" />}>
+                Começar grátis
+              </Button>
+            </Link>
+            <Link href="/login" className="w-full sm:w-auto">
+              <Button size="lg" variant="ghost" className="w-full sm:w-auto">
+                Entrar
+              </Button>
+            </Link>
           </div>
         </Card>
       </section>

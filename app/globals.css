@@ -40,30 +40,30 @@
   }
 
   .dark {
-    /* Fundos / bordas — valores atuais do dark mode */
-    --bg: 10 26 64;             /* #0A1A40 */
-    --bg-surface: 15 23 42;     /* #0F172A */
-    --bg-elevated: 19 28 54;    /* #131C36 */
-    --bg-muted: 26 37 71;       /* #1A2547 */
-    --border: 30 42 82;         /* #1E2A52 */
-    --border-muted: 21 35 74;   /* #15234A */
+    /* Fundos / bordas — paleta mais neutra e premium, menos neon */
+    --bg: 11 15 25;             /* #0B0F19 — quase preto azulado */
+    --bg-surface: 17 22 34;     /* #111622 */
+    --bg-elevated: 23 29 44;    /* #171D2C */
+    --bg-muted: 30 37 53;       /* #1E2535 */
+    --border: 38 46 64;         /* #262E40 */
+    --border-muted: 28 34 49;   /* #1C2231 */
 
-    /* Texto — slate 100..500 = cinzas claros sobre fundo escuro */
-    --slate-100: 241 245 249;   /* #F1F5F9 */
+    /* Texto — cinzas claros sobre fundo escuro */
+    --slate-100: 243 246 250;   /* #F3F6FA */
     --slate-200: 226 232 240;   /* #E2E8F0 */
-    --slate-300: 203 213 225;   /* #CBD5E1 */
-    --slate-400: 148 163 184;   /* #94A3B8 */
-    --slate-500: 100 116 139;   /* #64748B */
+    --slate-300: 176 186 202;   /* #B0BACA */
+    --slate-400: 131 145 168;   /* #8391A8 */
+    --slate-500: 92 104 126;    /* #5C687E */
 
-    /* Acentos royal de texto — roxos claros sobre fundo escuro (originais) */
-    --royal-200: 176 187 255;   /* #B0BBFF */
-    --royal-300: 135 151 255;   /* #8797FF */
-    --royal-400: 94 116 255;    /* #5E74FF */
+    /* Acentos royal mais sóbrios — azul elétrico suavizado */
+    --royal-200: 149 164 255;   /* #95A4FF */
+    --royal-300: 116 134 255;   /* #7486FF */
+    --royal-400: 88 108 240;    /* #586CF0 */
 
-    /* Sombras (originais) */
-    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.25);
-    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.30);
-    --shadow-elevated: 0 8px 30px rgba(0, 0, 0, 0.45);
+    /* Sombras (mais suaves) */
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.22);
+    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.25);
+    --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 
   html {
@@ -412,12 +412,12 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 48%;
+    height: 58%;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.45;
-    -webkit-mask: linear-gradient(#000 0%, #000 60%, transparent 100%);
-    mask: linear-gradient(#000 0%, #000 60%, transparent 100%);
+    opacity: 0.4;
+    -webkit-mask: linear-gradient(#000 0%, #000 55%, transparent 100%);
+    mask: linear-gradient(#000 0%, #000 55%, transparent 100%);
   }
 
   /* Spotlight — radial suave que segue o cursor (premium em cards).

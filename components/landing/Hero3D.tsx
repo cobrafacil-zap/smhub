@@ -4,44 +4,28 @@ import { useEffect, useRef } from "react";
 import type * as ThreeTypes from "three";
 
 /**
- * Hero3D — "universo" da SM Hub no hero da LP.
+ * Hero3D — universo sutil da SM Hub atrás do logo.
  *
- * Cosmos da marca: o núcleo central é o Hub; ao redor orbitam os 5 módulos da
- * plataforma, cada um com seu ícone, ligados ao núcleo por linhas. O efeito é
- * estático e elegante, sem interação de hover, servindo como fundo luminoso.
+ * Anel calmo com ícones orbitando lentamente, linhas finas ligando ao centro
+ * e um starfield discreto. Sem interação de mouse, sem neon piscante.
  */
 
-const ICON_SVGS: { inner: string; color: number }[] = [
-  {
-    // Clientes
-    inner: `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
-    color: 0x8797ff,
-  },
-  {
-    // Planejamento
-    inner: `<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>`,
-    color: 0x22d3ee,
-  },
-  {
-    // Relatórios
-    inner: `<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>`,
-    color: 0x3d5afe,
-  },
-  {
-    // Financeiro
-    inner: `<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>`,
-    color: 0x8797ff,
-  },
-  {
-    // Contratos
-    inner: `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`,
-    color: 0x22d3ee,
-  },
+const ICON_SVGS: string[] = [
+  // Clientes
+  `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
+  // Planejamento
+  `<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>`,
+  // Relatórios
+  `<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>`,
+  // Financeiro
+  `<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>`,
+  // Contratos
+  `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`,
 ];
 
 function makeIconTexture(THREE: any, inner: string): Promise<ThreeTypes.CanvasTexture> {
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+    `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="#AEB9D6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
   const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   const img = new Image();
   img.src = url;
@@ -89,7 +73,7 @@ export function Hero3D() {
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-      camera.position.set(0, 0, 6.8);
+      camera.position.set(0, 0, 7.2);
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -104,26 +88,21 @@ export function Hero3D() {
       renderer.domElement.style.display = "block";
 
       const universe = new THREE.Group();
-      // Desloca o universo para baixo, deixando o anel/orbita atrás/abaixo do logo SM Hub.
-      // y negativo = desce na tela; z ligeiramente negativo = fica mais ao fundo.
-      universe.position.set(0, -1.95, -0.6);
+      universe.position.set(0, -2.1, -0.8);
       scene.add(universe);
 
-      // --- Iluminação ambiente suave ---
-      scene.add(new THREE.AmbientLight(0x0a1a40, 1.4));
-      const coreLight = new THREE.PointLight(0x3d5afe, 18, 30);
+      // Iluminação ambiente muito suave
+      scene.add(new THREE.AmbientLight(0x0b0f19, 1.2));
+      const coreLight = new THREE.PointLight(0x586cf0, 10, 30);
       coreLight.position.set(0, 0, 0);
       scene.add(coreLight);
-      const rim = new THREE.PointLight(0x22d3ee, 8, 30);
-      rim.position.set(4, 3, 3);
-      scene.add(rim);
 
-      // --- Anel grande ao redor do logo central ---
-      const ringGeo = new THREE.TorusGeometry(1.55, 0.05, 20, 120);
+      // Anel central
+      const ringGeo = new THREE.TorusGeometry(1.6, 0.035, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
-        color: 0x8797ff,
+        color: 0x586cf0,
         transparent: true,
-        opacity: 0.35,
+        opacity: 0.22,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -131,51 +110,50 @@ export function Hero3D() {
       ring.rotation.x = Math.PI / 2;
       universe.add(ring);
 
-      const coreGlowGeo = new THREE.SphereGeometry(0.75, 32, 32);
+      // Glow central sutil
+      const coreGlowGeo = new THREE.SphereGeometry(0.6, 32, 32);
       const coreGlowMat = new THREE.MeshBasicMaterial({
-        color: 0x3d5afe,
+        color: 0x586cf0,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.12,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
       const coreGlow = new THREE.Mesh(coreGlowGeo, coreGlowMat);
       universe.add(coreGlow);
 
-      // --- Nós = ícones dos módulos orbitando ---
+      // Ícones orbitando
       const textures = await Promise.all(
-        ICON_SVGS.map((ic) => makeIconTexture(THREE, ic.inner))
+        ICON_SVGS.map((inner) => makeIconTexture(THREE, inner))
       );
       if (cancelled) return;
 
       type Node = {
         sprite: ThreeTypes.Sprite;
-        spriteMat: ThreeTypes.SpriteMaterial;
         glow: ThreeTypes.Mesh;
-        glowMat: ThreeTypes.MeshBasicMaterial;
         r: number;
         speed: number;
         tilt: number;
         phase: number;
       };
       const nodes: Node[] = [];
-      const glowGeo = new THREE.SphereGeometry(0.24, 24, 24);
+      const glowGeo = new THREE.SphereGeometry(0.18, 20, 20);
       for (let i = 0; i < ICON_SVGS.length; i++) {
         const spriteMat = new THREE.SpriteMaterial({
           map: textures[i],
           transparent: true,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
-          opacity: 0.8,
+          opacity: 0.65,
         });
         const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(0.62, 0.62, 1);
+        sprite.scale.set(0.52, 0.52, 1);
         universe.add(sprite);
 
         const glowMat = new THREE.MeshBasicMaterial({
-          color: ICON_SVGS[i].color,
+          color: 0x586cf0,
           transparent: true,
-          opacity: 0.28,
+          opacity: 0.14,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         });
@@ -184,50 +162,47 @@ export function Hero3D() {
 
         nodes.push({
           sprite,
-          spriteMat,
           glow,
-          glowMat,
-          r: 2.4 + i * 0.28,
-          speed: 0.08 + (i % 3) * 0.03,
-          tilt: i * 0.65,
-          phase: i * 1.25,
+          r: 2.35 + i * 0.3,
+          speed: 0.04 + (i % 3) * 0.015,
+          tilt: i * 0.55,
+          phase: i * 1.2,
         });
       }
 
-      // --- Linhas de conexão núcleo <-> nós ---
+      // Linhas finas de conexão
       const linePositions = new Float32Array(nodes.length * 6);
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
       const lineMat = new THREE.LineBasicMaterial({
-        color: 0x5e74ff,
+        color: 0x586cf0,
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.15,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
       const lines = new THREE.LineSegments(lineGeo, lineMat);
       universe.add(lines);
 
-      // --- Starfield piscante sutil ---
-      const STAR_N = 420;
+      // Starfield longínquo e sutil
+      const STAR_N = 280;
       const starPos = new Float32Array(STAR_N * 3);
       const starPhase = new Float32Array(STAR_N);
       const starSpeed = new Float32Array(STAR_N);
       const starSize = new Float32Array(STAR_N);
       const starBrightness = new Float32Array(STAR_N);
       for (let i = 0; i < STAR_N; i++) {
-        // Distribuição em cascata: algumas perto, muitas mais longe.
-        const r = 6 + Math.pow(Math.random(), 0.55) * 22;
+        const r = 8 + Math.pow(Math.random(), 0.5) * 28;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
         starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
         starPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        starPos[i * 3 + 2] = r * Math.cos(phi) - 4;
+        starPos[i * 3 + 2] = r * Math.cos(phi) - 5;
         starPhase[i] = Math.random() * Math.PI * 2;
-        starSpeed[i] = 0.2 + Math.random() * 1.6;
-        starSize[i] = 0.25 + Math.random() * 0.65;
-        // Brilho base: 30% das estrelas brilham mais, 70% ficam mais fracas.
-        starBrightness[i] = Math.random() < 0.3 ? 0.9 + Math.random() * 0.55 : 0.25 + Math.random() * 0.35;
+        starSpeed[i] = 0.15 + Math.random() * 1.4;
+        starSize[i] = 0.2 + Math.random() * 0.5;
+        // 20% brilham mais, 80% ficam bem discretas
+        starBrightness[i] = Math.random() < 0.2 ? 0.75 + Math.random() * 0.45 : 0.15 + Math.random() * 0.25;
       }
       const starGeo = new THREE.BufferGeometry();
       starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
@@ -239,7 +214,7 @@ export function Hero3D() {
       const starMat = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
-          uColor: { value: new THREE.Color(0x8797ff) },
+          uColor: { value: new THREE.Color(0x7b8cc7) },
         },
         vertexShader: `
           attribute float phase;
@@ -252,10 +227,10 @@ export function Hero3D() {
           void main() {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.15 + 0.35 * sin(uTime * speed + phase);
+            float twinkle = 0.1 + 0.25 * sin(uTime * speed + phase);
             vAlpha = twinkle;
             vBrightness = brightness;
-            gl_PointSize = size * (1.6 + 1.4 * twinkle) * (100.0 / -mvPosition.z);
+            gl_PointSize = size * (1.4 + 1.0 * twinkle) * (100.0 / -mvPosition.z);
           }
         `,
         fragmentShader: `
@@ -266,7 +241,7 @@ export function Hero3D() {
             float dist = length(gl_PointCoord - vec2(0.5));
             if (dist > 0.5) discard;
             float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow * vBrightness * 0.45);
+            gl_FragColor = vec4(uColor, vAlpha * glow * vBrightness * 0.4);
           }
         `,
         transparent: true,
@@ -275,72 +250,6 @@ export function Hero3D() {
       });
       const stars = new THREE.Points(starGeo, starMat);
       scene.add(stars);
-
-      // --- Luzes menores piscantes próximas ao universo ---
-      const FIREFLY_N = 16;
-      const flyPos = new Float32Array(FIREFLY_N * 3);
-      const flyPhase = new Float32Array(FIREFLY_N);
-      const flySpeed = new Float32Array(FIREFLY_N);
-      for (let i = 0; i < FIREFLY_N; i++) {
-        const r = 3 + Math.random() * 2.5;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos(2 * Math.random() - 1);
-        flyPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-        flyPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        flyPos[i * 3 + 2] = r * Math.cos(phi);
-        flyPhase[i] = Math.random() * Math.PI * 2;
-        flySpeed[i] = 0.5 + Math.random() * 1.5;
-      }
-      const flyGeo = new THREE.BufferGeometry();
-      flyGeo.setAttribute("position", new THREE.BufferAttribute(flyPos, 3));
-      flyGeo.setAttribute("phase", new THREE.BufferAttribute(flyPhase, 1));
-      flyGeo.setAttribute("speed", new THREE.BufferAttribute(flySpeed, 1));
-      const flyMat = new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-          uColor: { value: new THREE.Color(0xb0bbff) },
-        },
-        vertexShader: `
-          attribute float phase;
-          attribute float speed;
-          varying float vAlpha;
-          uniform float uTime;
-          void main() {
-            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-            gl_Position = projectionMatrix * mvPosition;
-            float twinkle = 0.12 + 0.45 * sin(uTime * speed + phase);
-            vAlpha = twinkle;
-            gl_PointSize = (1.8 + 1.5 * twinkle) * (100.0 / -mvPosition.z);
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 uColor;
-          varying float vAlpha;
-          void main() {
-            float dist = length(gl_PointCoord - vec2(0.5));
-            if (dist > 0.5) discard;
-            float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            gl_FragColor = vec4(uColor, vAlpha * glow * 0.5);
-          }
-        `,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const fireflies = new THREE.Points(flyGeo, flyMat);
-      scene.add(fireflies);
-
-      // --- Parallax/tilt do universo seguindo o mouse ---
-      const target = { rx: 0, ry: 0 };
-      const cur = { rx: 0, ry: 0 };
-      const onPointer = (e: PointerEvent) => {
-        const rect = renderer.domElement.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        target.ry = (x / rect.width - 0.5) * 0.55;
-        target.rx = (y / rect.height - 0.5) * 0.35;
-      };
-      if (!reduce) mount.addEventListener("pointermove", onPointer, { passive: true });
 
       let visible = true;
       const io = new IntersectionObserver(
@@ -358,10 +267,7 @@ export function Hero3D() {
       const clock = new THREE.Clock();
       const renderFrame = () => {
         const t = clock.getElapsedTime();
-        cur.rx += (target.rx - cur.rx) * 0.05;
-        cur.ry += (target.ry - cur.ry) * 0.05;
-        universe.rotation.x = cur.rx;
-        universe.rotation.y = cur.ry + t * 0.03;
+        universe.rotation.y = t * 0.015;
 
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
@@ -380,9 +286,8 @@ export function Hero3D() {
         }
         lineGeo.attributes.position.needsUpdate = true;
 
-        stars.rotation.y = t * 0.02;
+        stars.rotation.y = t * 0.01;
         starMat.uniforms.uTime.value = t;
-        flyMat.uniforms.uTime.value = t;
         renderer.render(scene, camera);
       };
 
@@ -408,7 +313,6 @@ export function Hero3D() {
 
       cleanup = () => {
         cancelAnimationFrame(raf);
-        mount.removeEventListener("pointermove", onPointer);
         window.removeEventListener("resize", onResize);
         document.removeEventListener("visibilitychange", onVis);
         io.disconnect();
@@ -418,16 +322,16 @@ export function Hero3D() {
         coreGlowGeo.dispose();
         coreGlowMat.dispose();
         nodes.forEach((n) => {
-          n.spriteMat.map?.dispose();
-          n.spriteMat.dispose();
-          n.glowMat.dispose();
+          const spriteMat = n.sprite.material as ThreeTypes.SpriteMaterial;
+          spriteMat.map?.dispose();
+          spriteMat.dispose();
+          const glowMat = n.glow.material as ThreeTypes.MeshBasicMaterial;
+          glowMat.dispose();
         });
         lineGeo.dispose();
         lineMat.dispose();
         starGeo.dispose();
         starMat.dispose();
-        flyGeo.dispose();
-        flyMat.dispose();
         renderer.dispose();
         if (renderer.domElement.parentNode === mount) {
           mount.removeChild(renderer.domElement);

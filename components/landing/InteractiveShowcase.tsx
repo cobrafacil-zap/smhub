@@ -15,14 +15,9 @@ import {
 } from "lucide-react";
 
 /**
- * InteractiveShowcase — seção "clicando você vê como a plataforma ajuda".
- *
- * Layout centralizado e robusto:
- * - Mobile: carrossel simples, um card por vez, centralizado, sem cortes.
- * - Desktop: coverflow 3D simétrico, card ativo no centro, vizinhos ±1.
- *
- * Os cards usam left-1/2 top-1/2 + translate(-50%, -50%) no transform inline,
- * então o centro do card coincide com o centro do palco exatamente.
+ * InteractiveShowcase — módulos da plataforma em carrossel limpo.
+ * Mobile: um card por vez, centralizado, com setas.
+ * Desktop: cards alinhados horizontalmente, ativo em destaque.
  */
 
 interface Mod {
@@ -30,7 +25,6 @@ interface Mod {
   title: string;
   tagline: string;
   bullets: string[];
-  accent: string;
 }
 
 const MODS: Mod[] = [
@@ -43,7 +37,6 @@ const MODS: Mod[] = [
       "Alertas de inadimplência e faturas a vencer",
       "Atalhos pra briefing, contrato e financeiro de cada conta",
     ],
-    accent: "text-royal-300 bg-royal-500/15 border-royal-500/30",
   },
   {
     icon: CalendarDays,
@@ -54,7 +47,6 @@ const MODS: Mod[] = [
       "Aprovação de conteúdo com o cliente in-app",
       "Datas comemorativas e ideias sugeridas automaticamente",
     ],
-    accent: "text-cyan-600 bg-cyan-500/15 border-cyan-500/30",
   },
   {
     icon: BarChart3,
@@ -65,7 +57,6 @@ const MODS: Mod[] = [
       "Exportação em PDF com a sua marca",
       "Leads e alcance por período, prontos pra apresentar",
     ],
-    accent: "text-emerald-600 bg-emerald-500/15 border-emerald-500/30",
   },
   {
     icon: Wallet,
@@ -76,7 +67,6 @@ const MODS: Mod[] = [
       "Cobrança recorrente e recibos automáticos",
       "Saldo do mês e inadimplência num olhar",
     ],
-    accent: "text-amber-600 bg-amber-500/15 border-amber-500/30",
   },
   {
     icon: FileText,
@@ -87,15 +77,12 @@ const MODS: Mod[] = [
       "Assinatura eletrônica com validade jurídica",
       "Portal do cliente pra assinar e acompanhar",
     ],
-    accent: "text-rose-600 bg-rose-500/15 border-rose-500/30",
   },
 ];
 
 export function InteractiveShowcase() {
   const [active, setActive] = useState(0);
-  const [reduce, setReduce] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const stageRef = useRef<HTMLDivElement | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   const prev = () => setActive((a) => (a - 1 + MODS.length) % MODS.length);
@@ -116,11 +103,8 @@ export function InteractiveShowcase() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const reduceMq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const deskMq = window.matchMedia("(min-width: 640px)");
-    setReduce(reduceMq.matches);
     setIsDesktop(deskMq.matches);
-
     const onDesk = () => setIsDesktop(deskMq.matches);
     deskMq.addEventListener("change", onDesk);
     return () => deskMq.removeEventListener("change", onDesk);
@@ -138,21 +122,18 @@ export function InteractiveShowcase() {
   return (
     <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
       <div className="text-center mb-6 sm:mb-8">
-        <p className="text-xs uppercase tracking-wider text-royal-300 font-semibold">
-          Como a SM Hub ajuda
-        </p>
+        <p className="text-xs text-slate-500 font-medium">Módulos</p>
         <h2 className="text-2xl sm:text-4xl font-bold mt-2">
-          Clique e explore cada parte da plataforma
+          Uma plataforma, todas as etapas
         </h2>
         <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
-          Gire a estrutura e veja, na prática, como cada módulo tira peso do
-          seu dia a dia.
+          Clique em cada módulo e veja como a SM Hub tira peso do dia a dia da sua agência.
         </p>
       </div>
 
-      {/* MOBILE: carrossel simples e centralizado */}
+      {/* Mobile carousel */}
       <div
-        className="sm:hidden relative h-[360px] flex items-center justify-center px-8"
+        className="sm:hidden relative h-[360px] flex items-center justify-center px-10"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -165,34 +146,11 @@ export function InteractiveShowcase() {
               type="button"
               key={m.title}
               onClick={() => setActive(i)}
-              className="relative w-full max-w-[320px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="relative w-full max-w-[320px] text-left transition-opacity duration-300"
             >
-              <div className="card group p-4 flex flex-col gap-3 spotlight border-royal-500/40 shadow-elevated bg-gradient-to-b from-bg-elevated to-bg-surface">
-                <div className="flex items-start gap-3">
-                  <div className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-base font-semibold text-slate-100 leading-tight">
-                      {m.title}
-                    </h3>
-                    <p className="text-[11px] text-slate-400 leading-snug mt-0.5">
-                      {m.tagline}
-                    </p>
-                  </div>
-                </div>
-                <ul className="space-y-1.5">
-                  {m.bullets.map((b) => (
-                    <li
-                      key={b}
-                      className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
-                    >
-                      <Check className={cn("h-4 w-4 shrink-0 mt-0.5", m.accent.split(" ")[0])} />
-                      <span>{b}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <Card active>
+                <ModuleContent m={m} Icon={Icon} />
+              </Card>
             </button>
           );
         })}
@@ -215,93 +173,31 @@ export function InteractiveShowcase() {
         </button>
       </div>
 
-      {/* DESKTOP: coverflow simétrico */}
-      <div
-        ref={stageRef}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        className="hidden sm:flex relative h-[440px] items-center justify-center overflow-visible"
-        style={{ perspective: "1200px", perspectiveOrigin: "center center" }}
-      >
+      {/* Desktop layout */}
+      <div className="hidden sm:grid sm:grid-cols-3 gap-4 lg:gap-5 items-stretch">
         {MODS.map((m, i) => {
-          const N = MODS.length;
-          const offset =
-            ((i - active + N + Math.floor(N / 2)) % N) - Math.floor(N / 2);
-          const abs = Math.abs(offset);
-          const isActive = offset === 0;
-          const isNeighbor = abs === 1;
-          const visible = isActive || isNeighbor;
+          const isActive = i === active;
           const Icon = m.icon;
-
-          const transform = reduce
-            ? `translate(-50%, -50%) translateX(${offset * 120}%) scale(${isActive ? 1 : 0.9})`
-            : `translate(-50%, -50%) translateX(${offset * 280}px) translateZ(${-abs * 55}px) rotateY(${offset * -25}deg) scale(${isActive ? 1 : 0.85})`;
-
           return (
             <button
               type="button"
               key={m.title}
               onClick={() => setActive(i)}
-              aria-label={m.title}
-              tabIndex={visible ? 0 : -1}
               className={cn(
-                "absolute left-1/2 top-1/2 w-[400px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
-                visible ? "pointer-events-auto" : "pointer-events-none"
+                "text-left transition-all duration-300 rounded-[1.5rem] border p-5",
+                isActive
+                  ? "border-royal-500/40 bg-bg-surface shadow-card"
+                  : "border-border/60 bg-bg-surface/50 hover:border-royal-500/30 hover:bg-bg-surface"
               )}
-              style={{
-                transform,
-                opacity: !visible ? 0 : isActive ? 1 : 0.45,
-                zIndex: isActive ? 30 : 20 - abs,
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
-                transformOrigin: "center center",
-              }}
             >
-              <div
-                className={cn(
-                  "card group p-5 flex flex-col gap-3 spotlight",
-                  isActive
-                    ? "border-royal-500/40 shadow-elevated bg-gradient-to-b from-bg-elevated to-bg-surface"
-                    : "border-border/70 bg-bg-surface/80"
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-semibold text-slate-100 leading-tight">
-                      {m.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 leading-snug mt-0.5">
-                      {m.tagline}
-                    </p>
-                  </div>
-                </div>
-                <ul className="space-y-1.5">
-                  {m.bullets.map((b) => (
-                    <li
-                      key={b}
-                      className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
-                    >
-                      <Check className={cn("h-4 w-4 shrink-0 mt-0.5", m.accent.split(" ")[0])} />
-                      <span>{b}</span>
-                    </li>
-                  ))}
-                </ul>
-                {!isActive && (
-                  <p className="text-[11px] text-royal-300/80 font-medium pt-1">
-                    Clique pra ver →
-                  </p>
-                )}
-              </div>
+              <ModuleContent m={m} Icon={Icon} />
             </button>
           );
         })}
       </div>
 
       {/* Chips de navegação */}
-      <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
         {MODS.map((m, i) => {
           const Icon = m.icon;
           const isActive = i === active;
@@ -312,7 +208,7 @@ export function InteractiveShowcase() {
               onClick={() => setActive(i)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
                 isActive
-                  ? "bg-royal-500 text-white border-royal-500 shadow-sm shadow-royal-500/25"
+                  ? "bg-royal-500 text-white border-royal-500"
                   : "bg-bg-surface/60 border-border text-slate-400 hover:text-slate-200 hover:border-royal-500/30 hover:bg-bg-elevated"
               }`}
             >
@@ -324,11 +220,54 @@ export function InteractiveShowcase() {
       </div>
 
       <p className="text-center text-xs text-slate-500 mt-4">
-        {active + 1} de {MODS.length} ·{" "}
-        {isDesktop
-          ? "clique num módulo ou nos cards laterais"
-          : "arraste o card ← →"}
+        {active + 1} de {MODS.length} · {isDesktop ? "clique em um card" : "arraste o card ← →"}
       </p>
     </section>
+  );
+}
+
+function Card({ children, active }: { children: React.ReactNode; active?: boolean }) {
+  return (
+    <div
+      className={cn(
+        "rounded-[1.5rem] border p-4 sm:p-5 flex flex-col gap-3",
+        active
+          ? "border-royal-500/40 bg-bg-surface shadow-card"
+          : "border-border/60 bg-bg-surface/50"
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ModuleContent({ m, Icon }: { m: Mod; Icon: LucideIcon }) {
+  return (
+    <>
+      <div className="flex items-start gap-3">
+        <div className="h-11 w-11 rounded-xl border border-royal-500/20 bg-royal-500/10 flex items-center justify-center shrink-0">
+          <Icon className="h-5 w-5 text-royal-300" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-100 leading-tight">
+            {m.title}
+          </h3>
+          <p className="text-[11px] sm:text-xs text-slate-400 leading-snug mt-0.5">
+            {m.tagline}
+          </p>
+        </div>
+      </div>
+      <ul className="space-y-1.5">
+        {m.bullets.map((b) => (
+          <li
+            key={b}
+            className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
+          >
+            <Check className="h-4 w-4 shrink-0 mt-0.5 text-royal-300" />
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

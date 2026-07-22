@@ -29,10 +29,10 @@ interface LogoItem {
 }
 
 const LOGOS: LogoItem[] = [
-  { nome: "Instagram", Icon: Instagram, cor: "text-pink-400" },
-  { nome: "Facebook", Icon: Facebook, cor: "text-blue-400" },
-  { nome: "YouTube", Icon: Youtube, cor: "text-red-400" },
-  { nome: "LinkedIn", Icon: Linkedin, cor: "text-sky-400" },
+  { nome: "Instagram", Icon: Instagram, cor: "text-slate-300" },
+  { nome: "Facebook", Icon: Facebook, cor: "text-slate-300" },
+  { nome: "YouTube", Icon: Youtube, cor: "text-slate-300" },
+  { nome: "LinkedIn", Icon: Linkedin, cor: "text-slate-300" },
   { nome: "X (Twitter)", Icon: Twitter, cor: "text-slate-300" },
 ];
 
@@ -55,9 +55,9 @@ export function EcossistemaMarquee() {
 
 function LogoPill({ item }: { item: LogoItem }) {
   return (
-    <div className="group flex items-center gap-2 px-4 sm:px-5 py-3 rounded-lg bg-bg-elevated/40 border border-border/60 shrink-0 min-w-[150px] sm:min-w-[180px] justify-center lift hover:border-royal-500/40 opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition-[filter,opacity] duration-300">
-      <item.Icon className={`h-6 w-6 ${item.cor} transition-transform duration-300 group-hover:scale-110`} />
-      <span className="text-sm font-semibold text-slate-300 whitespace-nowrap">
+    <div className="flex items-center gap-2 px-4 sm:px-5 py-3 rounded-lg bg-bg-elevated/40 border border-border/60 shrink-0 min-w-[150px] sm:min-w-[180px] justify-center hover:border-royal-500/30 transition-colors duration-300">
+      <item.Icon className={`h-5 w-5 ${item.cor}`} />
+      <span className="text-sm text-slate-400 whitespace-nowrap">
         {item.nome}
       </span>
     </div>
