@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   Users,
   CalendarDays,
   BarChart3,
   Wallet,
   FileText,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 
@@ -122,7 +124,7 @@ export function InteractiveShowcase() {
     const measure = () => {
       const w = stageRef.current?.clientWidth ?? 600;
       // painel ~300px; espaçamento cresce com a tela, com teto.
-      setSpacing(Math.max(150, Math.min(220, w * 0.3)));
+      setSpacing(Math.max(170, Math.min(260, w * 0.3)));
     };
     const onDesk = () => setIsDesktop(deskMq.matches);
     measure();
@@ -166,7 +168,7 @@ export function InteractiveShowcase() {
         ref={stageRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        className="relative h-[260px] sm:h-[300px] flex items-center justify-center overflow-hidden"
+        className="relative h-[260px] sm:h-[320px] flex items-center justify-center overflow-hidden"
         style={{ perspective: "1200px", touchAction: "pan-y" }}
       >
         {/* Painéis */}
@@ -194,8 +196,8 @@ export function InteractiveShowcase() {
               ? `translateX(${offset * 18}px) scale(${isActive ? 1 : 0.92})`
               : `translateX(${offset * spacing}px) translateZ(${
                   -abs * 90
-                }px) rotateY(${offset * -46}deg) scale(${
-                  isActive ? 1 : 0.8
+                }px) rotateY(${offset * -42}deg) scale(${
+                  isActive ? 1 : 0.82
                 })`;
 
             return (
@@ -205,38 +207,45 @@ export function InteractiveShowcase() {
                 onClick={() => setActive(i)}
                 aria-label={m.title}
                 tabIndex={visible ? 0 : -1}
-                className="absolute left-1/2 top-1/2 w-[300px] max-w-[88vw] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-90"
+                className="absolute left-1/2 top-1/2 w-[320px] max-w-[90vw] sm:w-[360px] -translate-x-1/2 -translate-y-1/2 text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer hover:!opacity-95"
                 style={{
                   transform,
-                  opacity: !visible ? 0 : isActive ? 1 : 0.4,
+                  opacity: !visible ? 0 : isActive ? 1 : 0.35,
                   zIndex: isActive ? 20 : 19,
                   pointerEvents: visible ? "auto" : "none",
                   transformStyle: "preserve-3d",
                   backfaceVisibility: "hidden",
                 }}
               >
-                <div className="card group h-full p-5 flex flex-col gap-3 spotlight">
-                  <div className="flex items-center gap-3">
+                <div className={`card group h-full p-5 sm:p-6 flex flex-col gap-4 spotlight ${isActive ? "border-royal-500/40 shadow-elevated" : ""}`}>
+                  <div className="flex items-start gap-3">
                     <div
-                      className={`h-10 w-10 rounded-xl border flex items-center justify-center ${m.accent}`}
+                      className={`h-11 w-11 rounded-xl border flex items-center justify-center shrink-0 ${m.accent}`}
                     >
-                      <Icon className="h-5 w-5 icon-pop" />
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-slate-100 leading-tight">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-slate-100 leading-tight">
                         {m.title}
                       </h3>
-                      <p className="text-xs text-slate-400 leading-tight">{m.tagline}</p>
+                      <p className="text-xs text-slate-400 leading-snug mt-0.5">
+                        {m.tagline}
+                      </p>
                     </div>
                   </div>
-                  <ul className="space-y-1.5 flex-1">
+                  <ul className="space-y-2 flex-1">
                     {m.bullets.map((b) => (
                       <li
                         key={b}
-                        className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
+                        className="flex items-start gap-2 text-sm leading-relaxed text-slate-300"
                       >
-                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-royal-400 shrink-0" />
-                        {b}
+                        <Check
+                          className={cn(
+                            "h-4 w-4 shrink-0 mt-0.5",
+                            m.accent.split(" ")[0]
+                          )}
+                        />
+                        <span>{b}</span>
                       </li>
                     ))}
                   </ul>
@@ -264,8 +273,8 @@ export function InteractiveShowcase() {
               onClick={() => setActive(i)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
                 isActive
-                  ? "bg-royal-500/15 border-royal-500/50 text-royal-200"
-                  : "bg-bg-surface/60 border-border text-slate-400 hover:text-slate-200 hover:border-royal-500/30"
+                  ? "bg-royal-500 text-white border-royal-500 shadow-sm shadow-royal-500/25"
+                  : "bg-bg-surface/60 border-border text-slate-400 hover:text-slate-200 hover:border-royal-500/30 hover:bg-bg-elevated"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />

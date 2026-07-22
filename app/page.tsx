@@ -25,7 +25,6 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
 import { EcossistemaMarquee } from "@/components/landing/EcossistemaMarquee";
-import { Hero3D } from "@/components/landing/Hero3D";
 import { InteractiveShowcase } from "@/components/landing/InteractiveShowcase";
 import { Reveal } from "@/components/ui/motion/Reveal";
 import { TiltCard } from "@/components/ui/motion/TiltCard";
@@ -318,19 +317,15 @@ export default async function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 lg:pt-20 pb-14 sm:pb-20 text-center">
-        <Hero3D />
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 text-center">
         <div className="relative z-10">
-        <div className="flex justify-center mb-10 animate-logo-in">
-          <Logo variant="full" className="!h-20 sm:!h-24 animate-logo-float" />
-        </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-royal-500/10 border border-royal-500/30 text-xs text-royal-200 mb-6 animate-fade-in pulse-ring">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-royal-500/10 border border-royal-500/30 text-xs text-royal-200 mb-5 animate-fade-in">
           <Sparkles className="h-3.5 w-3.5 icon-bob" />
           7 dias grátis. Sem cartão de crédito.
         </div>
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] animate-slide-up">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] animate-slide-up">
           A plataforma completa para{" "}
-          <span className="bg-gradient-to-r from-royal-300 via-royal-400 to-royal-500 bg-clip-text text-transparent text-gradient-anim">
+          <span className="bg-gradient-to-r from-royal-300 via-royal-400 to-royal-500 bg-clip-text text-transparent">
             agências de marketing
           </span>
         </h1>
