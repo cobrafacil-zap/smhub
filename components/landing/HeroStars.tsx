@@ -73,19 +73,43 @@ export function HeroStars() {
     };
 
     const spawnShooting = () => {
-      const startSide = Math.random() < 0.5 ? "top" : "left";
-      const x = startSide === "top" ? Math.random() * width : -60;
-      const y = startSide === "top" ? -60 : Math.random() * height * 0.6;
-      const angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
-      const speed = 6 + Math.random() * 4;
+      const side = Math.floor(Math.random() * 4); // 0=top, 1=left, 2=right, 3=top-right corner
+      let x = 0;
+      let y = 0;
+      let angle = Math.PI / 4;
+
+      switch (side) {
+        case 0: // topo
+          x = Math.random() * width;
+          y = -40;
+          angle = Math.PI / 4 + (Math.random() - 0.5) * 0.4;
+          break;
+        case 1: // esquerda
+          x = -40;
+          y = Math.random() * height * 0.5;
+          angle = Math.PI / 6 + Math.random() * 0.4;
+          break;
+        case 2: // direita
+          x = width + 40;
+          y = Math.random() * height * 0.5;
+          angle = Math.PI - Math.PI / 6 - Math.random() * 0.4;
+          break;
+        case 3: // canto superior direito
+          x = width + Math.random() * 60;
+          y = -Math.random() * 40;
+          angle = Math.PI * 0.75 + (Math.random() - 0.5) * 0.3;
+          break;
+      }
+
+      const speed = 5 + Math.random() * 5;
       shooting = {
         x,
         y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: 40 + Math.random() * 30,
-        length: 40 + Math.random() * 30,
+        maxLife: 35 + Math.random() * 35,
+        length: 30 + Math.random() * 40,
       };
     };
 
@@ -121,11 +145,12 @@ export function HeroStars() {
         ctx.fill();
       }
 
-      // Estrela cadente rara
+      // Estrelas cadentes em sequências com intervalos aleatórios
       if (!shooting && now > nextShooting) {
         spawnShooting();
-        // próxima entre 6 e 18 segundos
-        nextShooting = now + 6 + Math.random() * 12;
+        // sorteia um padrão de pausa: curta, média, longa ou dupla em sequência
+        const patterns = [1.5, 3, 7, 10, 14, 18];
+        nextShooting = now + patterns[Math.floor(Math.random() * patterns.length)] + Math.random() * 2;
       }
 
       if (shooting) {
