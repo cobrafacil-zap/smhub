@@ -3,7 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Periodo } from "@/lib/planejamento";
+import { faixaPrazo, ORDEM_FAIXA, type Periodo } from "@/lib/planejamento";
 
 function toIso(d: Date): string {
   const y = d.getFullYear();
@@ -25,6 +25,48 @@ function addMonths(iso: string, meses: number): string {
   return toIso(new Date(d.getFullYear(), d.getMonth() + meses, 1));
 }
 
+/**
+ * Devolve um YYYY-MM-DD "representante" da faixa de prazo, usado para
+ * posicionar a navegação do período (não muda o filtro do quadro — o kanban
+ * continua mostrando a janela de 2 semanas independente do `ref`).
+ *
+ * - "Atrasado" / "Hoje" / "Amanhã" → exatamente o dia da faixa
+ * - "Esta semana" → segunda desta semana
+ * - "Próxima semana" → segunda da próxima
+ * - "Depois" → daqui 21 dias (entra na janela de 2 semanas como "Esta semana")
+ * - "Sem data" → não tem data representativa; usa hoje (atalho fica igual a "Hoje")
+ */
+function refParaFaixa(faixa: string, hoje: Date): string {
+  const ref = new Date(hoje);
+  ref.setHours(0, 0, 0, 0);
+
+  switch (faixa) {
+    case "Atrasado":
+      return toIso(new Date(ref.getTime() - 3 * 86400000));
+    case "Hoje":
+      return toIso(ref);
+    case "Amanhã":
+      return toIso(new Date(ref.getTime() + 86400000));
+    case "Esta semana": {
+      const offsetToMonday = (ref.getDay() + 6) % 7;
+      const monday = new Date(ref);
+      monday.setDate(ref.getDate() - offsetToMonday);
+      return toIso(monday);
+    }
+    case "Próxima semana": {
+      const offsetToMonday = (ref.getDay() + 6) % 7;
+      const monday = new Date(ref);
+      monday.setDate(ref.getDate() - offsetToMonday + 7);
+      return toIso(monday);
+    }
+    case "Depois":
+      return toIso(new Date(ref.getTime() + 21 * 86400000));
+    case "Sem data":
+    default:
+      return toIso(ref);
+  }
+}
+
 export function TarefasPeriodoNav({
   periodo,
   refIso,
@@ -37,6 +79,7 @@ export function TarefasPeriodoNav({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const hoje = new Date();
 
   function navegar(novoPeriodo: Periodo, novoRef: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -55,9 +98,14 @@ export function TarefasPeriodoNav({
   function proximo() {
     navegar(periodo, periodo === "semana" ? addDays(refIso, 7) : addMonths(refIso, 1));
   }
-  function hoje() {
-    navegar(periodo, toIso(new Date()));
+  function irParaFaixa(faixa: string) {
+    navegar(periodo, refParaFaixa(faixa, hoje));
   }
+
+  // Faixa atualmente "ativa" = aquela que contém o ref atual. Usada só para
+  // destacar a pílula correspondente. "Sem data" nunca fica ativa (ref é uma
+  // data real, sempre cai em alguma faixa temporal).
+  const faixaAtiva = faixaPrazo(refIso, hoje);
 
   return (
     <div className="card !p-3 flex flex-wrap items-center justify-between gap-3">
@@ -101,13 +149,32 @@ export function TarefasPeriodoNav({
         >
           <ChevronRight className="h-4 w-4" />
         </button>
-        <button
-          type="button"
-          onClick={hoje}
-          className="ml-1 text-xs text-royal-300 hover:text-royal-200 border border-royal-500/30 rounded-md px-2 py-1"
-        >
-          Hoje
-        </button>
+      </div>
+
+      {/* Atalhos de faixa de prazo — clicar leva o `ref` para uma data dentro
+          da faixa. O quadro (kanban) não é filtrado por isso; ele continua
+          mostrando a janela de 2 semanas. A pílula ativa reflete a faixa em
+          que o `ref` atual cai. */}
+      <div className="flex flex-wrap items-center gap-1">
+        {ORDEM_FAIXA.map((faixa) => {
+          const ativa = faixa === faixaAtiva;
+          return (
+            <button
+              key={faixa}
+              type="button"
+              onClick={() => irParaFaixa(faixa)}
+              title={`Ir para ${faixa.toLowerCase()}`}
+              className={cn(
+                "text-xs rounded-md px-2 py-1 border transition",
+                ativa
+                  ? "bg-royal-500/15 text-royal-200 border-royal-500/40"
+                  : "text-slate-300 border-border hover:bg-bg-elevated hover:text-slate-100"
+              )}
+            >
+              {faixa}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
