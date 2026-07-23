@@ -19,12 +19,16 @@ import { Card } from "@/components/ui/Card";
 import { PlanoCard, PLANO_FEATURES } from "@/components/billing/PlanoCard";
 import { EcossistemaMarquee } from "@/components/landing/EcossistemaMarquee";
 import { FeaturesTimeline } from "@/components/landing/FeaturesTimeline";
-import { Hero3D } from "@/components/landing/Hero3D";
 import { InteractiveShowcase } from "@/components/landing/InteractiveShowcase";
-import { HeroEmojiField } from "@/components/landing/HeroEmojiField";
+import dynamicImport from "next/dynamic";
 import { StepsSection } from "@/components/landing/StepsSection";
 import { HeroStars } from "@/components/landing/HeroStars";
 import { Reveal } from "@/components/ui/motion/Reveal";
+
+const Hero3D = dynamicImport(() => import("@/components/landing/Hero3D").then((m) => m.Hero3D), {
+  ssr: false,
+  loading: () => <div aria-hidden className="hero-3d opacity-0" />,
+});
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
 import type { Plano, PlanoConfig, UserRole } from "@/types/database";

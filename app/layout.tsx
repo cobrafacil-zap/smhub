@@ -97,6 +97,9 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// Força render dinâmico para toda a aplicação e otimiza chunk de runtime.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: {
@@ -104,6 +107,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="/" />
+        <link rel="preload" href="/logo-full.svg" as="image" type="image/svg+xml" />
+      </head>
       <body className="font-sans antialiased min-h-screen bg-bg text-slate-100">
         <ThemeProvider
           attribute="class"
