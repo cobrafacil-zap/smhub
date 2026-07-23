@@ -156,71 +156,22 @@ export function Hero3D() {
       const orbitParticles = new THREE.Points(orbitGeo, orbitMat);
       universe.add(orbitParticles);
 
-      // Pulsos de plasma azul neon claro ao longo do raio do anel
-      const PLASMA_N = 18;
-      const plasmaGeo = new THREE.BufferGeometry();
-      const plasmaPos = new Float32Array(PLASMA_N * 3);
-      const plasmaSize = new Float32Array(PLASMA_N);
-      const plasmaPhase = new Float32Array(PLASMA_N);
-      const plasmaSpeed = new Float32Array(PLASMA_N);
-      const plasmaAngle = new Float32Array(PLASMA_N);
-      const plasmaRadius = new Float32Array(PLASMA_N);
-      for (let i = 0; i < PLASMA_N; i++) {
-        plasmaAngle[i] = Math.random() * Math.PI * 2;
-        plasmaRadius[i] = (isMobile ? 1.35 : 2.25) + Math.random() * (isMobile ? 0.45 : 0.7);
-        plasmaPhase[i] = Math.random() * Math.PI * 2;
-        plasmaSpeed[i] = 0.4 + Math.random() * 0.8;
-      }
-      plasmaGeo.setAttribute("position", new THREE.BufferAttribute(plasmaPos, 3));
-      plasmaGeo.setAttribute("size", new THREE.BufferAttribute(plasmaSize, 1));
-      plasmaGeo.setAttribute("phase", new THREE.BufferAttribute(plasmaPhase, 1));
-      plasmaGeo.setAttribute("speed", new THREE.BufferAttribute(plasmaSpeed, 1));
-      plasmaGeo.setAttribute("radius", new THREE.BufferAttribute(plasmaRadius, 1));
-      plasmaGeo.setAttribute("angle", new THREE.BufferAttribute(plasmaAngle, 1));
-      const plasmaMat = new THREE.ShaderMaterial({
-        uniforms: {
-          uTime: { value: 0 },
-          uColor: { value: new THREE.Color(0x88aaff) },
-        },
-        vertexShader: `
-          attribute float size;
-          attribute float phase;
-          attribute float speed;
-          attribute float radius;
-          attribute float angle;
-          varying float vPulse;
-          uniform float uTime;
-          void main() {
-            float pulse = sin(uTime * speed + phase);
-            float active = smoothstep(0.2, 1.0, pulse);
-            float r = radius;
-            vec3 pos;
-            pos.x = r * cos(angle);
-            pos.z = r * sin(angle);
-            pos.y = sin(uTime * speed * 1.5 + phase) * 0.05;
-            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-            gl_Position = projectionMatrix * mvPosition;
-            vPulse = active;
-            gl_PointSize = (size * (0.8 + active * 2.2)) * (100.0 / -mvPosition.z);
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 uColor;
-          varying float vPulse;
-          void main() {
-            float dist = length(gl_PointCoord - vec2(0.5));
-            if (dist > 0.5) discard;
-            float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-            float core = 1.0 - smoothstep(0.0, 0.2, dist);
-            gl_FragColor = vec4(uColor, glow * (0.35 + vPulse * 0.85) + core * 0.4);
-          }
-        `,
+      // Raio de neon correndo ao redor do anel (por fora)
+      const RAY_SEGMENTS = 80;
+      const rayGeo = new THREE.BufferGeometry();
+      const rayPos = new Float32Array(RAY_SEGMENTS * 3);
+      const rayProgress = { value: 0 };
+      rayGeo.setAttribute("position", new THREE.BufferAttribute(rayPos, 3));
+      const rayMat = new THREE.PointsMaterial({
+        color: 0xbfd4ff,
+        size: isMobile ? 0.18 : 0.26,
         transparent: true,
+        opacity: 0.85,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
-      const plasma = new THREE.Points(plasmaGeo, plasmaMat);
-      universe.add(plasma);
+      const ray = new THREE.Points(rayGeo, rayMat);
+      universe.add(ray);
 
       // Ícones orbitando
       const textures = await Promise.all(
@@ -445,14 +396,20 @@ export function Hero3D() {
         ring.rotation.x = Math.PI / 2 + Math.sin(t * 0.35) * 0.08;
         ringShadow.rotation.x = ring.rotation.x;
 
-        // Atualiza pulsos de plasma
-        plasmaMat.uniforms.uTime.value = t;
-        for (let i = 0; i < PLASMA_N; i++) {
-          plasmaAngle[i] += 0.002 + Math.sin(i + t * 0.1) * 0.001;
-          plasmaSize[i] = (isMobile ? 0.12 : 0.18) + Math.max(0, Math.sin(t * plasmaSpeed[i] + plasmaPhase[i])) * (isMobile ? 0.14 : 0.22);
+        // Raio de neon correndo ao redor do anel
+        rayProgress.value += 0.008 + Math.sin(t * 0.4) * 0.002;
+        const rayR = (isMobile ? 1.82 : 2.92) + Math.sin(t * 0.6) * 0.03;
+        for (let i = 0; i < RAY_SEGMENTS; i++) {
+          const angle = rayProgress.value + (i / RAY_SEGMENTS) * Math.PI * 2;
+          // forma alongada: poucos pontos brilhantes, cauda curta
+          const tail = Math.max(0, 1 - i / (RAY_SEGMENTS * 0.18));
+          rayPos[i * 3] = rayR * Math.cos(angle);
+          rayPos[i * 3 + 1] = -0.02 + Math.sin(angle * 2 + t) * 0.03;
+          rayPos[i * 3 + 2] = rayR * Math.sin(angle);
+          rayMat.opacity = 0.2 + tail * 0.8;
+          rayMat.size = (isMobile ? 0.12 : 0.2) + tail * (isMobile ? 0.14 : 0.22);
         }
-        plasmaGeo.attributes.angle.needsUpdate = true;
-        plasmaGeo.attributes.size.needsUpdate = true;
+        rayGeo.attributes.position.needsUpdate = true;
 
         renderer.render(scene, camera);
       };
@@ -491,8 +448,8 @@ export function Hero3D() {
         shadowMat.dispose();
         orbitGeo.dispose();
         orbitMat.dispose();
-        plasmaGeo.dispose();
-        plasmaMat.dispose();
+        rayGeo.dispose();
+        rayMat.dispose();
         nodes.forEach((n) => {
           const spriteMat = n.sprite.material as ThreeTypes.SpriteMaterial;
           spriteMat.map?.dispose();
