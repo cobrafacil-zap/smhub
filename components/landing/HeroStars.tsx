@@ -29,11 +29,15 @@ export function HeroStars() {
     let height = 0;
     let stars: Star[] = [];
     let dpr = 1;
+    const isDark = document.documentElement.classList.contains("dark");
 
-    const colors = ["#a8b4ff", "#8797ff", "#c3cfff", "#586cf0", "#ffffff"];
+    const colors = isDark
+      ? ["#a8b4ff", "#8797ff", "#c3cfff", "#586cf0", "#ffffff"]
+      : ["#6b7cff", "#8797ff", "#4f5bff", "#586cf0", "#a8b4ff"];
 
     const createStars = () => {
-      const count = Math.floor((width * height) / 9000);
+      const density = isDark ? 9000 : 12000;
+      const count = Math.floor((width * height) / density);
       stars = [];
       for (let i = 0; i < count; i++) {
         const bright = Math.random() < 0.25;

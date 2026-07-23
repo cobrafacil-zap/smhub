@@ -23,9 +23,9 @@ const ICON_SVGS: string[] = [
   `<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`,
 ];
 
-function makeIconTexture(THREE: any, inner: string): Promise<ThreeTypes.CanvasTexture> {
+function makeIconTexture(THREE: any, inner: string, strokeColor: string): Promise<ThreeTypes.CanvasTexture> {
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="#AEB9D6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+    `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
   const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   const img = new Image();
   img.src = url;
@@ -71,6 +71,7 @@ export function Hero3D() {
       const width = mount.clientWidth || 1;
       const height = mount.clientHeight || 1;
       const isMobile = width < 768;
+      const isDark = document.documentElement.classList.contains("dark");
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
@@ -92,24 +93,24 @@ export function Hero3D() {
       universe.position.set(0, isMobile ? 3.65 : 2.75, isMobile ? -1.6 : -2.2);
       scene.add(universe);
 
-      // Iluminação ambiente + neon sutil
-      scene.add(new THREE.AmbientLight(0x0b0f19, 1.2));
-      const coreLight = new THREE.PointLight(0x586cf0, 18, 30);
+      // Iluminação ambiente + neon sutil (mais suave no claro)
+      scene.add(new THREE.AmbientLight(isDark ? 0x0b0f19 : 0xf1f5f9, isDark ? 1.2 : 1.5));
+      const coreLight = new THREE.PointLight(isDark ? 0x586cf0 : 0x4f5bff, isDark ? 18 : 10, 30);
       coreLight.position.set(0, 0, 0);
       scene.add(coreLight);
-      const neonLight = new THREE.PointLight(0x8797ff, 9, 25);
+      const neonLight = new THREE.PointLight(isDark ? 0x8797ff : 0x6b7cff, isDark ? 9 : 5, 25);
       neonLight.position.set(0, -2, 2);
       scene.add(neonLight);
-      const rimLight = new THREE.PointLight(0xb9c2ff, 5, 25);
+      const rimLight = new THREE.PointLight(isDark ? 0xb9c2ff : 0xa8b4ff, isDark ? 5 : 3, 25);
       rimLight.position.set(0, 3, -3);
       scene.add(rimLight);
 
       // Anel central orbitando o SM Hub — maior que o logo
       const ringGeo = new THREE.TorusGeometry(isMobile ? 1.55 : 2.6, isMobile ? 0.055 : 0.06, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
-        color: 0x7486ff,
+        color: isDark ? 0x7486ff : 0x4f5bff,
         transparent: true,
-        opacity: 0.35,
+        opacity: isDark ? 0.35 : 0.55,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -120,9 +121,9 @@ export function Hero3D() {
       // Sombra/projeção do anel no centro (disco translúcido)
       const shadowGeo = new THREE.CircleGeometry(isMobile ? 1.42 : 2.42, 64);
       const shadowMat = new THREE.MeshBasicMaterial({
-        color: 0x586cf0,
+        color: isDark ? 0x586cf0 : 0x8797ff,
         transparent: true,
-        opacity: 0.18,
+        opacity: isDark ? 0.18 : 0.10,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide,
@@ -146,10 +147,10 @@ export function Hero3D() {
       const orbitGeo = new THREE.BufferGeometry();
       orbitGeo.setAttribute("position", new THREE.BufferAttribute(orbitPos, 3));
       const orbitMat = new THREE.PointsMaterial({
-        color: 0xa8b4ff,
+        color: isDark ? 0xa8b4ff : 0x4f5bff,
         size: isMobile ? 0.07 : 0.09,
         transparent: true,
-        opacity: 0.55,
+        opacity: isDark ? 0.55 : 0.35,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -163,10 +164,10 @@ export function Hero3D() {
       const rayProgress = { value: 0 };
       rayGeo.setAttribute("position", new THREE.BufferAttribute(rayPos, 3));
       const rayMat = new THREE.PointsMaterial({
-        color: 0xbfd4ff,
+        color: isDark ? 0xbfd4ff : 0x4f5bff,
         size: isMobile ? 0.18 : 0.26,
         transparent: true,
-        opacity: 0.85,
+        opacity: isDark ? 0.85 : 0.75,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -174,8 +175,9 @@ export function Hero3D() {
       universe.add(ray);
 
       // Ícones orbitando
+      const iconStroke = isDark ? "#AEB9D6" : "#4a5d8a";
       const textures = await Promise.all(
-        ICON_SVGS.map((inner) => makeIconTexture(THREE, inner))
+        ICON_SVGS.map((inner) => makeIconTexture(THREE, inner, iconStroke))
       );
       if (cancelled) return;
 
@@ -265,7 +267,7 @@ export function Hero3D() {
       const starMat = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
-          uColor: { value: new THREE.Color(0x9aaae0) },
+          uColor: { value: new THREE.Color(isDark ? 0x9aaae0 : 0x6b7cff) },
         },
         vertexShader: `
           attribute float phase;
