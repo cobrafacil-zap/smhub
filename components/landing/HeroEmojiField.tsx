@@ -41,7 +41,7 @@ export function HeroEmojiField() {
       el.style.left = "0";
       el.style.top = "0";
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const size = 0.6 + Math.random() * 0.9;
+      const size = isCoarse ? 0.45 + Math.random() * 0.55 : 0.6 + Math.random() * 0.9;
       el.style.fontSize = `${size}rem`;
       el.style.color = color;
       el.style.textShadow = `0 0 8px ${color}, 0 0 16px ${color}`;
@@ -49,7 +49,7 @@ export function HeroEmojiField() {
       container.appendChild(el);
 
       const angle = Math.random() * Math.PI * 2;
-      const speed = 0.3 + Math.random() * 0.8;
+      const speed = isCoarse ? 0.2 + Math.random() * 0.5 : 0.3 + Math.random() * 0.8;
 
       particles.push({
         el,
@@ -58,7 +58,7 @@ export function HeroEmojiField() {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: 24 + Math.random() * 28,
+        maxLife: isCoarse ? 18 + Math.random() * 20 : 24 + Math.random() * 28,
         size,
       });
     };
@@ -87,10 +87,6 @@ export function HeroEmojiField() {
     };
 
     const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY);
-    const onTouchMove = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      if (touch) onMove(touch.clientX, touch.clientY);
-    };
 
     const tick = () => {
       if (cancelled) return;
@@ -99,16 +95,20 @@ export function HeroEmojiField() {
       // No mobile, gera estrelas aleatórias ao redor do centro para manter a vibe
       if (isCoarse) {
         const now = performance.now();
-        if (now - lastSpawn > 180) {
+        if (now - lastSpawn > 220) {
           lastSpawn = now;
           const rect = container.getBoundingClientRect();
-          const angle = Math.random() * Math.PI * 2;
-          const r = Math.min(rect.width, rect.height) * (0.28 + Math.random() * 0.32);
-          const x = rect.width / 2 + Math.cos(angle) * r;
-          const y = rect.height / 2 + Math.sin(angle) * r;
-          spawn(x, y);
-          if (Math.random() < 0.5) spawn(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 40);
-          if (Math.random() < 0.25) spawn(x + (Math.random() - 0.5) * 70, y + (Math.random() - 0.5) * 70);
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const minDim = Math.min(rect.width, rect.height);
+          // 4 estrelas posicionadas em anéis diferentes, evitando centro
+          for (let k = 0; k < 4; k++) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = minDim * (0.25 + Math.random() * 0.35);
+            const x = centerX + Math.cos(angle) * r;
+            const y = centerY + Math.sin(angle) * r;
+            spawn(x, y);
+          }
         }
       }
 
@@ -136,9 +136,7 @@ export function HeroEmojiField() {
       }
     };
 
-    if (isCoarse) {
-      container.addEventListener("touchmove", onTouchMove, { passive: true });
-    } else {
+    if (!isCoarse) {
       container.addEventListener("mousemove", onMouseMove, { passive: true });
     }
     raf = requestAnimationFrame(tick);
@@ -146,7 +144,6 @@ export function HeroEmojiField() {
     return () => {
       cancelled = true;
       container.removeEventListener("mousemove", onMouseMove);
-      container.removeEventListener("touchmove", onTouchMove);
       cancelAnimationFrame(raf);
       particles.forEach((p) => p.el.remove());
       particles.length = 0;
