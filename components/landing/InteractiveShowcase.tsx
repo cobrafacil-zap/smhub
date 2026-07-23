@@ -179,7 +179,7 @@ export function InteractiveShowcase() {
                   "rounded-[1.5rem] border p-4 sm:p-5 flex flex-col gap-3 transition-all duration-300",
                   isActive
                     ? "border-royal-500/45 bg-bg-surface shadow-[0_0_48px_-10px_rgba(88,108,240,0.32)]"
-                    : "border-border/60 bg-bg-surface/60 group-hover:border-royal-400/40 group-hover:bg-bg-surface/80"
+                    : "border-border/60 bg-bg-surface/60 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.45)] group-hover:border-royal-400/40 group-hover:bg-bg-surface/80"
                 )}
               >
                 <div className="flex items-start gap-3">
