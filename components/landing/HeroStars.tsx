@@ -6,12 +6,21 @@ type Star = {
   x: number;
   y: number;
   size: number;
-  opacity: number;
   minOpacity: number;
   maxOpacity: number;
   phase: number;
   speed: number;
   color: string;
+};
+
+type ShootingStar = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  length: number;
 };
 
 export function HeroStars() {
@@ -28,6 +37,8 @@ export function HeroStars() {
     let width = 0;
     let height = 0;
     let stars: Star[] = [];
+    let shooting: ShootingStar | null = null;
+    let nextShooting = 0;
     let dpr = 1;
     const isDark = document.documentElement.classList.contains("dark");
 
@@ -37,7 +48,7 @@ export function HeroStars() {
 
     const createStars = () => {
       const mobile = width < 768;
-      const density = mobile ? 14000 : (isDark ? 9000 : 12000);
+      const density = mobile ? 7000 : isDark ? 9000 : 12000;
       const count = Math.floor((width * height) / density);
       stars = [];
       for (let i = 0; i < count; i++) {
@@ -46,16 +57,36 @@ export function HeroStars() {
           x: Math.random() * width,
           y: Math.random() * height,
           size: mobile
-            ? (bright ? 1.0 + Math.random() * 0.6 : 0.5 + Math.random() * 0.4)
-            : (bright ? 1.2 + Math.random() * 1.6 : 0.5 + Math.random() * 0.9),
-          opacity: Math.random(),
+            ? bright
+              ? 1.1 + Math.random() * 0.7
+              : 0.55 + Math.random() * 0.45
+            : bright
+              ? 1.2 + Math.random() * 1.6
+              : 0.5 + Math.random() * 0.9,
           minOpacity: bright ? 0.3 : 0.08,
-          maxOpacity: bright ? 0.8 : 0.35,
+          maxOpacity: bright ? 0.85 : 0.38,
           phase: Math.random() * Math.PI * 2,
           speed: 0.8 + Math.random() * 2.4,
           color: colors[Math.floor(Math.random() * colors.length)],
         });
       }
+    };
+
+    const spawnShooting = () => {
+      const startSide = Math.random() < 0.5 ? "top" : "left";
+      const x = startSide === "top" ? Math.random() * width : -60;
+      const y = startSide === "top" ? -60 : Math.random() * height * 0.6;
+      const angle = Math.PI / 4 + (Math.random() - 0.5) * 0.3;
+      const speed = 6 + Math.random() * 4;
+      shooting = {
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 0,
+        maxLife: 40 + Math.random() * 30,
+        length: 40 + Math.random() * 30,
+      };
     };
 
     const resize = () => {
@@ -76,17 +107,55 @@ export function HeroStars() {
       const now = performance.now() / 1000;
       ctx.clearRect(0, 0, width, height);
 
+      // Estrelas fixas piscando
       for (const s of stars) {
         const pulse = Math.sin(now * s.speed + s.phase);
-        s.opacity = s.minOpacity + (s.maxOpacity - s.minOpacity) * (0.5 + 0.5 * pulse);
+        const opacity = s.minOpacity + (s.maxOpacity - s.minOpacity) * (0.5 + 0.5 * pulse);
 
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
         ctx.fillStyle = s.color;
-        ctx.globalAlpha = s.opacity;
+        ctx.globalAlpha = opacity;
         ctx.shadowBlur = s.size * 4;
         ctx.shadowColor = s.color;
         ctx.fill();
+      }
+
+      // Estrela cadente rara
+      if (!shooting && now > nextShooting) {
+        spawnShooting();
+        // próxima entre 6 e 18 segundos
+        nextShooting = now + 6 + Math.random() * 12;
+      }
+
+      if (shooting) {
+        shooting.life++;
+        shooting.x += shooting.vx;
+        shooting.y += shooting.vy;
+        const progress = shooting.life / shooting.maxLife;
+        const opacity = progress < 0.15 ? progress / 0.15 : Math.max(0, 1 - (progress - 0.15) / 0.85);
+
+        const tailX = shooting.x - shooting.vx * (shooting.length / shooting.vx);
+        const tailY = shooting.y - shooting.vy * (shooting.length / shooting.vy);
+
+        const grad = ctx.createLinearGradient(shooting.x, shooting.y, tailX, tailY);
+        grad.addColorStop(0, "rgba(191, 212, 255, " + opacity + ")");
+        grad.addColorStop(1, "rgba(191, 212, 255, 0)");
+
+        ctx.beginPath();
+        ctx.moveTo(shooting.x, shooting.y);
+        ctx.lineTo(tailX, tailY);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = "round";
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "#bfd4ff";
+        ctx.stroke();
+
+        if (shooting.life >= shooting.maxLife || shooting.x > width + 100 || shooting.y > height + 100) {
+          shooting = null;
+        }
       }
 
       ctx.globalAlpha = 1;
