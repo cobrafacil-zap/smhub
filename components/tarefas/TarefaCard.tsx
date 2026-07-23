@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useTransition, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -182,7 +182,7 @@ export function TarefaCard({
           </span>
         )}
         {!vencido && tarefa.prazo && (
-          <span className="text-[10px] text-slate-400 inline-flex items-center gap-1">
+          <span className="text-[10px] text-success-400 bg-success-500/10 border border-success-500/30 rounded px-1.5 py-0.5 inline-flex items-center gap-1">
             <CalendarClock className="h-3 w-3" />
             {new Date(tarefa.prazo + "T00:00:00").toLocaleDateString("pt-BR")}
           </span>
@@ -303,25 +303,12 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
-  // Handle do setTimeout pendente de fechar o menu após um clique. Cancelado
-  // se o navegador detectar duplo-clique antes do timeout (400ms) expirar.
-  // 400ms é o limite típico de double-click em sistemas desktop — abaixo do
-  // limite, o segundo clique é consumido pelo timeout antes do navegador
-  // disparar o dblclick.
-  const pendingClose = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useLayoutEffect(() => {
     if (!open || !btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     setPos({ top: rect.bottom + 6, left: rect.left });
   }, [open]);
-
-  // Limpa timeout pendente se o componente desmontar.
-  useEffect(() => {
-    return () => {
-      if (pendingClose.current) clearTimeout(pendingClose.current);
-    };
-  }, []);
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -370,58 +357,37 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
           <>
             <div
               className="fixed inset-0 z-40"
-              onClick={() => {
-                if (pendingClose.current) {
-                  clearTimeout(pendingClose.current);
-                  pendingClose.current = null;
-                }
-                setOpen(false);
-              }}
+              onClick={() => setOpen(false)}
               aria-hidden="true"
             />
             <div
               className="fixed z-50 w-36 rounded-xl border border-border bg-bg-surface shadow-[0_16px_50px_-10px_rgba(0,0,0,0.5)] py-1.5 overflow-hidden"
               style={{ top: pos.top, left: pos.left }}
             >
-              {opcoes.map((o) => (
-                <button
-                  key={o.label}
-                  type="button"
-                  onClick={() => {
-                    // Adia o fechamento em 400ms para o navegador ter chance
-                    // de detectar duplo-clique. Se não houver segundo clique,
-                    // o timeout fecha o menu. Se houver, o onDoubleClick
-                    // cancela e limpa o prazo.
-                    if (pendingClose.current) clearTimeout(pendingClose.current);
-                    pendingClose.current = setTimeout(() => {
-                      pendingClose.current = null;
+              {opcoes.map((o) => {
+                // Clicar na opção já selecionada desativa o prazo (toggle).
+                // Não precisa de duplo-clique — basta um clique na ativa.
+                const ativo = o.value === prazo;
+                return (
+                  <button
+                    key={o.label}
+                    type="button"
+                    onClick={() => {
+                      onChange(ativo ? null : o.value);
                       setOpen(false);
-                    }, 400);
-                    onChange(o.value);
-                  }}
-                  onDoubleClick={(e) => {
-                    if (o.value === prazo) {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      if (pendingClose.current) {
-                        clearTimeout(pendingClose.current);
-                        pendingClose.current = null;
-                      }
-                      onChange(null);
-                      setOpen(false);
-                    }
-                  }}
-                  className={cn(
-                    "w-full text-left px-3 py-2.5 text-sm font-medium transition flex items-center justify-between gap-2",
-                    o.value === prazo
-                      ? "text-royal-300 bg-royal-500/10"
-                      : "text-slate-200 hover:bg-bg-muted hover:text-white"
-                  )}
-                >
-                  <span>{o.label}</span>
-                  {o.value === prazo && <Check className="h-4 w-4 shrink-0" />}
-                </button>
-              ))}
+                    }}
+                    className={cn(
+                      "w-full text-left px-3 py-2.5 text-sm font-medium transition flex items-center justify-between gap-2",
+                      ativo
+                        ? "text-royal-300 bg-royal-500/10"
+                        : "text-slate-200 hover:bg-bg-muted hover:text-white"
+                    )}
+                  >
+                    <span>{o.label}</span>
+                    {ativo && <Check className="h-4 w-4 shrink-0" />}
+                  </button>
+                );
+              })}
             </div>
           </>,
           document.body
