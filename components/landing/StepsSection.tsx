@@ -75,9 +75,9 @@ export function StepsSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20"
+      className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14"
     >
-      <div className="text-center mb-10 sm:mb-14">
+      <div className="text-center mb-8 sm:mb-10">
         <p className="text-xs text-slate-500 font-medium">Como funciona</p>
         <h2 className="text-2xl sm:text-4xl font-bold mt-2">
           Três passos pra começar
@@ -86,7 +86,7 @@ export function StepsSection() {
 
       {/* Accordion horizontal de passos */}
       <Reveal delay={100}>
-        <div className="hidden sm:flex h-[420px] gap-3 group/steps"
+        <div className="hidden sm:flex h-[260px] gap-3 group/steps"
         >
           {STEPS.map((s, i) => {
             const isActive = active === i;
@@ -110,23 +110,23 @@ export function StepsSection() {
                   }`}
                 />
 
-                <div className="relative h-full flex flex-col justify-between p-6">
+                <div className="relative h-full flex flex-col justify-between p-5">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`flex h-12 w-12 rounded-2xl items-center justify-center transition-all duration-500 bg-gradient-to-br ${s.color}`}
+                      className={`flex h-10 w-10 rounded-xl items-center justify-center transition-all duration-500 bg-gradient-to-br ${s.color}`}
                     >
-                      <Icon className="h-6 w-6 text-white" />
+                      <Icon className="h-5 w-5 text-white" />
                     </div>
-                    <span className="text-xs font-bold text-slate-500 tracking-widest">
+                    <span className="text-[10px] font-bold text-slate-500 tracking-widest">
                       {s.n}
                     </span>
                   </div>
 
                   <div className={`transition-all duration-700 ${isActive ? "opacity-100 translate-y-0" : "opacity-80 translate-y-4"}`}>
-                    <h3 className={`font-semibold text-slate-100 transition-all duration-500 ${isActive ? "text-2xl" : "text-base whitespace-nowrap [writing-mode:vertical-rl] rotate-180"}`}>
+                    <h3 className={`font-semibold text-slate-100 transition-all duration-500 ${isActive ? "text-xl" : "text-sm whitespace-nowrap [writing-mode:vertical-rl] rotate-180"}`}>
                       {s.title}
                     </h3>
-                    <p className={`text-sm text-slate-400 mt-3 leading-relaxed transition-all duration-700 ${isActive ? "opacity-100 max-h-40" : "opacity-0 max-h-0 overflow-hidden"}`}>
+                    <p className={`text-xs text-slate-400 mt-2 leading-relaxed transition-all duration-700 ${isActive ? "opacity-100 max-h-32" : "opacity-0 max-h-0 overflow-hidden"}`}>
                       {s.desc}
                     </p>
                   </div>
@@ -185,7 +185,7 @@ export function StepsSection() {
       </div>
 
       {/* Linha de progresso horizontal */}
-      <div className="mt-10 hidden sm:block">
+      <div className="mt-7 hidden sm:block">
         <div className="relative h-1 rounded-full bg-border overflow-hidden">
           <div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-royal-300 via-royal-400 to-royal-500 transition-[width] duration-100 ease-linear"
