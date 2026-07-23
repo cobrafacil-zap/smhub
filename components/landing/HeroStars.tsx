@@ -73,43 +73,32 @@ export function HeroStars() {
     };
 
     const spawnShooting = () => {
-      const side = Math.floor(Math.random() * 4); // 0=top, 1=left, 2=right, 3=top-right corner
-      let x = 0;
-      let y = 0;
-      let angle = Math.PI / 4;
+      // Origens variadas: topo, cantos, laterais, e até próximo ao centro superior
+      const origins = [
+        { label: "topo-esquerdo", x: () => Math.random() * width * 0.6, y: () => -40, angleBase: Math.PI / 4 },
+        { label: "topo-direito", x: () => width * 0.4 + Math.random() * width * 0.6, y: () => -40, angleBase: Math.PI / 3 },
+        { label: "esquerda-alta", x: () => -40, y: () => Math.random() * height * 0.35, angleBase: Math.PI / 5 },
+        { label: "esquerda-media", x: () => -40, y: () => height * 0.2 + Math.random() * height * 0.4, angleBase: Math.PI / 4 },
+        { label: "direita-alta", x: () => width + 40, y: () => Math.random() * height * 0.35, angleBase: Math.PI * 0.7 },
+        { label: "direita-media", x: () => width + 40, y: () => height * 0.2 + Math.random() * height * 0.4, angleBase: Math.PI * 0.75 },
+        { label: "canto-superior-direito", x: () => width + Math.random() * 80, y: () => -Math.random() * 50, angleBase: Math.PI * 0.65 },
+        { label: "centro-superior", x: () => width * 0.4 + Math.random() * width * 0.2, y: () => -60, angleBase: Math.PI / 4 + (Math.random() - 0.5) * 0.2 },
+      ];
+      const origin = origins[Math.floor(Math.random() * origins.length)];
 
-      switch (side) {
-        case 0: // topo
-          x = Math.random() * width;
-          y = -40;
-          angle = Math.PI / 4 + (Math.random() - 0.5) * 0.4;
-          break;
-        case 1: // esquerda
-          x = -40;
-          y = Math.random() * height * 0.5;
-          angle = Math.PI / 6 + Math.random() * 0.4;
-          break;
-        case 2: // direita
-          x = width + 40;
-          y = Math.random() * height * 0.5;
-          angle = Math.PI - Math.PI / 6 - Math.random() * 0.4;
-          break;
-        case 3: // canto superior direito
-          x = width + Math.random() * 60;
-          y = -Math.random() * 40;
-          angle = Math.PI * 0.75 + (Math.random() - 0.5) * 0.3;
-          break;
-      }
+      const x = origin.x();
+      const y = origin.y();
+      const angle = origin.angleBase + (Math.random() - 0.5) * 0.5;
+      const speed = 4.5 + Math.random() * 5.5;
 
-      const speed = 5 + Math.random() * 5;
       shooting = {
         x,
         y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: 35 + Math.random() * 35,
-        length: 30 + Math.random() * 40,
+        maxLife: 30 + Math.random() * 40,
+        length: 25 + Math.random() * 55,
       };
     };
 
@@ -145,12 +134,19 @@ export function HeroStars() {
         ctx.fill();
       }
 
-      // Estrelas cadentes em sequências com intervalos aleatórios
+      // Estrelas cadentes em sequências com intervalos imprevisíveis
       if (!shooting && now > nextShooting) {
         spawnShooting();
-        // sorteia um padrão de pausa: curta, média, longa ou dupla em sequência
-        const patterns = [1.5, 3, 7, 10, 14, 18];
-        nextShooting = now + patterns[Math.floor(Math.random() * patterns.length)] + Math.random() * 2;
+        // Sequência de pausas: curta surpresa, média, longa, duplas rápidas, silêncio
+        const patterns = [
+          1.2 + Math.random() * 1.0, // dupla rápida ~1-2s
+          2.5 + Math.random() * 2.0, // curta ~2-4s
+          5.0 + Math.random() * 2.5, // média ~5-7s
+          8.0 + Math.random() * 2.0, // longa ~8-10s
+          12.0 + Math.random() * 3.0, // mais longa ~12-15s
+          18.0 + Math.random() * 5.0, // rara ~18-23s
+        ];
+        nextShooting = now + patterns[Math.floor(Math.random() * patterns.length)];
       }
 
       if (shooting) {
