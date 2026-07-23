@@ -88,7 +88,7 @@ export function Hero3D() {
       renderer.domElement.style.display = "block";
 
       const universe = new THREE.Group();
-      universe.position.set(0, 2.35, -1.6);
+      universe.position.set(0, 2.35, -2.2);
       scene.add(universe);
 
       // Iluminação ambiente + neon sutil
@@ -100,8 +100,8 @@ export function Hero3D() {
       neonLight.position.set(0, -2, 2);
       scene.add(neonLight);
 
-      // Anel central orbitando o SM Hub (visível ao redor do logo)
-      const ringGeo = new THREE.TorusGeometry(2.0, 0.032, 20, 120);
+      // Anel central orbitando o SM Hub — maior que o logo
+      const ringGeo = new THREE.TorusGeometry(2.6, 0.036, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x7486ff,
         transparent: true,
@@ -154,9 +154,9 @@ export function Hero3D() {
         nodes.push({
           sprite,
           glow,
-          r: 2.3 + (i % 2) * 0.45,
-          speed: 0.05 + (i % 2) * 0.03,
-          tilt: i * 0.8,
+          r: 2.9 + (i % 2) * 0.55,
+          speed: 0.04 + (i % 2) * 0.025,
+          tilt: i * 0.7,
           phase: i * (Math.PI * 2 / ICON_SVGS.length),
         });
       }
