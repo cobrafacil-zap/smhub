@@ -158,27 +158,6 @@ export function Hero3D() {
       const orbitParticles = new THREE.Points(orbitGeo, orbitMat);
       universe.add(orbitParticles);
 
-      // Raio de neon correndo ao redor do anel (por fora) — desativado no mobile
-      let ray: ThreeTypes.Points | null = null;
-      let rayGeo: ThreeTypes.BufferGeometry | null = null;
-      let rayMat: ThreeTypes.PointsMaterial | null = null;
-      let rayProgress = { value: 0 };
-      const RAY_SEGMENTS = 80;
-      if (!isMobile) {
-        rayGeo = new THREE.BufferGeometry();
-        const rayPos = new Float32Array(RAY_SEGMENTS * 3);
-        rayGeo.setAttribute("position", new THREE.BufferAttribute(rayPos, 3));
-        rayMat = new THREE.PointsMaterial({
-          color: isDark ? 0xbfd4ff : 0x4f5bff,
-          size: 0.26,
-          transparent: true,
-          opacity: isDark ? 0.85 : 0.75,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        });
-        ray = new THREE.Points(rayGeo, rayMat);
-        universe.add(ray);
-      }
 
       // Ícones orbitando
       const iconStroke = isDark ? "#AEB9D6" : "#4a5d8a";
@@ -354,10 +333,16 @@ export function Hero3D() {
         universe.rotation.x = curRot.x + 0.55 + Math.sin(t * 0.08) * 0.05;
         universe.rotation.y = curRot.y + t * 0.035;
 
-        // Giro contínuo do anel sobre seu próprio eixo + pulsar
+        // Giro contínuo do anel sobre seu próprio eixo + pulso aleatório de glow
         ring.rotation.z += 0.018;
-        ringMat.opacity = 0.28 + Math.sin(t * 1.2) * 0.07;
-        ringShadow.material.opacity = 0.12 + Math.sin(t * 1.2 + 0.6) * 0.05;
+        // Pulso de brilho no anel interno azul: disparos aleatórios de curta duração
+        const pulseBase = isDark ? 0.28 : 0.42;
+        const pulseIntensity = 0.22;
+        const pulseSpeed = 1.8;
+        const pulseTrigger = Math.sin(t * pulseSpeed + Math.sin(t * 0.7) * 2.5);
+        const pulse = Math.pow(Math.max(0, pulseTrigger), 3.5);
+        ringMat.opacity = pulseBase + pulse * pulseIntensity;
+        ringShadow.material.opacity = (isMobile ? 0.06 : (isDark ? 0.12 : 0.08)) + pulse * 0.08;
 
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
@@ -404,23 +389,6 @@ export function Hero3D() {
         ring.rotation.x = Math.PI / 2 + Math.sin(t * 0.35) * 0.08;
         ringShadow.rotation.x = ring.rotation.x;
 
-        // Raio de neon correndo ao redor do anel (só no desktop)
-        if (ray && rayGeo && rayMat) {
-          rayProgress.value += 0.008 + Math.sin(t * 0.4) * 0.002;
-          const rayR = 2.92 + Math.sin(t * 0.6) * 0.03;
-          const rayPos = rayGeo.attributes.position.array as Float32Array;
-          for (let i = 0; i < RAY_SEGMENTS; i++) {
-            const angle = rayProgress.value + (i / RAY_SEGMENTS) * Math.PI * 2;
-            const tail = Math.max(0, 1 - i / (RAY_SEGMENTS * 0.18));
-            rayPos[i * 3] = rayR * Math.cos(angle);
-            rayPos[i * 3 + 1] = -0.02 + Math.sin(angle * 2 + t) * 0.03;
-            rayPos[i * 3 + 2] = rayR * Math.sin(angle);
-            rayMat.opacity = 0.2 + tail * 0.8;
-            rayMat.size = 0.2 + tail * 0.22;
-          }
-          rayGeo.attributes.position.needsUpdate = true;
-        }
-
         renderer.render(scene, camera);
       };
 
@@ -458,8 +426,6 @@ export function Hero3D() {
         shadowMat.dispose();
         orbitGeo.dispose();
         orbitMat.dispose();
-        rayGeo?.dispose();
-        rayMat?.dispose();
         nodes.forEach((n) => {
           const spriteMat = n.sprite.material as ThreeTypes.SpriteMaterial;
           spriteMat.map?.dispose();
