@@ -108,8 +108,12 @@ export default async function TarefasPage({
   // - Período atual (que contém hoje): inclui também as atrasadas e tarefas
   //   sem prazo — pra não se perderem ao navegar.
   // - Outros períodos: só tarefas com prazo dentro do intervalo.
-  const visiveis = itens.filter((t) =>
-    prazoDentroPeriodo(t.prazo, inicio, fim, contemHoje)
+  // - Tarefas já entregues sempre ficam visíveis (histórico): independente
+  //   do período, queremos ver o que já saiu. O prazo gravado na entrega é
+  //   a data do movimento, que pode estar fora do período que o usuário
+  //   está inspecionando agora.
+  const visiveis = itens.filter(
+    (t) => t.status === "entregue" || prazoDentroPeriodo(t.prazo, inicio, fim, contemHoje)
   );
 
   // Membros ativos para atribuição (exclui clientes — eles não recebem tarefas)
