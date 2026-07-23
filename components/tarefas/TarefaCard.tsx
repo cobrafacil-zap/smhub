@@ -342,7 +342,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute z-40 left-0 top-full mt-1.5 w-36 rounded-xl border border-border bg-bg-surface dark:bg-bg-elevated shadow-[0_12px_40px_-8px_rgba(15,23,42,0.22)] dark:shadow-elevated py-1.5 overflow-hidden">
+          <div className="absolute z-40 left-0 top-full mt-1.5 w-36 rounded-xl border border-border bg-bg-surface shadow-[0_16px_50px_-10px_rgba(15,23,42,0.35)] py-1.5 overflow-hidden">
             {opcoes.map((o) => (
               <button
                 key={o.label}
