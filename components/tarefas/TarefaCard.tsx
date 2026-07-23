@@ -349,7 +349,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onChange(o.value);
+                  onChange(o.value === prazo ? null : o.value);
                   setOpen(false);
                 }}
                 className={cn(
