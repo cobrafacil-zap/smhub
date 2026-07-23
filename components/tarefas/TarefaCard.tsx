@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn, initials } from "@/lib/utils";
@@ -353,13 +353,14 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
                   setOpen(false);
                 }}
                 className={cn(
-                  "w-full text-left px-3 py-2.5 text-sm font-medium transition",
+                  "w-full text-left px-3 py-2.5 text-sm font-medium transition flex items-center justify-between gap-2",
                   o.value === prazo
                     ? "text-royal-300 bg-royal-500/10"
                     : "text-slate-200 hover:bg-bg-muted hover:text-white dark:hover:bg-bg-surface"
                 )}
               >
-                {o.label}
+                <span>{o.label}</span>
+                {o.value === prazo && <Check className="h-4 w-4 shrink-0" />}
               </button>
             ))}
           </div>
