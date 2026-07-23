@@ -157,6 +157,13 @@ export async function atualizarTarefaAction(
 
 // ============================================================================
 // MOVER (mudar status = coluna do kanban)
+//
+// Quando a tarefa vai para "entregue", gravamos `prazo = hoje` (data local em
+// YYYY-MM-DD). Assim o card registra quando foi efetivamente concluído, e o
+// destaque "Vencido" (que só aparece para status != "entregue") some
+// naturalmente. Mover de volta para outro status NÃO limpa o prazo — o dado
+// fica preservado para histórico; se o usuário quiser ajustar, ele mexe no
+// dropdown de prazo.
 // ============================================================================
 export async function moverTarefaAction(id: string, status: string): Promise<TarefaState> {
   const session = await requireAgenciaMember();
@@ -167,9 +174,20 @@ export async function moverTarefaAction(id: string, status: string): Promise<Tar
     return { error: "Status inválido." };
   }
 
+  const update: { status: TarefaStatus; prazo?: string } = {
+    status: status as TarefaStatus,
+  };
+  if (status === "entregue") {
+    const hoje = new Date();
+    const y = hoje.getFullYear();
+    const m = String(hoje.getMonth() + 1).padStart(2, "0");
+    const d = String(hoje.getDate()).padStart(2, "0");
+    update.prazo = `${y}-${m}-${d}`;
+  }
+
   const { error } = await supabase
     .from("tarefas")
-    .update({ status: status as TarefaStatus })
+    .update(update)
     .eq("id", id)
     .eq("agencia_id", aid);
   if (error) return { error: "Erro ao mover tarefa." };

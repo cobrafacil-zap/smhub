@@ -377,6 +377,17 @@
     opacity: 1;
     transform: translateY(0);
   }
+  /* Aplicada via JS logo após a transição terminar (Reveal.tsx agenda um
+     setTimeout). Zera transform/will-change para destruir o stacking context
+     que esses dois criam — sem isso, qualquer `position: fixed` descendente
+     (portais de dropdown/menu) fica preso no contexto deste nó e o conteúdo
+     dos cards vizinhos vaza pelo menu. Também tira a transição pra não
+     animar o "transform: none" (estaria escutando mudanças de transform). */
+  .reveal-done {
+    transform: none;
+    will-change: auto;
+    transition: none;
+  }
 
   /* Ambiente — blobs de aurora (LP) ---------------------------------- */
   .aurora-blob {

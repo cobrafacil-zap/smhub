@@ -3,6 +3,13 @@
 import { useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+// Duração da transição em ms (deve bater com .reveal em globals.css). Folga
+// de 50ms para garantir que a transição terminou antes de remover o transform
+// e o will-change — caso contrário, o navegador ainda pode tratar o nó como
+// "animando" e segurar o stacking context que o transform cria.
+const REVEAL_TRANSITION_MS = 500;
+const REVEAL_CLEANUP_FOLGA_MS = 50;
+
 /**
  * Reveal — fade/slide-in suave quando o elemento entra na viewport.
  *
@@ -58,6 +65,13 @@ export function Reveal({
   const Tag = (as ?? "div") as ElementType;
   const ref = useRef<HTMLElement | null>(null);
   const [inView, setInView] = useState(false);
+  // Marca "animação já terminou" — quando true, removemos o `transform` e o
+  // `will-change` residuais para que o nó deixe de criar um stacking context.
+  // Crítico para portais/tooltips/dropdowns posicionados com `position: fixed`
+  // dentro do Reveal: enquanto houver transform, o fixed vira relativo a este
+  // ancestral e o menu fica preso entre cards vizinhos (vazamento de fundo).
+  const [done, setDone] = useState(false);
+  const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -68,31 +82,48 @@ export function Reveal({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
       setInView(true);
+      setDone(true);
       return;
     }
     const obs = getObserver();
     callbacks.set(el, (visible) => {
       if (visible) {
         setInView(true);
+        // Agenda a remoção do transform/will-change logo após a transição
+        // terminar. Cancela timer anterior se ainda estiver pendente.
+        if (doneTimer.current) clearTimeout(doneTimer.current);
+        doneTimer.current = setTimeout(
+          () => setDone(true),
+          delay + REVEAL_TRANSITION_MS + REVEAL_CLEANUP_FOLGA_MS
+        );
         if (once) {
           obs.unobserve(el);
           callbacks.delete(el);
         }
       } else if (!once) {
         setInView(false);
+        setDone(false);
+        if (doneTimer.current) {
+          clearTimeout(doneTimer.current);
+          doneTimer.current = null;
+        }
       }
     });
     obs.observe(el);
     return () => {
+      if (doneTimer.current) {
+        clearTimeout(doneTimer.current);
+        doneTimer.current = null;
+      }
       obs.unobserve(el);
       callbacks.delete(el);
     };
-  }, [once]);
+  }, [once, delay]);
 
   return (
     <Tag
       ref={ref}
-      className={cn("reveal", inView && "reveal-in", className)}
+      className={cn("reveal", inView && "reveal-in", done && "reveal-done", className)}
       style={{ transitionDelay: `${delay}ms`, ...style }}
     >
       {children}

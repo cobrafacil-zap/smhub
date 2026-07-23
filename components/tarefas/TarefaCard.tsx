@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -300,6 +301,14 @@ export function TarefaCard({
 
 function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p: string | null) => void }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    setPos({ top: rect.bottom + 6, left: rect.left });
+  }, [open]);
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -329,6 +338,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
   return (
     <div className="relative">
       <button
+        ref={btnRef}
         type="button"
         onClick={(e) => {
           e.stopPropagation();
@@ -339,33 +349,43 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
       >
         <CalendarDays className="h-3.5 w-3.5" /> {ativo}
       </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute z-40 left-0 top-full mt-1.5 w-36 rounded-xl border border-border bg-bg-surface shadow-[0_16px_50px_-10px_rgba(15,23,42,0.35)] py-1.5 overflow-hidden">
-            {opcoes.map((o) => (
-              <button
-                key={o.label}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange(o.value === prazo ? null : o.value);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "w-full text-left px-3 py-2.5 text-sm font-medium transition flex items-center justify-between gap-2",
-                  o.value === prazo
-                    ? "text-royal-300 bg-royal-500/10"
-                    : "text-slate-200 hover:bg-bg-muted hover:text-white dark:hover:bg-bg-surface"
-                )}
-              >
-                <span>{o.label}</span>
-                {o.value === prazo && <Check className="h-4 w-4 shrink-0" />}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      {open &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              className="fixed z-50 w-36 rounded-xl border border-border bg-bg-surface shadow-[0_16px_50px_-10px_rgba(0,0,0,0.5)] py-1.5 overflow-hidden"
+              style={{ top: pos.top, left: pos.left }}
+            >
+              {opcoes.map((o) => (
+                <button
+                  key={o.label}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onChange(o.value === prazo ? null : o.value);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2.5 text-sm font-medium transition flex items-center justify-between gap-2",
+                    o.value === prazo
+                      ? "text-royal-300 bg-royal-500/10"
+                      : "text-slate-200 hover:bg-bg-muted hover:text-white"
+                  )}
+                >
+                  <span>{o.label}</span>
+                  {o.value === prazo && <Check className="h-4 w-4 shrink-0" />}
+                </button>
+              ))}
+            </div>
+          </>,
+          document.body
+        )
+      }
     </div>
   );
 }
