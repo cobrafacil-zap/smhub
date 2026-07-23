@@ -174,6 +174,9 @@ export function FeaturesTimeline() {
                   data-timeline-item
                   className="relative md:grid md:grid-cols-[1fr_auto_1fr] md:items-center min-h-[120px] md:min-h-[140px]"
                 >
+                  {/* Círculo base da linha por trás */}
+                  <div className="absolute top-1/2 -translate-y-1/2 z-[1] flex h-11 w-11 rounded-full bg-bg-surface md:left-1/2 md:-translate-x-1/2 left-4" />
+
                   {/* Marcador — acima das linhas */}
                   <div
                     className={`absolute top-1/2 -translate-y-1/2 z-10 flex h-11 w-11 rounded-full border transition-all duration-500 items-center justify-center md:left-1/2 md:-translate-x-1/2 left-4 ${
