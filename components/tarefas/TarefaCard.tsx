@@ -182,7 +182,14 @@ export function TarefaCard({
           </span>
         )}
         {!vencido && tarefa.prazo && (
-          <span className="text-[10px] text-success-400 bg-success-500/10 border border-success-500/30 rounded px-1.5 py-0.5 inline-flex items-center gap-1">
+          <span
+            className={cn(
+              "text-[10px] rounded px-1.5 py-0.5 inline-flex items-center gap-1 border",
+              tarefa.status === "entregue"
+                ? "text-success-400 bg-success-500/10 border-success-500/30"
+                : "text-slate-400 bg-bg-elevated border-border"
+            )}
+          >
             <CalendarClock className="h-3 w-3" />
             {new Date(tarefa.prazo + "T00:00:00").toLocaleDateString("pt-BR")}
           </span>
