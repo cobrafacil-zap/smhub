@@ -89,7 +89,7 @@ export function Hero3D() {
       renderer.domElement.style.display = "block";
 
       const universe = new THREE.Group();
-      universe.position.set(0, isMobile ? 3.65 : 2.45, isMobile ? -1.6 : -2.2);
+      universe.position.set(0, isMobile ? 3.65 : 2.75, isMobile ? -1.6 : -2.2);
       scene.add(universe);
 
       // Iluminação ambiente + neon sutil
@@ -288,7 +288,7 @@ export function Hero3D() {
         universe.rotation.y = curRot.y + t * 0.035;
 
         // Giro contínuo do anel sobre seu próprio eixo + pulsar
-        ring.rotation.z += 0.003;
+        ring.rotation.z += 0.012;
         ringMat.opacity = 0.25 + Math.sin(t * 0.8) * 0.05;
 
         for (let i = 0; i < nodes.length; i++) {
