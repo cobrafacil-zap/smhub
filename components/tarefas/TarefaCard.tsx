@@ -370,7 +370,14 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onChange(o.value);
+                    // Clique duplo na opção já ativa volta ao estado neutro
+                    // (sem prazo). Útil para limpar a marcação sem ter que
+                    // abrir o TarefaDialog.
+                    if (e.detail >= 2 && o.value === prazo) {
+                      onChange(null);
+                    } else {
+                      onChange(o.value);
+                    }
                     setOpen(false);
                   }}
                   className={cn(
