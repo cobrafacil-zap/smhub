@@ -140,7 +140,7 @@ export function FeaturesTimeline() {
         {/* Track base — segmentos entre marcadores */}
         {markerPositions.slice(0, -1).map((pos, i) => {
           const next = markerPositions[i + 1];
-          const gap = 4; // % de espaço reservado ao redor do marcador
+          const gap = 7; // % de espaço reservado ao redor do marcador
           const top = `${pos + gap}%`;
           const height = `${next - pos - gap * 2}%`;
           return (
@@ -156,7 +156,7 @@ export function FeaturesTimeline() {
 
         {markerPositions.slice(0, -1).map((pos, i) => {
           const next = markerPositions[i + 1];
-          const gap = 4;
+          const gap = 7;
           const top = `${pos + gap}%`;
           const height = `${next - pos - gap * 2}%`;
           return (
@@ -173,7 +173,7 @@ export function FeaturesTimeline() {
         {/* Progresso neon — segmentos entre marcadores */}
         {markerPositions.slice(0, -1).map((pos, i) => {
           const next = markerPositions[i + 1];
-          const gap = 4;
+          const gap = 7;
           const segStart = (i / (total - 1));
           const segEnd = ((i + 1) / (total - 1));
           const segProgress = Math.max(0, Math.min(1, (progress - segStart) / (segEnd - segStart)));
@@ -192,7 +192,7 @@ export function FeaturesTimeline() {
 
         {markerPositions.slice(0, -1).map((pos, i) => {
           const next = markerPositions[i + 1];
-          const gap = 4;
+          const gap = 7;
           const segStart = (i / (total - 1));
           const segEnd = ((i + 1) / (total - 1));
           const segProgress = Math.max(0, Math.min(1, (progress - segStart) / (segEnd - segStart)));
