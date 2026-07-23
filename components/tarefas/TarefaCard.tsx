@@ -241,7 +241,9 @@ export function TarefaCard({
       </div>
 
       {/* Mudar prazo rápido */}
-      <PrazoDropdown prazo={tarefa.prazo} onChange={mudarPrazo} />
+      <div onClick={stop} onMouseDown={stop}>
+        <PrazoDropdown prazo={tarefa.prazo} onChange={mudarPrazo} />
+      </div>
 
       {/* Ações */}
       <div className="flex items-center justify-end gap-1">
@@ -328,27 +330,33 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
-        className="text-[10px] text-slate-400 hover:text-slate-200 inline-flex items-center gap-1 py-1"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+        className="text-[11px] text-slate-200 hover:text-white inline-flex items-center gap-1 py-1 px-1.5 -ml-1.5 rounded-md hover:bg-bg-elevated transition"
         title="Mudar prazo"
       >
-        <CalendarDays className="h-3 w-3" /> {ativo}
+        <CalendarDays className="h-3.5 w-3.5" /> {ativo}
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute z-20 left-0 top-full mt-1 w-28 rounded-lg border border-border bg-bg-elevated shadow-elevated py-1">
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute z-40 left-0 top-full mt-1 w-32 rounded-lg border border-border bg-bg-elevated shadow-elevated py-1">
             {opcoes.map((o) => (
               <button
                 key={o.label}
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   onChange(o.value);
                   setOpen(false);
                 }}
                 className={cn(
-                  "w-full text-left px-2.5 py-1.5 text-xs hover:bg-bg-surface transition",
-                  o.value === prazo ? "text-royal-300" : "text-slate-300"
+                  "w-full text-left px-3 py-2 text-xs font-medium transition",
+                  o.value === prazo
+                    ? "text-royal-300 bg-royal-500/10"
+                    : "text-slate-200 hover:bg-bg-surface hover:text-white"
                 )}
               >
                 {o.label}
