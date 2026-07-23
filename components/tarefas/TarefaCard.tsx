@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useLayoutEffect } from "react";
+import { useState, useTransition, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -303,12 +303,22 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
+  // Handle do setTimeout pendente de fechar o menu após um clique. Cancelado
+  // se o navegador detectar duplo-clique antes do timeout (250ms) expirar.
+  const pendingClose = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useLayoutEffect(() => {
     if (!open || !btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     setPos({ top: rect.bottom + 6, left: rect.left });
   }, [open]);
+
+  // Limpa timeout pendente se o componente desmontar.
+  useEffect(() => {
+    return () => {
+      if (pendingClose.current) clearTimeout(pendingClose.current);
+    };
+  }, []);
 
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -357,7 +367,13 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
           <>
             <div
               className="fixed inset-0 z-40"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                if (pendingClose.current) {
+                  clearTimeout(pendingClose.current);
+                  pendingClose.current = null;
+                }
+                setOpen(false);
+              }}
               aria-hidden="true"
             />
             <div
@@ -368,17 +384,28 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
                 <button
                   key={o.label}
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Clique duplo na opção já ativa volta ao estado neutro
-                    // (sem prazo). Útil para limpar a marcação sem ter que
-                    // abrir o TarefaDialog.
-                    if (e.detail >= 2 && o.value === prazo) {
+                  onClick={() => {
+                    // Adia o fechamento em 250ms para o navegador ter chance
+                    // de detectar duplo-clique. Se não houver segundo clique,
+                    // o timeout fecha o menu. Se houver, o onDoubleClick
+                    // cancela e limpa o prazo.
+                    if (pendingClose.current) clearTimeout(pendingClose.current);
+                    pendingClose.current = setTimeout(() => {
+                      pendingClose.current = null;
+                      setOpen(false);
+                    }, 250);
+                    onChange(o.value);
+                  }}
+                  onDoubleClick={(e) => {
+                    if (o.value === prazo) {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      if (pendingClose.current) {
+                        clearTimeout(pendingClose.current);
+                        pendingClose.current = null;
+                      }
                       onChange(null);
-                    } else {
-                      onChange(o.value);
                     }
-                    setOpen(false);
                   }}
                   className={cn(
                     "w-full text-left px-3 py-2.5 text-sm font-medium transition flex items-center justify-between gap-2",
