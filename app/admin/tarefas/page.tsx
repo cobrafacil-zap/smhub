@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { KanbanBoard } from "@/components/tarefas/KanbanBoard";
 import { TarefasPeriodoNav } from "@/components/tarefas/TarefasPeriodoNav";
-import { periodoRef, prazoDentroPeriodo, type Periodo } from "@/lib/planejamento";
+import { prazoDentroJanelaDuasSemanas, periodoRef, type Periodo } from "@/lib/planejamento";
 import type { TarefaStatus, TarefaPrioridade } from "@/types/database";
 
 export const metadata = { title: "Tarefas" };
@@ -104,9 +104,10 @@ export default async function TarefasPage({
     };
   });
 
-  // Filtro pelo período selecionado (semana/mês). No período atual, inclui
-  // também as atrasadas. Ao navegar pra outro período, só o intervalo dele.
-  const visiveis = itens.filter((t) => prazoDentroPeriodo(t.prazo, inicio, fim, contemHoje));
+  // Exibe todas as tarefas dentro da janela de duas semanas a partir de hoje,
+  // independentemente da semana/data selecionada no calendário. A navegação de
+  // período serve apenas como referência/previsão; o prazo é uma marcação.
+  const visiveis = itens.filter((t) => prazoDentroJanelaDuasSemanas(t.prazo, hoje));
 
   // Membros ativos para atribuição (exclui clientes — eles não recebem tarefas)
   const { data: membrosRaw } = await supabase
