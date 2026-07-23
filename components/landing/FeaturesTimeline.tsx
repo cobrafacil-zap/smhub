@@ -174,17 +174,26 @@ export function FeaturesTimeline() {
                   data-timeline-item
                   className="relative md:grid md:grid-cols-[1fr_auto_1fr] md:items-center min-h-[120px] md:min-h-[140px]"
                 >
-                  {/* Círculo base da linha por trás */}
+                  {/* Círculo base da linha por trás (mascara a linha no centro do marcador) */}
                   <div className="absolute top-1/2 -translate-y-1/2 z-[1] flex h-11 w-11 rounded-full bg-bg-surface left-16 -translate-x-1/2 md:left-1/2 md:-translate-x-1/2" />
 
-                  {/* Marcador — acima das linhas */}
+                  {/* Borda do marcador — acima da linha */}
                   <div
-                    className={`absolute top-1/2 -translate-y-1/2 z-10 flex h-11 w-11 rounded-full border transition-all duration-500 items-center justify-center left-16 -translate-x-1/2 md:left-1/2 md:-translate-x-1/2 ${
+                    className={`absolute top-1/2 -translate-y-1/2 z-[6] flex h-11 w-11 rounded-full border transition-all duration-500 items-center justify-center left-16 -translate-x-1/2 md:left-1/2 md:-translate-x-1/2 ${
                       isActive
-                        ? "border-royal-300/70 bg-royal-500/20 shadow-[0_0_30px_-4px_rgba(116,134,255,0.65)]"
-                        : "border-royal-500/30 bg-bg-surface shadow-[0_0_24px_-8px_rgba(88,108,240,0.35)]"
+                        ? "border-royal-300/70 shadow-[0_0_30px_-4px_rgba(116,134,255,0.65)]"
+                        : "border-royal-500/30 shadow-[0_0_24px_-8px_rgba(88,108,240,0.35)]"
                     }`}
                   >
+                    <div
+                      className={`absolute inset-[3px] rounded-full transition-all duration-500 ${
+                        isActive ? "bg-royal-500/20" : "bg-bg-surface"
+                      }`}
+                    />
+                  </div>
+
+                  {/* Ícone — sempre no topo */}
+                  <div className="absolute top-1/2 -translate-y-1/2 z-10 flex h-11 w-11 items-center justify-center left-16 -translate-x-1/2 md:left-1/2 md:-translate-x-1/2">
                     <f.icon
                       className={`h-5 w-5 transition-colors duration-500 ${
                         isActive ? "text-royal-200" : "text-royal-300"
