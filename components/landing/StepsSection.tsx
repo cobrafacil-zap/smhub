@@ -75,18 +75,18 @@ export function StepsSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14"
+      className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12"
     >
-      <div className="text-center mb-8 sm:mb-10">
+      <div className="text-center mb-6 sm:mb-8">
         <p className="text-xs text-slate-500 font-medium">Como funciona</p>
-        <h2 className="text-2xl sm:text-4xl font-bold mt-2">
+        <h2 className="text-2xl sm:text-3xl font-bold mt-1.5">
           Três passos pra começar
         </h2>
       </div>
 
       {/* Accordion horizontal de passos */}
       <Reveal delay={100}>
-        <div className="hidden sm:flex h-[260px] gap-3 group/steps"
+        <div className="hidden sm:flex h-[200px] gap-3 group/steps"
         >
           {STEPS.map((s, i) => {
             const isActive = active === i;
@@ -110,12 +110,12 @@ export function StepsSection() {
                   }`}
                 />
 
-                <div className="relative h-full flex flex-col justify-between p-5">
-                  <div className="flex items-center gap-3">
+                <div className="relative h-full flex flex-col justify-between p-4">
+                  <div className="flex items-center gap-2.5">
                     <div
-                      className={`flex h-10 w-10 rounded-xl items-center justify-center transition-all duration-500 bg-gradient-to-br ${s.color}`}
+                      className={`flex h-9 w-9 rounded-lg items-center justify-center transition-all duration-500 bg-gradient-to-br ${s.color}`}
                     >
-                      <Icon className="h-5 w-5 text-white" />
+                      <Icon className="h-4 w-4 text-white" />
                     </div>
                     <span className="text-[10px] font-bold text-slate-500 tracking-widest">
                       {s.n}
@@ -123,10 +123,10 @@ export function StepsSection() {
                   </div>
 
                   <div className={`transition-all duration-700 ${isActive ? "opacity-100 translate-y-0" : "opacity-80 translate-y-4"}`}>
-                    <h3 className={`font-semibold text-slate-100 transition-all duration-500 ${isActive ? "text-xl" : "text-sm whitespace-nowrap [writing-mode:vertical-rl] rotate-180"}`}>
+                    <h3 className={`font-semibold text-slate-100 transition-all duration-500 ${isActive ? "text-lg" : "text-xs whitespace-nowrap [writing-mode:vertical-rl] rotate-180"}`}>
                       {s.title}
                     </h3>
-                    <p className={`text-xs text-slate-400 mt-2 leading-relaxed transition-all duration-700 ${isActive ? "opacity-100 max-h-32" : "opacity-0 max-h-0 overflow-hidden"}`}>
+                    <p className={`text-[11px] text-slate-400 mt-1.5 leading-relaxed transition-all duration-700 ${isActive ? "opacity-100 max-h-28" : "opacity-0 max-h-0 overflow-hidden"}`}>
                       {s.desc}
                     </p>
                   </div>
