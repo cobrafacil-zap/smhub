@@ -203,6 +203,34 @@ export async function arquivarTarefaAction(
 }
 
 // ============================================================================
+// ALTERAR PRAZO RÁPIDO (kanban)
+// ============================================================================
+export async function alterarPrazoTarefaAction(
+  id: string,
+  prazo: string | null
+): Promise<TarefaState> {
+  const session = await requireAgenciaMember();
+  const supabase = createClient();
+  const aid = session.profile.agencia_id!;
+
+  // Aceita YYYY-MM-DD ou null (sem prazo)
+  if (prazo && !/^\d{4}-\d{2}-\d{2}$/.test(prazo)) {
+    return { error: "Data de prazo inválida." };
+  }
+
+  const { error } = await supabase
+    .from("tarefas")
+    .update({ prazo })
+    .eq("id", id)
+    .eq("agencia_id", aid);
+  if (error) return { error: "Erro ao alterar prazo da tarefa." };
+
+  revalidatePath("/admin/tarefas");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+// ============================================================================
 // EXCLUIR (só criador ou admin)
 // ============================================================================
 export async function deletarTarefaAction(id: string): Promise<TarefaState> {

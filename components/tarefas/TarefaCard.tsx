@@ -1,11 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock } from "lucide-react";
+import { useState, useTransition } from "react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn, initials } from "@/lib/utils";
-import { moverTarefaAction, deletarTarefaAction, arquivarTarefaAction } from "@/lib/actions/tarefa-actions";
+import { moverTarefaAction, deletarTarefaAction, arquivarTarefaAction, alterarPrazoTarefaAction } from "@/lib/actions/tarefa-actions";
 import type { TarefaItem } from "@/app/admin/tarefas/page";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -112,6 +112,12 @@ export function TarefaCard({
   function excluir() {
     startTransition(async () => {
       await deletarTarefaAction(tarefa.id);
+    });
+  }
+
+  function mudarPrazo(novoPrazo: string | null) {
+    startTransition(async () => {
+      await alterarPrazoTarefaAction(tarefa.id, novoPrazo);
     });
   }
 
@@ -234,6 +240,9 @@ export function TarefaCard({
         </button>
       </div>
 
+      {/* Mudar prazo rápido */}
+      <PrazoDropdown prazo={tarefa.prazo} onChange={mudarPrazo} />
+
       {/* Ações */}
       <div className="flex items-center justify-end gap-1">
         {podeEditar && (
@@ -283,6 +292,71 @@ export function TarefaCard({
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p: string | null) => void }) {
+  const [open, setOpen] = useState(false);
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const fmt = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+  const add = (dias: number) => {
+    const d = new Date(hoje);
+    d.setDate(d.getDate() + dias);
+    return fmt(d);
+  };
+
+  const opcoes = [
+    { label: "Hoje", value: add(0) },
+    { label: "Amanhã", value: add(1) },
+    { label: "+2 dias", value: add(2) },
+    { label: "+3 dias", value: add(3) },
+    { label: "+7 dias", value: add(7) },
+    { label: "Sem data", value: null },
+  ];
+
+  const ativo = opcoes.find((o) => o.value === prazo)?.label ?? "Prazo";
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="text-[10px] text-slate-400 hover:text-slate-200 inline-flex items-center gap-1 py-1"
+        title="Mudar prazo"
+      >
+        <CalendarDays className="h-3 w-3" /> {ativo}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute z-20 left-0 top-full mt-1 w-28 rounded-lg border border-border bg-bg-elevated shadow-elevated py-1">
+            {opcoes.map((o) => (
+              <button
+                key={o.label}
+                type="button"
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full text-left px-2.5 py-1.5 text-xs hover:bg-bg-surface transition",
+                  o.value === prazo ? "text-royal-300" : "text-slate-300"
+                )}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -45,6 +45,8 @@ export function KanbanBoard({
   const [visualizando, setVisualizando] = useState<TarefaItem | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<TarefaStatus | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const LIMITE_VISIVEL = 9;
   const [, startTransition] = useTransition();
 
   const filtradas = useMemo(() => {
@@ -296,6 +298,12 @@ export function KanbanBoard({
                     let index = 0;
                     return ORDEM_FAIXA.filter((faixa) => grupos[faixa]?.length).map((faixa) => {
                       const lista = grupos[faixa];
+                      const groupKey = `${col.status}__${faixa}`;
+                      const expandido = expandedGroups.has(groupKey);
+                      const total = lista.length;
+                      const visiveis = expandido ? lista : lista.slice(0, LIMITE_VISIVEL);
+                      const ocultos = total - visiveis.length;
+
                       const faixaColor =
                         faixa === "Atrasado"
                           ? "text-danger-400 bg-danger-500/10 border-danger-500/30"
@@ -308,12 +316,27 @@ export function KanbanBoard({
                         <div key={faixa} className="space-y-1">
                           <div className={`text-[10px] font-semibold uppercase tracking-wider rounded-md border px-2 py-1 flex items-center justify-between ${faixaColor}`}>
                             <span>{faixa}</span>
-                            <span>{lista.length}</span>
+                            <span>{total}</span>
                           </div>
-                          {renderCards(lista, index)}
+                          {renderCards(visiveis, index)}
+                          {ocultos > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full text-xs text-slate-400 hover:text-slate-200"
+                              onClick={() => {
+                                const next = new Set(expandedGroups);
+                                if (next.has(groupKey)) next.delete(groupKey);
+                                else next.add(groupKey);
+                                setExpandedGroups(next);
+                              }}
+                            >
+                              {expandido ? `Ver menos` : `+ ${ocultos} tarefa${ocultos > 1 ? "s" : ""}`}
+                            </Button>
+                          )}
                         </div>
                       );
-                      index += lista.length;
+                      index += visiveis.length;
                       return component;
                     });
                   })()}
