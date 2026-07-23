@@ -58,7 +58,7 @@ export function HeroEmojiField() {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: 40 + Math.random() * 40,
+        maxLife: 24 + Math.random() * 28,
         size,
       });
     };
@@ -71,14 +71,17 @@ export function HeroEmojiField() {
       lastY = y;
 
       const now = performance.now();
-      if (now - lastSpawn > 120) {
+      if (now - lastSpawn > 50) {
         lastSpawn = now;
         // Só cria se estiver na área de fundo (evita poluir o texto central).
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
         const distFromCenter = Math.hypot(x - centerX, y - centerY);
-        if (distFromCenter > Math.min(rect.width, rect.height) * 0.22) {
+        if (distFromCenter > Math.min(rect.width, rect.height) * 0.18) {
           spawn(x, y);
+          // Chance de spawn duplo/triplo para mais movimento
+          if (Math.random() < 0.45) spawn(x + (Math.random() - 0.5) * 30, y + (Math.random() - 0.5) * 30);
+          if (Math.random() < 0.2) spawn(x + (Math.random() - 0.5) * 50, y + (Math.random() - 0.5) * 50);
         }
       }
     };
@@ -93,15 +96,19 @@ export function HeroEmojiField() {
       if (cancelled) return;
       raf = requestAnimationFrame(tick);
 
-      // No mobile, gera uma estrela perto do centro a cada intervalo para manter a vibe
+      // No mobile, gera estrelas aleatórias ao redor do centro para manter a vibe
       if (isCoarse) {
         const now = performance.now();
-        if (now - lastSpawn > 350) {
+        if (now - lastSpawn > 180) {
           lastSpawn = now;
           const rect = container.getBoundingClientRect();
           const angle = Math.random() * Math.PI * 2;
-          const r = Math.min(rect.width, rect.height) * (0.28 + Math.random() * 0.3);
-          spawn(rect.width / 2 + Math.cos(angle) * r, rect.height / 2 + Math.sin(angle) * r);
+          const r = Math.min(rect.width, rect.height) * (0.28 + Math.random() * 0.32);
+          const x = rect.width / 2 + Math.cos(angle) * r;
+          const y = rect.height / 2 + Math.sin(angle) * r;
+          spawn(x, y);
+          if (Math.random() < 0.5) spawn(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 40);
+          if (Math.random() < 0.25) spawn(x + (Math.random() - 0.5) * 70, y + (Math.random() - 0.5) * 70);
         }
       }
 
