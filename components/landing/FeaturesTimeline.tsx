@@ -136,7 +136,7 @@ export function FeaturesTimeline() {
         <div className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px z-0 pointer-events-none">
           <div className="absolute inset-0 bg-royal-500/20" />
         </div>
-        <div className="md:hidden absolute left-4 top-0 bottom-0 w-px z-0 pointer-events-none">
+        <div className="md:hidden absolute left-16 top-0 bottom-0 w-px z-0 pointer-events-none">
           <div className="absolute inset-0 bg-royal-500/20" />
         </div>
 
@@ -148,7 +148,7 @@ export function FeaturesTimeline() {
           <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
         </div>
         <div
-          className="md:hidden absolute left-4 top-0 w-[2px] z-0 pointer-events-none transition-[height] duration-75 ease-linear"
+          className="md:hidden absolute left-16 top-0 w-[2px] z-0 pointer-events-none transition-[height] duration-75 ease-linear"
           style={{ height: lineHeight }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
@@ -160,7 +160,7 @@ export function FeaturesTimeline() {
           style={{ top: lineHeight }}
         />
         <div
-          className="md:hidden absolute z-[5] left-4 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(116,134,255,0.75)] transition-[top] duration-75 ease-linear pointer-events-none"
+          className="md:hidden absolute z-[5] left-16 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(116,134,255,0.75)] transition-[top] duration-75 ease-linear pointer-events-none"
           style={{ top: lineHeight }}
         />
 
@@ -175,11 +175,11 @@ export function FeaturesTimeline() {
                   className="relative md:grid md:grid-cols-[1fr_auto_1fr] md:items-center min-h-[120px] md:min-h-[140px]"
                 >
                   {/* Círculo base da linha por trás */}
-                  <div className="absolute top-1/2 -translate-y-1/2 z-[1] flex h-11 w-11 rounded-full bg-bg-surface md:left-1/2 md:-translate-x-1/2 left-4" />
+                  <div className="absolute top-1/2 -translate-y-1/2 z-[1] flex h-11 w-11 rounded-full bg-bg-surface left-16 -translate-x-1/2 md:left-1/2 md:-translate-x-1/2" />
 
                   {/* Marcador — acima das linhas */}
                   <div
-                    className={`absolute top-1/2 -translate-y-1/2 z-10 flex h-11 w-11 rounded-full border transition-all duration-500 items-center justify-center md:left-1/2 md:-translate-x-1/2 left-4 ${
+                    className={`absolute top-1/2 -translate-y-1/2 z-10 flex h-11 w-11 rounded-full border transition-all duration-500 items-center justify-center left-16 -translate-x-1/2 md:left-1/2 md:-translate-x-1/2 ${
                       isActive
                         ? "border-royal-300/70 bg-royal-500/20 shadow-[0_0_30px_-4px_rgba(116,134,255,0.65)]"
                         : "border-royal-500/30 bg-bg-surface shadow-[0_0_24px_-8px_rgba(88,108,240,0.35)]"
@@ -197,7 +197,7 @@ export function FeaturesTimeline() {
 
                   {/* Card */}
                   <div
-                    className={`w-full md:w-auto pl-16 md:pl-0 ${
+                    className={`w-full md:w-auto pl-[88px] md:pl-0 ${
                       isLeft ? "md:col-start-1 md:row-start-1 md:pr-12" : "md:col-start-3 md:row-start-1 md:pl-12"
                     }`}
                   >

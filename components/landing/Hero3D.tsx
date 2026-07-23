@@ -70,10 +70,11 @@ export function Hero3D() {
 
       const width = mount.clientWidth || 1;
       const height = mount.clientHeight || 1;
+      const isMobile = width < 768;
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-      camera.position.set(0, 0, 7.2);
+      camera.position.set(0, 0, isMobile ? 9.5 : 7.2);
 
       const renderer = new THREE.WebGLRenderer({
         alpha: true,
@@ -88,7 +89,7 @@ export function Hero3D() {
       renderer.domElement.style.display = "block";
 
       const universe = new THREE.Group();
-      universe.position.set(0, 2.35, -2.2);
+      universe.position.set(0, isMobile ? 1.9 : 2.35, isMobile ? -1.6 : -2.2);
       scene.add(universe);
 
       // Iluminação ambiente + neon sutil
@@ -101,7 +102,7 @@ export function Hero3D() {
       scene.add(neonLight);
 
       // Anel central orbitando o SM Hub — maior que o logo
-      const ringGeo = new THREE.TorusGeometry(2.6, 0.036, 20, 120);
+      const ringGeo = new THREE.TorusGeometry(isMobile ? 2.0 : 2.6, isMobile ? 0.03 : 0.036, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x7486ff,
         transparent: true,
@@ -138,7 +139,7 @@ export function Hero3D() {
           opacity: 0.65,
         });
         const sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(0.38, 0.38, 1);
+        sprite.scale.set(isMobile ? 0.28 : 0.38, isMobile ? 0.28 : 0.38, 1);
         universe.add(sprite);
 
         const glowMat = new THREE.MeshBasicMaterial({
@@ -154,7 +155,7 @@ export function Hero3D() {
         nodes.push({
           sprite,
           glow,
-          r: 2.9 + (i % 2) * 0.55,
+          r: (isMobile ? 2.1 : 2.9) + (i % 2) * (isMobile ? 0.35 : 0.55),
           speed: 0.04 + (i % 2) * 0.025,
           tilt: i * 0.7,
           phase: i * (Math.PI * 2 / ICON_SVGS.length),
