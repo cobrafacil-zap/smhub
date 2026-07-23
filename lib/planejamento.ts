@@ -60,27 +60,9 @@ export function prazoDaEntrada(
 }
 
 /**
- * Janela de entrega do quadro de tarefas: mostra só o que é desta semana e da
- * próxima (mais as atrasadas). Tarefas com prazo daqui 2 semanas ou mais ficam
- * ocultas até entrarem na janela.
- *
- * Tarefas sem prazo (criadas manualmente sem data) continuam visíveis.
+ * Janela de entrega do quadro de tarefas: removida. O quadro agora filtra
+ * diretamente pelo período selecionado na navegação via `prazoDentroPeriodo`.
  */
-export function prazoDentroJanelaDuasSemanas(
-  prazo: string | null | undefined,
-  hoje: Date = new Date()
-): boolean {
-  if (!prazo) return true;
-  const ref = new Date(hoje);
-  ref.setHours(0, 0, 0, 0);
-  const offsetToMonday = (ref.getDay() + 6) % 7;
-  const startThisWeek = new Date(ref);
-  startThisWeek.setDate(ref.getDate() - offsetToMonday); // segunda desta semana
-  const limite = new Date(startThisWeek);
-  limite.setDate(startThisWeek.getDate() + 14); // segunda da semana seguinte à próxima
-  const p = new Date(prazo + "T00:00:00");
-  return p.getTime() < limite.getTime();
-}
 
 export type Periodo = "semana" | "mes";
 
