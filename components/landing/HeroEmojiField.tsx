@@ -95,16 +95,16 @@ export function HeroEmojiField() {
       // No mobile, gera estrelas aleatórias ao redor do centro para manter a vibe
       if (isCoarse) {
         const now = performance.now();
-        if (now - lastSpawn > 220) {
+        if (now - lastSpawn > 550) {
           lastSpawn = now;
           const rect = container.getBoundingClientRect();
           const centerX = rect.width / 2;
           const centerY = rect.height / 2;
           const minDim = Math.min(rect.width, rect.height);
-          // 4 estrelas posicionadas em anéis diferentes, evitando centro
-          for (let k = 0; k < 4; k++) {
+          // 2 estrelas suaves posicionadas em anéis diferentes, evitando centro
+          for (let k = 0; k < 2; k++) {
             const angle = Math.random() * Math.PI * 2;
-            const r = minDim * (0.25 + Math.random() * 0.35);
+            const r = minDim * (0.28 + Math.random() * 0.32);
             const x = centerX + Math.cos(angle) * r;
             const y = centerY + Math.sin(angle) * r;
             spawn(x, y);
@@ -121,10 +121,10 @@ export function HeroEmojiField() {
         p.vy *= 0.96;
 
         const progress = p.life / p.maxLife;
-        const twinkle = 0.5 + 0.5 * Math.sin(progress * Math.PI * 4);
-        const opacity = progress < 0.15
-          ? (progress / 0.15) * 0.7
-          : Math.max(0, 1 - (progress - 0.15) / 0.85) * 0.7 * twinkle;
+        const twinkle = 0.7 + 0.3 * Math.sin(progress * Math.PI * 3);
+        const opacity = progress < 0.2
+          ? (progress / 0.2) * 0.6
+          : Math.max(0, 1 - (progress - 0.2) / 0.8) * 0.6 * twinkle;
 
         p.el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${1 - progress * 0.2}) rotate(${progress * 90}deg)`;
         p.el.style.opacity = String(opacity);
