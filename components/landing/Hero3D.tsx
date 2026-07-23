@@ -94,25 +94,67 @@ export function Hero3D() {
 
       // Iluminação ambiente + neon sutil
       scene.add(new THREE.AmbientLight(0x0b0f19, 1.2));
-      const coreLight = new THREE.PointLight(0x586cf0, 14, 30);
+      const coreLight = new THREE.PointLight(0x586cf0, 18, 30);
       coreLight.position.set(0, 0, 0);
       scene.add(coreLight);
-      const neonLight = new THREE.PointLight(0x8797ff, 6, 25);
+      const neonLight = new THREE.PointLight(0x8797ff, 9, 25);
       neonLight.position.set(0, -2, 2);
       scene.add(neonLight);
+      const rimLight = new THREE.PointLight(0xb9c2ff, 5, 25);
+      rimLight.position.set(0, 3, -3);
+      scene.add(rimLight);
 
       // Anel central orbitando o SM Hub — maior que o logo
-      const ringGeo = new THREE.TorusGeometry(isMobile ? 1.55 : 2.6, isMobile ? 0.045 : 0.048, 20, 120);
+      const ringGeo = new THREE.TorusGeometry(isMobile ? 1.55 : 2.6, isMobile ? 0.055 : 0.06, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x7486ff,
         transparent: true,
-        opacity: 0.32,
+        opacity: 0.35,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       ring.rotation.x = Math.PI / 2;
       universe.add(ring);
+
+      // Sombra/projeção do anel no centro (disco translúcido)
+      const shadowGeo = new THREE.CircleGeometry(isMobile ? 1.42 : 2.42, 64);
+      const shadowMat = new THREE.MeshBasicMaterial({
+        color: 0x586cf0,
+        transparent: true,
+        opacity: 0.18,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      const ringShadow = new THREE.Mesh(shadowGeo, shadowMat);
+      ringShadow.rotation.x = Math.PI / 2;
+      ringShadow.position.y = -0.08;
+      universe.add(ringShadow);
+
+      // Partículas orbitando no plano do anel
+      const ORBIT_N = 40;
+      const orbitPos = new Float32Array(ORBIT_N * 3);
+      const orbitSpeed: number[] = [];
+      const orbitRadius: number[] = [];
+      const orbitPhase: number[] = [];
+      for (let i = 0; i < ORBIT_N; i++) {
+        orbitRadius.push((isMobile ? 1.35 : 2.25) + Math.random() * (isMobile ? 0.45 : 0.65));
+        orbitSpeed.push(0.08 + Math.random() * 0.12);
+        orbitPhase.push(Math.random() * Math.PI * 2);
+      }
+      const orbitGeo = new THREE.BufferGeometry();
+      orbitGeo.setAttribute("position", new THREE.BufferAttribute(orbitPos, 3));
+      const orbitMat = new THREE.PointsMaterial({
+        color: 0xa8b4ff,
+        size: isMobile ? 0.07 : 0.09,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const orbitParticles = new THREE.Points(orbitGeo, orbitMat);
+      universe.add(orbitParticles);
 
       // Ícones orbitando
       const textures = await Promise.all(
@@ -288,8 +330,9 @@ export function Hero3D() {
         universe.rotation.y = curRot.y + t * 0.035;
 
         // Giro contínuo do anel sobre seu próprio eixo + pulsar
-        ring.rotation.z += 0.012;
-        ringMat.opacity = 0.25 + Math.sin(t * 0.8) * 0.05;
+        ring.rotation.z += 0.018;
+        ringMat.opacity = 0.28 + Math.sin(t * 1.2) * 0.07;
+        ringShadow.material.opacity = 0.12 + Math.sin(t * 1.2 + 0.6) * 0.05;
 
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
@@ -322,6 +365,20 @@ export function Hero3D() {
 
         stars.rotation.y = t * 0.01;
         starMat.uniforms.uTime.value = t;
+
+        // Anima partículas orbitando no plano do anel
+        for (let i = 0; i < ORBIT_N; i++) {
+          const a = orbitPhase[i] + t * orbitSpeed[i];
+          orbitPos[i * 3] = orbitRadius[i] * Math.cos(a);
+          orbitPos[i * 3 + 1] = -0.05 + Math.sin(a * 2) * 0.04;
+          orbitPos[i * 3 + 2] = orbitRadius[i] * Math.sin(a);
+        }
+        orbitGeo.attributes.position.needsUpdate = true;
+
+        // Anel balança levemente no eixo X, dando sensação de órbita real
+        ring.rotation.x = Math.PI / 2 + Math.sin(t * 0.35) * 0.08;
+        ringShadow.rotation.x = ring.rotation.x;
+
         renderer.render(scene, camera);
       };
 
@@ -355,6 +412,10 @@ export function Hero3D() {
         glowGeo.dispose();
         ringGeo.dispose();
         ringMat.dispose();
+        shadowGeo.dispose();
+        shadowMat.dispose();
+        orbitGeo.dispose();
+        orbitMat.dispose();
         nodes.forEach((n) => {
           const spriteMat = n.sprite.material as ThreeTypes.SpriteMaterial;
           spriteMat.map?.dispose();
