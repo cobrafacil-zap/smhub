@@ -259,7 +259,6 @@ export default async function LandingPage() {
       {/* Hero */}
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 text-center">
         <Hero3D />
-        <HeroEmojiField />
         <HeroStars />
         <div className="relative z-10 pointer-events-none">
         <div className="flex justify-center mb-8">
