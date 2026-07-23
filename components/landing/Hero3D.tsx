@@ -88,7 +88,7 @@ export function Hero3D() {
       renderer.domElement.style.display = "block";
 
       const universe = new THREE.Group();
-      universe.position.set(0, 1.65, -1.2);
+      universe.position.set(0, 1.9, -1.2);
       scene.add(universe);
 
       // Iluminação ambiente + neon sutil
