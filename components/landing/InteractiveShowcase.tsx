@@ -240,9 +240,30 @@ export function InteractiveShowcase() {
         })}
       </div>
 
-      <p className="text-center text-xs text-slate-500 mt-4">
-        {active + 1} de {MODS.length} · arraste o card ← →
-      </p>
+      <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+        {/* Indicador de swipe no mobile */}
+        <div className="flex items-center gap-2 text-xs text-slate-400 sm:hidden">
+          <span className="inline-flex h-6 items-center gap-1 px-2 rounded-full border border-border bg-bg-surface/60">
+            <span className="inline-block w-1 h-1 rounded-full bg-royal-300" />
+            arraste o card pro lado
+            <span className="inline-block w-1 h-1 rounded-full bg-royal-300" />
+          </span>
+          <span className="flex gap-1">
+            {MODS.map((_, i) => (
+              <span
+                key={i}
+                className={`block h-1.5 rounded-full transition-all duration-300 ${
+                  i === active ? "w-4 bg-royal-400" : "w-1.5 bg-slate-600"
+                }`}
+              />
+            ))}
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-500 hidden sm:block">
+          {active + 1} de {MODS.length} · arraste o card ← →
+        </p>
+      </div>
     </section>
   );
 }
