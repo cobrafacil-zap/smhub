@@ -33,8 +33,7 @@ function addMonths(iso: string, meses: number): string {
  * - "Atrasado" / "Hoje" / "Amanhã" → exatamente o dia da faixa
  * - "Esta semana" → segunda desta semana
  * - "Próxima semana" → segunda da próxima
- * - "Depois" → daqui 21 dias (entra na janela de 2 semanas como "Esta semana")
- * - "Sem data" → não tem data representativa; usa hoje (atalho fica igual a "Hoje")
+ * - "Depois" → daqui 21 dias
  */
 function refParaFaixa(faixa: string, hoje: Date): string {
   const ref = new Date(hoje);
@@ -61,7 +60,6 @@ function refParaFaixa(faixa: string, hoje: Date): string {
     }
     case "Depois":
       return toIso(new Date(ref.getTime() + 21 * 86400000));
-    case "Sem data":
     default:
       return toIso(ref);
   }
@@ -103,8 +101,7 @@ export function TarefasPeriodoNav({
   }
 
   // Faixa atualmente "ativa" = aquela que contém o ref atual. Usada só para
-  // destacar a pílula correspondente. "Sem data" nunca fica ativa (ref é uma
-  // data real, sempre cai em alguma faixa temporal).
+  // destacar a pílula correspondente.
   const faixaAtiva = faixaPrazo(refIso, hoje);
 
   return (

@@ -330,9 +330,12 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
     { label: "+2 dias", value: add(2) },
     { label: "+3 dias", value: add(3) },
     { label: "+7 dias", value: add(7) },
-    { label: "Sem data", value: null },
   ];
 
+  // Tarefas antigas (criadas antes da remoção de "Sem data") ainda podem ter
+  // prazo = null. Prazos definidos por outro caminho (ex: TarefaDialog com
+  // data que não está nas opções rápidas) também caem aqui. Em ambos os
+  // casos, mostra "Prazo" como rótulo neutro.
   const ativo = opcoes.find((o) => o.value === prazo)?.label ?? "Prazo";
 
   return (
@@ -367,7 +370,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onChange(o.value === prazo ? null : o.value);
+                    onChange(o.value);
                     setOpen(false);
                   }}
                   className={cn(

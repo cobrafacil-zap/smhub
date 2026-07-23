@@ -86,7 +86,10 @@ export type Periodo = "semana" | "mes";
 
 /** Nome amigável de um prazo relativo a hoje, para agrupamento no kanban. */
 export function faixaPrazo(prazo: string | null | undefined, hoje: Date = new Date()): string {
-  if (!prazo) return "Sem data";
+  // Tarefa sem prazo cai em "Esta semana" — sem uma faixa "Sem data" separada,
+  // porque o dropdown e o diálogo exigem prazo. Tarefas antigas sem prazo
+  // continuam visíveis no quadro, só agrupadas em "Esta semana".
+  if (!prazo) return "Esta semana";
 
   const ref = new Date(hoje);
   ref.setHours(0, 0, 0, 0);
@@ -103,7 +106,7 @@ export function faixaPrazo(prazo: string | null | undefined, hoje: Date = new Da
   return "Depois";
 }
 
-export const ORDEM_FAIXA = ["Atrasado", "Hoje", "Amanhã", "Esta semana", "Próxima semana", "Depois", "Sem data"];
+export const ORDEM_FAIXA = ["Atrasado", "Hoje", "Amanhã", "Esta semana", "Próxima semana", "Depois"];
 
 /**
  * Início (segunda) e fim (domingo) da semana, ou 1º e último dia do mês,
