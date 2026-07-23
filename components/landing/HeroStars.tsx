@@ -36,9 +36,9 @@ export function HeroStars() {
       : ["#6b7cff", "#8797ff", "#4f5bff", "#586cf0", "#a8b4ff"];
 
     const createStars = () => {
-      const density = isDark ? 9000 : 12000;
-      const count = Math.floor((width * height) / density);
       const mobile = width < 768;
+      const density = mobile ? 14000 : (isDark ? 9000 : 12000);
+      const count = Math.floor((width * height) / density);
       stars = [];
       for (let i = 0; i < count; i++) {
         const bright = Math.random() < 0.25;
@@ -46,11 +46,11 @@ export function HeroStars() {
           x: Math.random() * width,
           y: Math.random() * height,
           size: mobile
-            ? (bright ? 0.9 : 0.4)
+            ? (bright ? 1.0 + Math.random() * 0.6 : 0.5 + Math.random() * 0.4)
             : (bright ? 1.2 + Math.random() * 1.6 : 0.5 + Math.random() * 0.9),
           opacity: Math.random(),
-          minOpacity: bright ? 0.25 : 0.04,
-          maxOpacity: bright ? 0.75 : 0.28,
+          minOpacity: bright ? 0.3 : 0.08,
+          maxOpacity: bright ? 0.8 : 0.35,
           phase: Math.random() * Math.PI * 2,
           speed: 0.8 + Math.random() * 2.4,
           color: colors[Math.floor(Math.random() * colors.length)],

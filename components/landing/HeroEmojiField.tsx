@@ -2,8 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-const EMOJIS = ["✨", "💡", "⚡", "🔥"];
-
 interface Particle {
   el: HTMLSpanElement;
   x: number;
@@ -12,11 +10,12 @@ interface Particle {
   vy: number;
   life: number;
   maxLife: number;
+  size: number;
 }
 
 /**
- * HeroEmojiField — flares bem esparsos que surgem perto do cursor no hero.
- * Poucos, pequenos, longe do texto. Só desktop.
+ * HeroEmojiField — pequenas estrelas que surgem perto do cursor no hero.
+ * Cores azul/neon, piscam suavemente e desaparecem. Desktop e mobile.
  */
 export function HeroEmojiField() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -24,25 +23,33 @@ export function HeroEmojiField() {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    if (window.matchMedia("(pointer: coarse)").matches) return;
 
+    const isCoarse = window.matchMedia("(pointer: coarse)").matches;
     const particles: Particle[] = [];
     let lastSpawn = 0;
     let raf = 0;
     let cancelled = false;
+    let lastX = container.clientWidth / 2;
+    let lastY = container.clientHeight / 2;
+
+    const colors = ["#a8b4ff", "#8797ff", "#c3cfff", "#ffffff", "#bfd4ff"];
 
     const spawn = (x: number, y: number) => {
       const el = document.createElement("span");
-      el.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-      el.className = "absolute text-sm pointer-events-none select-none";
+      el.textContent = "✦";
+      el.className = "absolute pointer-events-none select-none";
       el.style.left = "0";
       el.style.top = "0";
-      el.style.filter = "drop-shadow(0 0 5px rgba(88,108,240,0.45))";
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const size = 0.6 + Math.random() * 0.9;
+      el.style.fontSize = `${size}rem`;
+      el.style.color = color;
+      el.style.textShadow = `0 0 8px ${color}, 0 0 16px ${color}`;
       el.style.opacity = "0";
       container.appendChild(el);
 
-      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.9;
-      const speed = 0.5 + Math.random() * 0.9;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.3 + Math.random() * 0.8;
 
       particles.push({
         el,
@@ -51,31 +58,52 @@ export function HeroEmojiField() {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: 35 + Math.random() * 30,
+        maxLife: 40 + Math.random() * 40,
+        size,
       });
     };
 
-    const onMove = (e: MouseEvent) => {
+    const onMove = (clientX: number, clientY: number) => {
       const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      lastX = x;
+      lastY = y;
 
       const now = performance.now();
-      if (now - lastSpawn > 160) {
+      if (now - lastSpawn > 120) {
         lastSpawn = now;
         // Só cria se estiver na área de fundo (evita poluir o texto central).
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
         const distFromCenter = Math.hypot(x - centerX, y - centerY);
-        if (distFromCenter > Math.min(rect.width, rect.height) * 0.25) {
+        if (distFromCenter > Math.min(rect.width, rect.height) * 0.22) {
           spawn(x, y);
         }
       }
     };
 
+    const onMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (touch) onMove(touch.clientX, touch.clientY);
+    };
+
     const tick = () => {
       if (cancelled) return;
       raf = requestAnimationFrame(tick);
+
+      // No mobile, gera uma estrela perto do centro a cada intervalo para manter a vibe
+      if (isCoarse) {
+        const now = performance.now();
+        if (now - lastSpawn > 350) {
+          lastSpawn = now;
+          const rect = container.getBoundingClientRect();
+          const angle = Math.random() * Math.PI * 2;
+          const r = Math.min(rect.width, rect.height) * (0.28 + Math.random() * 0.3);
+          spawn(rect.width / 2 + Math.cos(angle) * r, rect.height / 2 + Math.sin(angle) * r);
+        }
+      }
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
@@ -86,12 +114,13 @@ export function HeroEmojiField() {
         p.vy *= 0.96;
 
         const progress = p.life / p.maxLife;
-        const opacity = progress < 0.12
-          ? progress / 0.12
-          : Math.max(0, 1 - (progress - 0.12) / 0.88);
+        const twinkle = 0.5 + 0.5 * Math.sin(progress * Math.PI * 4);
+        const opacity = progress < 0.15
+          ? (progress / 0.15) * 0.7
+          : Math.max(0, 1 - (progress - 0.15) / 0.85) * 0.7 * twinkle;
 
-        p.el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${1 - progress * 0.25})`;
-        p.el.style.opacity = String(opacity * 0.7);
+        p.el.style.transform = `translate(${p.x}px, ${p.y}px) scale(${1 - progress * 0.2}) rotate(${progress * 90}deg)`;
+        p.el.style.opacity = String(opacity);
 
         if (p.life >= p.maxLife) {
           p.el.remove();
@@ -100,12 +129,17 @@ export function HeroEmojiField() {
       }
     };
 
-    container.addEventListener("mousemove", onMove, { passive: true });
+    if (isCoarse) {
+      container.addEventListener("touchmove", onTouchMove, { passive: true });
+    } else {
+      container.addEventListener("mousemove", onMouseMove, { passive: true });
+    }
     raf = requestAnimationFrame(tick);
 
     return () => {
       cancelled = true;
-      container.removeEventListener("mousemove", onMove);
+      container.removeEventListener("mousemove", onMouseMove);
+      container.removeEventListener("touchmove", onTouchMove);
       cancelAnimationFrame(raf);
       particles.forEach((p) => p.el.remove());
       particles.length = 0;
