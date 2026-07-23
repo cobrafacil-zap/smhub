@@ -88,7 +88,7 @@ export function Hero3D() {
       renderer.domElement.style.display = "block";
 
       const universe = new THREE.Group();
-      universe.position.set(0, 2.35, -1.3);
+      universe.position.set(0, 2.35, -1.6);
       scene.add(universe);
 
       // Iluminação ambiente + neon sutil
@@ -100,12 +100,12 @@ export function Hero3D() {
       neonLight.position.set(0, -2, 2);
       scene.add(neonLight);
 
-      // Anel central orbitando o SM Hub
-      const ringGeo = new THREE.TorusGeometry(1.55, 0.028, 20, 120);
+      // Anel central orbitando o SM Hub (visível ao redor do logo)
+      const ringGeo = new THREE.TorusGeometry(2.0, 0.032, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x7486ff,
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.32,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -154,10 +154,10 @@ export function Hero3D() {
         nodes.push({
           sprite,
           glow,
-          r: 1.85 + i * 0.18,
-          speed: 0.07 + (i % 3) * 0.025,
-          tilt: i * 0.55,
-          phase: i * 1.2,
+          r: 2.3 + (i % 2) * 0.45,
+          speed: 0.05 + (i % 2) * 0.03,
+          tilt: i * 0.8,
+          phase: i * (Math.PI * 2 / ICON_SVGS.length),
         });
       }
 
@@ -282,9 +282,9 @@ export function Hero3D() {
         const t = clock.getElapsedTime();
         curRot.x += (targetRot.x - curRot.x) * 0.05;
         curRot.y += (targetRot.y - curRot.y) * 0.05;
-        // Roda em torno do logo SM Hub — órbita inclinada e contínua
-        universe.rotation.x = curRot.x + 0.22 + Math.sin(t * 0.1) * 0.06;
-        universe.rotation.y = curRot.y + t * 0.045;
+        // Roda em torno do logo SM Hub — órbita 3D clara
+        universe.rotation.x = curRot.x + 0.28 + Math.sin(t * 0.08) * 0.05;
+        universe.rotation.y = curRot.y + t * 0.035;
 
         // Pulsar do anel central
         ringMat.opacity = 0.25 + Math.sin(t * 0.8) * 0.05;
