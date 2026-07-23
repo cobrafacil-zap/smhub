@@ -42,35 +42,6 @@ const STEPS: {
 export function StepsSection() {
   const [active, setActive] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
-  const [lineProgress, setLineProgress] = useState(0);
-
-  useEffect(() => {
-    let raf: number | null = null;
-    const handle = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = null;
-        const el = sectionRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        const vh = window.innerHeight;
-        const start = rect.top - vh * 0.7;
-        const end = rect.bottom - vh * 0.3;
-        const range = end - start;
-        const value = range <= 0 ? 1 : Math.max(0, Math.min(1, -start / range));
-        setLineProgress(value);
-      });
-    };
-
-    handle();
-    window.addEventListener("scroll", handle, { passive: true });
-    window.addEventListener("resize", handle, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handle);
-      window.removeEventListener("resize", handle);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
 
   return (
     <section
@@ -184,19 +155,32 @@ export function StepsSection() {
         })}
       </div>
 
-      {/* Linha de progresso horizontal */}
-      <div className="mt-7 hidden sm:block">
-        <div className="relative h-1 rounded-full bg-border overflow-hidden">
-          <div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-royal-300 via-royal-400 to-royal-500 transition-[width] duration-100 ease-linear"
-            style={{ width: `${lineProgress * 100}%` }}
-          />
-        </div>
-        <div className="mt-3 flex justify-between text-xs text-slate-500">
-          <span>Começo</span>
-          <span>Começando agora</span>
-          <span>Resultado</span>
-        </div>
+      {/* Indicadores clicáveis numerados */}
+      <div className="mt-6 hidden sm:flex items-center justify-center gap-3">
+        {STEPS.map((s, i) => {
+          const isActive = active === i;
+          return (
+            <button
+              key={s.n}
+              type="button"
+              onClick={() => setActive(i)}
+              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 border ${
+                isActive
+                  ? "bg-royal-500/15 border-royal-500/40 text-royal-200"
+                  : "bg-bg-surface/50 border-border/60 text-slate-500 hover:border-royal-500/25 hover:text-slate-300"
+              }`}
+            >
+              <span
+                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
+                  isActive ? "bg-royal-500 text-white" : "bg-slate-700 text-slate-400"
+                }`}
+              >
+                {s.n}
+              </span>
+              <span className={isActive ? "inline-block" : "hidden"}>{s.title}</span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );
