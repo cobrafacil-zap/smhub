@@ -22,6 +22,7 @@ import { FeaturesTimeline } from "@/components/landing/FeaturesTimeline";
 import { Hero3D } from "@/components/landing/Hero3D";
 import { InteractiveShowcase } from "@/components/landing/InteractiveShowcase";
 import { HeroEmojiField } from "@/components/landing/HeroEmojiField";
+import { StepsSection } from "@/components/landing/StepsSection";
 import { Reveal } from "@/components/ui/motion/Reveal";
 import { SITE } from "@/lib/site";
 import type { Metadata } from "next";
@@ -327,27 +328,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Como funciona */}
-      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-        <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs text-slate-500 font-medium">Como funciona</p>
-          <h2 className="text-2xl sm:text-4xl font-bold mt-2">
-            Três passos pra começar
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-          {STEPS.map((s, i) => (
-            <Reveal key={s.n} delay={i * 90}>
-              <Card className="h-full group card-hover">
-                <div className="h-9 w-9 rounded-lg bg-royal-500/10 border border-royal-500/20 flex items-center justify-center text-xs font-semibold text-royal-300 mb-4 transition-colors duration-300 group-hover:bg-royal-500/20">
-                  {s.n}
-                </div>
-                <h3 className="text-base font-semibold text-slate-100">{s.title}</h3>
-                <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">{s.desc}</p>
-              </Card>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+      <StepsSection />
 
       {/* Como a SM Hub ajuda — exploração interativa 3D */}
       <InteractiveShowcase />
