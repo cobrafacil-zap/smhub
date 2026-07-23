@@ -38,18 +38,21 @@ export function HeroStars() {
     const createStars = () => {
       const density = isDark ? 9000 : 12000;
       const count = Math.floor((width * height) / density);
+      const mobile = width < 768;
       stars = [];
       for (let i = 0; i < count; i++) {
         const bright = Math.random() < 0.25;
         stars.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          size: bright ? 1.2 + Math.random() * 1.6 : 0.5 + Math.random() * 0.9,
+          size: mobile
+            ? (bright ? 0.9 : 0.4)
+            : (bright ? 1.2 + Math.random() * 1.6 : 0.5 + Math.random() * 0.9),
           opacity: Math.random(),
-          minOpacity: bright ? 0.35 : 0.05,
-          maxOpacity: bright ? 0.95 : 0.4,
+          minOpacity: bright ? 0.25 : 0.04,
+          maxOpacity: bright ? 0.75 : 0.28,
           phase: Math.random() * Math.PI * 2,
-          speed: 0.4 + Math.random() * 1.8,
+          speed: 0.8 + Math.random() * 2.4,
           color: colors[Math.floor(Math.random() * colors.length)],
         });
       }

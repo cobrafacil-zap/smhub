@@ -128,6 +128,7 @@ export function Hero3D() {
         depthWrite: false,
         side: THREE.DoubleSide,
       });
+      shadowMat.opacity = isMobile ? 0.06 : shadowMat.opacity;
       const ringShadow = new THREE.Mesh(shadowGeo, shadowMat);
       ringShadow.rotation.x = Math.PI / 2;
       ringShadow.position.y = -0.08;
@@ -157,22 +158,27 @@ export function Hero3D() {
       const orbitParticles = new THREE.Points(orbitGeo, orbitMat);
       universe.add(orbitParticles);
 
-      // Raio de neon correndo ao redor do anel (por fora)
+      // Raio de neon correndo ao redor do anel (por fora) — desativado no mobile
+      let ray: ThreeTypes.Points | null = null;
+      let rayGeo: ThreeTypes.BufferGeometry | null = null;
+      let rayMat: ThreeTypes.PointsMaterial | null = null;
+      let rayProgress = { value: 0 };
       const RAY_SEGMENTS = 80;
-      const rayGeo = new THREE.BufferGeometry();
-      const rayPos = new Float32Array(RAY_SEGMENTS * 3);
-      const rayProgress = { value: 0 };
-      rayGeo.setAttribute("position", new THREE.BufferAttribute(rayPos, 3));
-      const rayMat = new THREE.PointsMaterial({
-        color: isDark ? 0xbfd4ff : 0x4f5bff,
-        size: isMobile ? 0.18 : 0.26,
-        transparent: true,
-        opacity: isDark ? 0.85 : 0.75,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const ray = new THREE.Points(rayGeo, rayMat);
-      universe.add(ray);
+      if (!isMobile) {
+        rayGeo = new THREE.BufferGeometry();
+        const rayPos = new Float32Array(RAY_SEGMENTS * 3);
+        rayGeo.setAttribute("position", new THREE.BufferAttribute(rayPos, 3));
+        rayMat = new THREE.PointsMaterial({
+          color: isDark ? 0xbfd4ff : 0x4f5bff,
+          size: 0.26,
+          transparent: true,
+          opacity: isDark ? 0.85 : 0.75,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        ray = new THREE.Points(rayGeo, rayMat);
+        universe.add(ray);
+      }
 
       // Ícones orbitando
       const iconStroke = isDark ? "#AEB9D6" : "#4a5d8a";
@@ -398,20 +404,22 @@ export function Hero3D() {
         ring.rotation.x = Math.PI / 2 + Math.sin(t * 0.35) * 0.08;
         ringShadow.rotation.x = ring.rotation.x;
 
-        // Raio de neon correndo ao redor do anel
-        rayProgress.value += 0.008 + Math.sin(t * 0.4) * 0.002;
-        const rayR = (isMobile ? 1.82 : 2.92) + Math.sin(t * 0.6) * 0.03;
-        for (let i = 0; i < RAY_SEGMENTS; i++) {
-          const angle = rayProgress.value + (i / RAY_SEGMENTS) * Math.PI * 2;
-          // forma alongada: poucos pontos brilhantes, cauda curta
-          const tail = Math.max(0, 1 - i / (RAY_SEGMENTS * 0.18));
-          rayPos[i * 3] = rayR * Math.cos(angle);
-          rayPos[i * 3 + 1] = -0.02 + Math.sin(angle * 2 + t) * 0.03;
-          rayPos[i * 3 + 2] = rayR * Math.sin(angle);
-          rayMat.opacity = 0.2 + tail * 0.8;
-          rayMat.size = (isMobile ? 0.12 : 0.2) + tail * (isMobile ? 0.14 : 0.22);
+        // Raio de neon correndo ao redor do anel (só no desktop)
+        if (ray && rayGeo && rayMat) {
+          rayProgress.value += 0.008 + Math.sin(t * 0.4) * 0.002;
+          const rayR = 2.92 + Math.sin(t * 0.6) * 0.03;
+          const rayPos = rayGeo.attributes.position.array as Float32Array;
+          for (let i = 0; i < RAY_SEGMENTS; i++) {
+            const angle = rayProgress.value + (i / RAY_SEGMENTS) * Math.PI * 2;
+            const tail = Math.max(0, 1 - i / (RAY_SEGMENTS * 0.18));
+            rayPos[i * 3] = rayR * Math.cos(angle);
+            rayPos[i * 3 + 1] = -0.02 + Math.sin(angle * 2 + t) * 0.03;
+            rayPos[i * 3 + 2] = rayR * Math.sin(angle);
+            rayMat.opacity = 0.2 + tail * 0.8;
+            rayMat.size = 0.2 + tail * 0.22;
+          }
+          rayGeo.attributes.position.needsUpdate = true;
         }
-        rayGeo.attributes.position.needsUpdate = true;
 
         renderer.render(scene, camera);
       };
@@ -450,8 +458,8 @@ export function Hero3D() {
         shadowMat.dispose();
         orbitGeo.dispose();
         orbitMat.dispose();
-        rayGeo.dispose();
-        rayMat.dispose();
+        rayGeo?.dispose();
+        rayMat?.dispose();
         nodes.forEach((n) => {
           const spriteMat = n.sprite.material as ThreeTypes.SpriteMaterial;
           spriteMat.map?.dispose();
