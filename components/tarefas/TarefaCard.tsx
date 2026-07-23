@@ -304,7 +304,10 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   // Handle do setTimeout pendente de fechar o menu após um clique. Cancelado
-  // se o navegador detectar duplo-clique antes do timeout (250ms) expirar.
+  // se o navegador detectar duplo-clique antes do timeout (400ms) expirar.
+  // 400ms é o limite típico de double-click em sistemas desktop — abaixo do
+  // limite, o segundo clique é consumido pelo timeout antes do navegador
+  // disparar o dblclick.
   const pendingClose = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useLayoutEffect(() => {
@@ -385,7 +388,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
                   key={o.label}
                   type="button"
                   onClick={() => {
-                    // Adia o fechamento em 250ms para o navegador ter chance
+                    // Adia o fechamento em 400ms para o navegador ter chance
                     // de detectar duplo-clique. Se não houver segundo clique,
                     // o timeout fecha o menu. Se houver, o onDoubleClick
                     // cancela e limpa o prazo.
@@ -393,7 +396,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
                     pendingClose.current = setTimeout(() => {
                       pendingClose.current = null;
                       setOpen(false);
-                    }, 250);
+                    }, 400);
                     onChange(o.value);
                   }}
                   onDoubleClick={(e) => {
@@ -405,6 +408,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
                         pendingClose.current = null;
                       }
                       onChange(null);
+                      setOpen(false);
                     }
                   }}
                   className={cn(
