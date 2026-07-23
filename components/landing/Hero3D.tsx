@@ -287,7 +287,8 @@ export function Hero3D() {
         universe.rotation.x = curRot.x + 0.55 + Math.sin(t * 0.08) * 0.05;
         universe.rotation.y = curRot.y + t * 0.035;
 
-        // Pulsar do anel central
+        // Giro contínuo do anel sobre seu próprio eixo + pulsar
+        ring.rotation.z += 0.003;
         ringMat.opacity = 0.25 + Math.sin(t * 0.8) * 0.05;
 
         for (let i = 0; i < nodes.length; i++) {
