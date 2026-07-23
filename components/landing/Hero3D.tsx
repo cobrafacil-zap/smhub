@@ -90,45 +90,132 @@ export function Hero3D() {
       renderer.domElement.style.display = "block";
 
       const universe = new THREE.Group();
-      universe.position.set(0, isMobile ? 3.65 : 2.75, isMobile ? -1.6 : -2.2);
+      universe.position.set(0, isMobile ? 3.55 : 2.65, isMobile ? -1.6 : -2.2);
       scene.add(universe);
 
       // Iluminação ambiente + neon sutil (mais suave no claro)
       scene.add(new THREE.AmbientLight(isDark ? 0x0b0f19 : 0xf1f5f9, isDark ? 1.2 : 1.5));
-      const coreLight = new THREE.PointLight(isDark ? 0x586cf0 : 0x4f5bff, isDark ? 18 : 10, 30);
-      coreLight.position.set(0, 0, 0);
+      const coreLight = new THREE.PointLight(isDark ? 0x586cf0 : 0x5f6fff, isDark ? 22 : 14, 35);
+      coreLight.position.set(0, 0.3, 0);
       scene.add(coreLight);
-      const neonLight = new THREE.PointLight(isDark ? 0x8797ff : 0x6b7cff, isDark ? 9 : 5, 25);
+      const neonLight = new THREE.PointLight(isDark ? 0x8797ff : 0x7b8cff, isDark ? 12 : 7, 28);
       neonLight.position.set(0, -2, 2);
       scene.add(neonLight);
-      const rimLight = new THREE.PointLight(isDark ? 0xb9c2ff : 0xa8b4ff, isDark ? 5 : 3, 25);
+      const rimLight = new THREE.PointLight(isDark ? 0xb9c2ff : 0xa8b4ff, isDark ? 6 : 4, 28);
       rimLight.position.set(0, 3, -3);
       scene.add(rimLight);
 
       // Anel central orbitando o SM Hub — maior que o logo
-      const ringGeo = new THREE.TorusGeometry(isMobile ? 1.55 : 2.6, isMobile ? 0.055 : 0.06, 20, 120);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: isDark ? 0x7486ff : 0x4f5bff,
-        transparent: true,
-        opacity: isDark ? 0.35 : 0.55,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.rotation.x = Math.PI / 2;
-      universe.add(ring);
+      const RING_RADIUS = isMobile ? 1.45 : 2.45;
+      const RING_THICK = isMobile ? 0.12 : 0.18;
+      const ringGeo = new THREE.TorusGeometry(RING_RADIUS, RING_THICK, 32, 180);
+      const ringMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uColor: { value: new THREE.Color(isDark ? 0x7486ff : 0x5f6fff) },
+          uCoreColor: { value: new THREE.Color(isDark ? 0xe8ecff : 0xffffff) },
+          uGlowColor: { value: new THREE.Color(isDark ? 0x3b4fd8 : 0x4f5bff) },
+          uOpacity: { value: isDark ? 0.55 : 0.7 },
+          uWaveSpeed: { value: 1.2 },
+          uDark: { value: isDark ? 1.0 : 0.0 },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          varying vec3 vNormal;
+          varying vec3 vViewPosition;
+          void main() {
+            vUv = uv;
+            vNormal = normalize(normalMatrix * normal);
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            vViewPosition = -mvPosition.xyz;
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          uniform vec3 uColor;
+          uniform vec3 uCoreColor;
+          uniform vec3 uGlowColor;
+          uniform float uOpacity;
+          uniform float uWaveSpeed;
+          uniform float uDark;
+          varying vec2 vUv;
+          varying vec3 vNormal;
+          varying vec3 vViewPosition;
 
-      // Sombra/projeção do anel no centro (disco translúcido)
-      const shadowGeo = new THREE.CircleGeometry(isMobile ? 1.42 : 2.42, 64);
-      const shadowMat = new THREE.MeshBasicMaterial({
-        color: isDark ? 0x586cf0 : 0x8797ff,
+          void main() {
+            // Coordenada radial no tubo (0 = centro, 1 = borda)
+            float r = length(vUv - vec2(0.5)) * 2.0;
+
+            // Ângulo ao longo do anel
+            float angle = vUv.y * 6.28318530718;
+
+            // Ondas de neon viajando em 3 harmônicos diferentes
+            float wave1 = sin(angle * 2.0 - uTime * uWaveSpeed);
+            float wave2 = sin(angle * 5.0 - uTime * uWaveSpeed * 1.7 + 1.3);
+            float wave3 = sin(angle * 9.0 - uTime * uWaveSpeed * 2.4 + 2.1);
+            float traveling = 0.35 * wave1 + 0.25 * wave2 + 0.18 * wave3;
+            traveling = smoothstep(-0.55, 1.0, traveling);
+
+            // Núcleo brilhante no centro do tubo
+            float core = 1.0 - smoothstep(0.0, 0.45, r);
+            core = pow(core, 1.6);
+
+            // Borda suave externa
+            float edge = 1.0 - smoothstep(0.55, 1.0, r);
+
+            // Fresnel para glow de volume
+            vec3 viewDir = normalize(vViewPosition);
+            float fresnel = pow(1.0 - abs(dot(viewDir, vNormal)), 2.5);
+
+            // Cor final: core branco no meio, cor neon na borda, pulso viajante
+            vec3 base = mix(uGlowColor, uColor, r);
+            vec3 coreGlow = mix(base, uCoreColor, core * 0.85);
+            vec3 pulse = coreGlow + traveling * (uCoreColor - coreGlow) * 0.7;
+            vec3 finalColor = pulse + fresnel * uGlowColor * 0.6;
+
+            float alpha = (core * 0.9 + edge * 0.35 + fresnel * 0.25 + traveling * 0.3) * uOpacity;
+            alpha *= smoothstep(1.0, 0.85, r); // corte limpo na borda
+
+            gl_FragColor = vec4(finalColor, alpha);
+          }
+        `,
         transparent: true,
-        opacity: isDark ? 0.18 : 0.10,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide,
       });
-      shadowMat.opacity = isMobile ? 0.06 : shadowMat.opacity;
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      // No mobile, achata horizontalmente para não parecer uma linha fina de perfil
+      ring.scale.set(isMobile ? 1.12 : 1.0, isMobile ? 0.82 : 1.0, 1.0);
+      universe.add(ring);
+
+      // Segundo anel externo mais fino e opaco para dar volume
+      const rimGeo = new THREE.TorusGeometry(RING_RADIUS + (isMobile ? 0.18 : 0.22), isMobile ? 0.025 : 0.035, 24, 140);
+      const rimMat = new THREE.MeshBasicMaterial({
+        color: isDark ? 0x4f5bff : 0x6b7cff,
+        transparent: true,
+        opacity: isDark ? 0.12 : 0.22,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const rimRing = new THREE.Mesh(rimGeo, rimMat);
+      rimRing.rotation.x = Math.PI / 2;
+      rimRing.scale.set(isMobile ? 1.12 : 1.0, isMobile ? 0.82 : 1.0, 1.0);
+      universe.add(rimRing);
+
+      // Sombra/projeção do anel no centro (disco translúcido)
+      const shadowGeo = new THREE.CircleGeometry(isMobile ? 1.35 : 2.25, 64);
+      const shadowMat = new THREE.MeshBasicMaterial({
+        color: isDark ? 0x586cf0 : 0x8797ff,
+        transparent: true,
+        opacity: isDark ? 0.16 : 0.10,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+      shadowMat.opacity = isMobile ? 0.05 : shadowMat.opacity;
       const ringShadow = new THREE.Mesh(shadowGeo, shadowMat);
       ringShadow.rotation.x = Math.PI / 2;
       ringShadow.position.y = -0.08;
@@ -201,7 +288,7 @@ export function Hero3D() {
         nodes.push({
           sprite,
           glow,
-          r: (isMobile ? 1.72 : 2.9) + (i % 2) * (isMobile ? 0.28 : 0.55),
+          r: RING_RADIUS + (isMobile ? 0.22 : 0.35) + (i % 2) * (isMobile ? 0.22 : 0.45),
           speed: 0.04 + (i % 2) * 0.025,
           tilt: i * 0.7,
           phase: i * (Math.PI * 2 / ICON_SVGS.length),
@@ -333,16 +420,19 @@ export function Hero3D() {
         universe.rotation.x = curRot.x + 0.55 + Math.sin(t * 0.08) * 0.05;
         universe.rotation.y = curRot.y + t * 0.035;
 
-        // Giro contínuo do anel sobre seu próprio eixo + pulso aleatório de glow
-        ring.rotation.z += 0.018;
-        // Pulso de brilho no anel interno azul: disparos aleatórios de curta duração
-        const pulseBase = isDark ? 0.28 : 0.42;
-        const pulseIntensity = 0.22;
-        const pulseSpeed = 1.8;
-        const pulseTrigger = Math.sin(t * pulseSpeed + Math.sin(t * 0.7) * 2.5);
-        const pulse = Math.pow(Math.max(0, pulseTrigger), 3.5);
-        ringMat.opacity = pulseBase + pulse * pulseIntensity;
-        ringShadow.material.opacity = (isMobile ? 0.06 : (isDark ? 0.12 : 0.08)) + pulse * 0.08;
+        // Giro contínuo do anel sobre seu próprio eixo + onda de neon viajando
+        ring.rotation.z += 0.022;
+        rimRing.rotation.z -= 0.018;
+        ringMat.uniforms.uTime.value = t;
+
+        // Pulso de brilho global sutil (sincronizado com a onda do shader)
+        const pulseBase = isDark ? 0.55 : 0.7;
+        const pulseIntensity = 0.18;
+        const pulseTrigger = Math.sin(t * 0.9 + Math.sin(t * 0.5) * 1.8);
+        const pulse = Math.pow(Math.max(0, pulseTrigger), 3.0);
+        ringMat.uniforms.uOpacity.value = pulseBase + pulse * pulseIntensity;
+        rimRing.material.opacity = (isDark ? 0.12 : 0.22) + pulse * 0.08;
+        ringShadow.material.opacity = (isMobile ? 0.05 : (isDark ? 0.14 : 0.09)) + pulse * 0.06;
 
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
@@ -386,7 +476,9 @@ export function Hero3D() {
         orbitGeo.attributes.position.needsUpdate = true;
 
         // Anel balança levemente no eixo X, dando sensação de órbita real
-        ring.rotation.x = Math.PI / 2 + Math.sin(t * 0.35) * 0.08;
+        const tilt = Math.sin(t * 0.35) * 0.08;
+        ring.rotation.x = Math.PI / 2 + tilt;
+        rimRing.rotation.x = ring.rotation.x;
         ringShadow.rotation.x = ring.rotation.x;
 
         renderer.render(scene, camera);
@@ -422,6 +514,8 @@ export function Hero3D() {
         glowGeo.dispose();
         ringGeo.dispose();
         ringMat.dispose();
+        rimGeo.dispose();
+        rimMat.dispose();
         shadowGeo.dispose();
         shadowMat.dispose();
         orbitGeo.dispose();
