@@ -41,7 +41,7 @@ export function HeroEmojiField() {
       el.style.left = "0";
       el.style.top = "0";
       const color = colors[Math.floor(Math.random() * colors.length)];
-      const size = isCoarse ? 0.45 + Math.random() * 0.55 : 0.6 + Math.random() * 0.9;
+      const size = isCoarse ? 0.4 + Math.random() * 0.45 : 0.6 + Math.random() * 0.9;
       el.style.fontSize = `${size}rem`;
       el.style.color = color;
       el.style.textShadow = `0 0 8px ${color}, 0 0 16px ${color}`;
@@ -58,7 +58,7 @@ export function HeroEmojiField() {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         life: 0,
-        maxLife: isCoarse ? 18 + Math.random() * 20 : 24 + Math.random() * 28,
+        maxLife: isCoarse ? 40 + Math.random() * 40 : 24 + Math.random() * 28,
         size,
       });
     };
@@ -92,23 +92,18 @@ export function HeroEmojiField() {
       if (cancelled) return;
       raf = requestAnimationFrame(tick);
 
-      // No mobile, gera estrelas aleatórias ao redor do centro para manter a vibe
+      // No mobile, gera uma estrela a cada intervalo, focada na área visível superior
       if (isCoarse) {
         const now = performance.now();
-        if (now - lastSpawn > 550) {
+        if (now - lastSpawn > 1400) {
           lastSpawn = now;
           const rect = container.getBoundingClientRect();
           const centerX = rect.width / 2;
-          const centerY = rect.height / 2;
-          const minDim = Math.min(rect.width, rect.height);
-          // 2 estrelas suaves posicionadas em anéis diferentes, evitando centro
-          for (let k = 0; k < 2; k++) {
-            const angle = Math.random() * Math.PI * 2;
-            const r = minDim * (0.28 + Math.random() * 0.32);
-            const x = centerX + Math.cos(angle) * r;
-            const y = centerY + Math.sin(angle) * r;
-            spawn(x, y);
-          }
+          // Foca na metade superior da tela mobile (onde o anel/logo aparece)
+          const y = rect.height * (0.12 + Math.random() * 0.38);
+          const xSpread = rect.width * 0.42;
+          const x = centerX + (Math.random() - 0.5) * xSpread;
+          spawn(x, y);
         }
       }
 
