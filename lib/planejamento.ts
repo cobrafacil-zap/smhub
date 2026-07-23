@@ -84,6 +84,27 @@ export function prazoDentroJanelaDuasSemanas(
 
 export type Periodo = "semana" | "mes";
 
+/** Nome amigável de um prazo relativo a hoje, para agrupamento no kanban. */
+export function faixaPrazo(prazo: string | null | undefined, hoje: Date = new Date()): string {
+  if (!prazo) return "Sem data";
+
+  const ref = new Date(hoje);
+  ref.setHours(0, 0, 0, 0);
+  const p = new Date(prazo + "T00:00:00");
+
+  const diffMs = p.getTime() - ref.getTime();
+  const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDias < 0) return "Atrasado";
+  if (diffDias === 0) return "Hoje";
+  if (diffDias === 1) return "Amanhã";
+  if (diffDias < 7) return "Esta semana";
+  if (diffDias < 14) return "Próxima semana";
+  return "Depois";
+}
+
+export const ORDEM_FAIXA = ["Atrasado", "Hoje", "Amanhã", "Esta semana", "Próxima semana", "Depois", "Sem data"];
+
 /**
  * Início (segunda) e fim (domingo) da semana, ou 1º e último dia do mês,
  * para a data de referência `refIso` (YYYY-MM-DD). Retorna também um label e se

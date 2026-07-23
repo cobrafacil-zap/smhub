@@ -11,6 +11,7 @@ import { Reveal } from "@/components/ui/motion/Reveal";
 import { TarefaCard } from "./TarefaCard";
 import { TarefaDialog } from "./TarefaDialog";
 import { TarefaDetailDialog } from "./TarefaDetailDialog";
+import { faixaPrazo, ORDEM_FAIXA } from "@/lib/planejamento";
 import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefas/page";
 import type { TarefaStatus } from "@/types/database";
 
@@ -38,6 +39,7 @@ export function KanbanBoard({
   const [clienteId, setClienteId] = useState<string>("");
   const [minhas, setMinhas] = useState(false);
   const [mostrarArquivadas, setMostrarArquivadas] = useState(false);
+  const [agruparPorDia, setAgruparPorDia] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editando, setEditando] = useState<TarefaItem | null>(null);
   const [visualizando, setVisualizando] = useState<TarefaItem | null>(null);
@@ -142,6 +144,16 @@ export function KanbanBoard({
           Arquivadas
         </label>
 
+        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer h-9">
+          <input
+            type="checkbox"
+            checked={agruparPorDia}
+            onChange={(e) => setAgruparPorDia(e.target.checked)}
+            className="h-4 w-4 rounded border-border accent-royal-500"
+          />
+          Por dia
+        </label>
+
         {podeCriar && (
           <div className="ml-auto">
             <Button iconLeft={<Plus className="h-4 w-4" />} onClick={abrirCriar}>
@@ -218,41 +230,91 @@ export function KanbanBoard({
                   {(() => {
                     // Densidade: com muitos cards na coluna, encolhe pra caber mais.
                     const nivel = itens.length > 10 ? "minimo" : itens.length > 5 ? "compacto" : "normal";
-                    // Agrupa por cliente (mesmo cliente junto, com rótulo).
-                    const ordenados = [...itens].sort(
-                      (a, b) =>
-                        (a.cliente_nome ?? "~~sem cliente").localeCompare(
-                          b.cliente_nome ?? "~~sem cliente"
-                        )
-                    );
-                    let ultimoCliente: string | null = "__init__";
-                    return ordenados.map((t, i) => {
-                      const grp = t.cliente_nome ?? null;
-                      const novoGrupo = grp !== ultimoCliente;
-                      ultimoCliente = grp;
-                      return (
-                        <div key={t.id}>
-                          {novoGrupo && (
-                            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-1 pt-1.5 pb-0.5 flex items-center gap-1">
-                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-royal-400" />
-                              {grp ?? "Sem cliente"}
-                            </div>
-                          )}
-                          <Reveal delay={Math.min(i, 8) * 50}>
-                            <TarefaCard
-                              tarefa={t}
-                              meuId={meuId}
-                              meuRole={meuRole}
-                              nivel={nivel}
-                              arrastando={dragId === t.id}
-                              onEdit={abrirEditar}
-                              onView={abrirVer}
-                              onDragStart={() => setDragId(t.id)}
-                              onDragEnd={() => setDragId(null)}
-                            />
-                          </Reveal>
+
+                    const renderCards = (lista: TarefaItem[], baseIndex: number) =>
+                      lista.map((t, i) => (
+                        <Reveal key={t.id} delay={Math.min(baseIndex + i, 12) * 40}>
+                          <TarefaCard
+                            tarefa={t}
+                            meuId={meuId}
+                            meuRole={meuRole}
+                            nivel={nivel}
+                            arrastando={dragId === t.id}
+                            onEdit={abrirEditar}
+                            onView={abrirVer}
+                            onDragStart={() => setDragId(t.id)}
+                            onDragEnd={() => setDragId(null)}
+                          />
+                        </Reveal>
+                      ));
+
+                    if (!agruparPorDia) {
+                      // Agrupamento original por cliente
+                      const ordenados = [...itens].sort(
+                        (a, b) =>
+                          (a.cliente_nome ?? "~~sem cliente").localeCompare(
+                            b.cliente_nome ?? "~~sem cliente"
+                          )
+                      );
+                      let ultimoCliente: string | null = "__init__";
+                      return ordenados.map((t, i) => {
+                        const grp = t.cliente_nome ?? null;
+                        const novoGrupo = grp !== ultimoCliente;
+                        ultimoCliente = grp;
+                        return (
+                          <div key={t.id}>
+                            {novoGrupo && (
+                              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-1 pt-1.5 pb-0.5 flex items-center gap-1">
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-royal-400" />
+                                {grp ?? "Sem cliente"}
+                              </div>
+                            )}
+                            {renderCards([t], i)}
+                          </div>
+                        );
+                      });
+                    }
+
+                    // Agrupamento por faixa de prazo: ajuda o executor a saber o que fazer por dia
+                    const grupos: Record<string, TarefaItem[]> = {};
+                    for (const t of itens) {
+                      const faixa = faixaPrazo(t.prazo);
+                      (grupos[faixa] ??= []).push(t);
+                    }
+
+                    // Ordena cada faixa: primeiro atrasados por dias, depois por prioridade e prazo
+                    for (const faixa of Object.keys(grupos)) {
+                      grupos[faixa].sort((a, b) => {
+                        const prioridadeOrdem = { urgente: 0, alta: 1, media: 2, baixa: 3 };
+                        const pa = prioridadeOrdem[a.prioridade] ?? 99;
+                        const pb = prioridadeOrdem[b.prioridade] ?? 99;
+                        if (pa !== pb) return pa - pb;
+                        return (a.prazo ?? "9999-99-99").localeCompare(b.prazo ?? "9999-99-99");
+                      });
+                    }
+
+                    let index = 0;
+                    return ORDEM_FAIXA.filter((faixa) => grupos[faixa]?.length).map((faixa) => {
+                      const lista = grupos[faixa];
+                      const faixaColor =
+                        faixa === "Atrasado"
+                          ? "text-danger-400 bg-danger-500/10 border-danger-500/30"
+                          : faixa === "Hoje"
+                            ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30"
+                            : faixa === "Amanhã"
+                              ? "text-royal-300 bg-royal-500/10 border-royal-500/30"
+                              : "text-slate-400 bg-bg-elevated border-border";
+                      const component = (
+                        <div key={faixa} className="space-y-1">
+                          <div className={`text-[10px] font-semibold uppercase tracking-wider rounded-md border px-2 py-1 flex items-center justify-between ${faixaColor}`}>
+                            <span>{faixa}</span>
+                            <span>{lista.length}</span>
+                          </div>
+                          {renderCards(lista, index)}
                         </div>
                       );
+                      index += lista.length;
+                      return component;
                     });
                   })()}
                 </div>
