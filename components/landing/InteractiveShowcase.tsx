@@ -132,9 +132,9 @@ export function InteractiveShowcase() {
         </p>
       </div>
 
-      {/* Carrossel 3D: sempre um card ativo no centro. */}
+      {/* Carrossel 3D: ativo no centro + vizinhos visíveis (peek) no mobile. */}
       <div
-        className="relative h-[380px] sm:h-[420px] flex items-center justify-center overflow-visible"
+        className="relative h-[380px] sm:h-[420px] flex items-center justify-center overflow-hidden sm:overflow-visible"
         style={{ perspective: "1200px", perspectiveOrigin: "center center" }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -146,13 +146,13 @@ export function InteractiveShowcase() {
           const abs = Math.abs(offset);
           const isActive = offset === 0;
           const isNeighbor = abs === 1;
-          const showSide = isDesktop && isNeighbor;
+          const showSide = isDesktop ? isNeighbor : abs <= 1;
           const visible = isActive || showSide;
           const Icon = m.icon;
 
           const transform = isDesktop
             ? `translate(-50%, -50%) translateX(${offset * 340}px) translateZ(${-abs * 80}px) rotateY(${offset * -22}deg) scale(${isActive ? 1 : 0.82})`
-            : `translate(-50%, -50%) translateX(${offset * 90}%) scale(${isActive ? 1 : 0.85})`;
+            : `translate(-50%, -50%) translateX(${offset * 78}%) scale(${isActive ? 1 : 0.78})`;
 
           return (
             <button
@@ -162,12 +162,12 @@ export function InteractiveShowcase() {
               aria-label={m.title}
               tabIndex={visible ? 0 : -1}
               className={cn(
-                "group absolute left-1/2 top-1/2 w-[min(88vw,360px)] sm:w-[420px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
+                "group absolute left-1/2 top-1/2 w-[min(78vw,320px)] sm:w-[420px] text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer",
                 visible ? "pointer-events-auto" : "pointer-events-none"
               )}
               style={{
                 transform,
-                opacity: !visible ? 0 : isActive ? 1 : 0.4,
+                opacity: !visible ? 0 : isActive ? 1 : isNeighbor ? 0.55 : 0.25,
                 zIndex: isActive ? 30 : 20 - abs,
                 transformStyle: "preserve-3d",
                 backfaceVisibility: "hidden",
@@ -240,29 +240,20 @@ export function InteractiveShowcase() {
         })}
       </div>
 
-      <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-        {/* Indicador de swipe no mobile */}
-        <div className="flex items-center gap-2 text-xs text-slate-400 sm:hidden">
-          <span className="inline-flex h-6 items-center gap-1 px-2 rounded-full border border-border bg-bg-surface/60">
-            <span className="inline-block w-1 h-1 rounded-full bg-royal-300" />
-            arraste o card pro lado
-            <span className="inline-block w-1 h-1 rounded-full bg-royal-300" />
-          </span>
-          <span className="flex gap-1">
-            {MODS.map((_, i) => (
-              <span
-                key={i}
-                className={`block h-1.5 rounded-full transition-all duration-300 ${
-                  i === active ? "w-4 bg-royal-400" : "w-1.5 bg-slate-600"
-                }`}
-              />
-            ))}
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-500 hidden sm:block">
-          {active + 1} de {MODS.length} · arraste o card ← →
+      <div className="mt-4 flex items-center justify-center gap-3">
+        <p className="text-xs text-slate-500">
+          {active + 1} de {MODS.length}
         </p>
+        <span className="flex gap-1">
+          {MODS.map((_, i) => (
+            <span
+              key={i}
+              className={`block h-1.5 rounded-full transition-all duration-300 ${
+                i === active ? "w-4 bg-royal-400" : "w-1.5 bg-slate-600"
+              }`}
+            />
+          ))}
+        </span>
       </div>
     </section>
   );
