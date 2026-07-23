@@ -102,7 +102,7 @@ export function Hero3D() {
       scene.add(neonLight);
 
       // Anel central orbitando o SM Hub — maior que o logo
-      const ringGeo = new THREE.TorusGeometry(isMobile ? 2.0 : 2.6, isMobile ? 0.03 : 0.036, 20, 120);
+      const ringGeo = new THREE.TorusGeometry(isMobile ? 1.55 : 2.6, isMobile ? 0.045 : 0.048, 20, 120);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x7486ff,
         transparent: true,
@@ -155,7 +155,7 @@ export function Hero3D() {
         nodes.push({
           sprite,
           glow,
-          r: (isMobile ? 2.1 : 2.9) + (i % 2) * (isMobile ? 0.35 : 0.55),
+          r: (isMobile ? 1.72 : 2.9) + (i % 2) * (isMobile ? 0.28 : 0.55),
           speed: 0.04 + (i % 2) * 0.025,
           tilt: i * 0.7,
           phase: i * (Math.PI * 2 / ICON_SVGS.length),
@@ -284,7 +284,7 @@ export function Hero3D() {
         curRot.x += (targetRot.x - curRot.x) * 0.05;
         curRot.y += (targetRot.y - curRot.y) * 0.05;
         // Roda em torno do logo SM Hub — órbita 3D clara
-        universe.rotation.x = curRot.x + 0.28 + Math.sin(t * 0.08) * 0.05;
+        universe.rotation.x = curRot.x + 0.55 + Math.sin(t * 0.08) * 0.05;
         universe.rotation.y = curRot.y + t * 0.035;
 
         // Pulsar do anel central
