@@ -10,13 +10,23 @@ import { deletarTransacaoAction } from "@/lib/actions/agencia-actions";
  * Botão "Excluir" de um lançamento financeiro. Abre um diálogo de
  * confirmação, chama a server action e dá feedback via toast. RLS garante
  * que só exclui transações da agência do usuário logado.
+ *
+ * Quando o lançamento é uma parcela de um grupo (`parcelaTotal > 1`), a
+ * mensagem do dialog deixa claro que **as outras parcelas continuam**:
+ * excluir uma não apaga o grupo inteiro (só o cascade da PAI faz isso).
+ * Pra excluir o grupo todo, o usuário usa o botão "Excluir todas as
+ * parcelas" no dialog de edição da parcela 1/N.
  */
 export function ExcluirTransacaoButton({
   id,
   descricao,
+  parcelaAtual,
+  parcelaTotal,
 }: {
   id: string;
   descricao: string;
+  parcelaAtual?: number | null;
+  parcelaTotal?: number | null;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -28,6 +38,10 @@ export function ExcluirTransacaoButton({
     else ref.current?.close();
   }, [open]);
 
+  const isParcela = !!parcelaTotal && !!parcelaAtual;
+  const isPai = isParcela && parcelaAtual === 1;
+  const outrasCount = isParcela && parcelaTotal ? parcelaTotal - 1 : 0;
+
   function excluir() {
     start(async () => {
       const res = await deletarTransacaoAction(id);
@@ -35,7 +49,11 @@ export function ExcluirTransacaoButton({
         toast.error(res.error);
         return;
       }
-      toast.success("Lançamento excluído.");
+      if (isPai) {
+        toast.success("Parcela inicial e todas as filhas excluídas.");
+      } else {
+        toast.success("Parcela excluída.");
+      }
       setOpen(false);
       router.refresh();
     });
@@ -63,12 +81,24 @@ export function ExcluirTransacaoButton({
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-100">
-                Excluir lançamento?
+                {isParcela ? `Excluir parcela ${parcelaAtual}/${parcelaTotal}?` : "Excluir lançamento?"}
               </h3>
               <p className="text-sm text-slate-400 mt-1">
                 <strong className="text-slate-200">{descricao}</strong> será
                 removido do fluxo de caixa. Esta ação não pode ser desfeita.
               </p>
+              {isPai && (
+                <p className="text-xs text-amber-300/90 mt-2 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1.5">
+                  <strong>Atenção:</strong> esta é a parcela 1/{parcelaTotal}.
+                  Excluí-la <strong>apaga todas as {parcelaTotal} parcelas</strong>{" "}
+                  do grupo (cascade).
+                </p>
+              )}
+              {!isPai && isParcela && outrasCount > 0 && (
+                <p className="text-xs text-slate-400 mt-2">
+                  As outras {outrasCount} parcela{outrasCount > 1 ? "s" : ""} do grupo continuam normais.
+                </p>
+              )}
             </div>
           </div>
 

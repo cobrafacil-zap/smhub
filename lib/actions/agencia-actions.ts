@@ -775,7 +775,28 @@ async function sincronizarTarefaDaEntrada(
     return null;
   }
 
-  // Cria nova tarefa vinculada à entrada.
+  // Cria nova tarefa vinculada à entrada. Vai pro "Quadro geral" (mais
+  // antigo da agência) — tarefas automáticas do planejamento não pertencem
+  // a um quadro específico, e o geral é o destino neutro.
+  const { data: geralRow } = await supabase
+    .from("tarefa_quadros")
+    .select("id")
+    .eq("agencia_id", aid)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  let quadroId = geralRow?.id ?? null;
+  if (!quadroId) {
+    // Defesa: se a migration 0036 não rodou (improvável), cria o geral
+    // na hora pra não quebrar o fluxo de atribuição do planejamento.
+    const { data: novo } = await supabase
+      .from("tarefa_quadros")
+      .insert({ agencia_id: aid, nome: "Quadro geral", ordem: 0 })
+      .select("id")
+      .single();
+    quadroId = novo?.id ?? null;
+  }
+
   const { data: tarefa, error: insErr } = await supabase
     .from("tarefas")
     .insert({
@@ -788,6 +809,7 @@ async function sincronizarTarefaDaEntrada(
       prioridade,
       prazo,
       entrada_id: entrada.id,
+      quadro_id: quadroId,
     })
     .select("id")
     .single();
@@ -1054,20 +1076,113 @@ const transacaoSchema = z.object({
   natureza: z.enum(["fixa", "variavel"]).default("variavel"),
 });
 
+/**
+ * Avança uma data (YYYY-MM-DD) em N meses, mantendo o dia do mês (limitado
+ * ao último dia do mês destino se o original for dia 31, por exemplo).
+ */
+function addMonths(iso: string, meses: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const target = new Date(y, m - 1 + meses, 1);
+  // dia = min(d, último dia do mês destino)
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  const day = Math.min(d, lastDay);
+  const out = new Date(target.getFullYear(), target.getMonth(), day);
+  const yy = out.getFullYear();
+  const mm = String(out.getMonth() + 1).padStart(2, "0");
+  const dd = String(out.getDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
 export async function criarTransacaoAction(prev: unknown, formData: FormData) {
   const session = await requireAgenciaMember();
   const supabase = createClient();
+  const aid = session.profile.agencia_id!;
+
+  // Lê `parcelas_total` separadamente (não vai pro schema base — só é
+  // lógica de criação). Default 1 = sem parcelar.
   const raw = Object.fromEntries(formData);
+  const parcelasTotalRaw = raw.parcelas_total;
+  const parcelasTotal = Math.max(
+    1,
+    Math.min(60, Number(parcelasTotalRaw) || 1)
+  );
+
   const parsed = transacaoSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
-  const { error } = await supabase.from("transacoes").insert({
-    ...parsed.data,
-    agencia_id: session.profile.agencia_id,
-  });
-  if (error) return { error: "Erro ao criar transação." };
+  const data = parsed.data;
+
+  // Monta o payload-base compartilhado entre pai e filhas.
+  const basePayload = {
+    tipo: data.tipo,
+    categoria: data.categoria,
+    descricao: data.descricao,
+    valor: data.valor,
+    natureza: data.natureza ?? "variavel",
+    cliente_id: data.cliente_id ?? null,
+    agencia_id: aid,
+  };
+
+  if (parcelasTotal === 1) {
+    // Caminho atual: 1 transação, sem parcelamento.
+    const { error } = await supabase.from("transacoes").insert({
+      ...basePayload,
+      data_vencimento: data.data_vencimento,
+      data_pagamento: data.data_pagamento ?? null,
+      status: data.status,
+      recorrente: data.recorrente ?? false,
+    });
+    if (error) return { error: "Erro ao criar transação." };
+    revalidatePath("/admin/financeiro");
+    revalidateTag("financeiro-data");
+    return { ok: true, count: 1 };
+  }
+
+  // Caminho parcelado: insere a pai (1/N) e depois as filhas (i/N pra
+  // i=2..N). Cada parcela é uma transação independente (pode ser marcada
+  // paga ou excluída sozinha).
+  const { data: pai, error: paiErr } = await supabase
+    .from("transacoes")
+    .insert({
+      ...basePayload,
+      data_vencimento: data.data_vencimento,
+      data_pagamento: null,
+      status: "pendente",
+      recorrente: data.recorrente ?? false,
+      parcela_atual: 1,
+      parcela_total: parcelasTotal,
+      transacao_pai_id: null,
+    })
+    .select("id")
+    .single();
+  if (paiErr || !pai) return { error: "Erro ao criar parcela inicial." };
+
+  const filhasPayload = [];
+  for (let i = 2; i <= parcelasTotal; i++) {
+    filhasPayload.push({
+      ...basePayload,
+      data_vencimento: addMonths(data.data_vencimento, i - 1),
+      data_pagamento: null,
+      status: "pendente",
+      recorrente: data.recorrente ?? false,
+      parcela_atual: i,
+      parcela_total: parcelasTotal,
+      transacao_pai_id: pai.id,
+    });
+  }
+  const { error: filhasErr } = await supabase
+    .from("transacoes")
+    .insert(filhasPayload);
+  if (filhasErr) {
+    // Rollback best-effort: apaga a pai (cascade cuida das filhas se já
+    // tivessem sido inseridas). Se a pai já estiver com filhas parciais,
+    // o cascade resolve.
+    await supabase.from("transacoes").delete().eq("id", pai.id);
+    return { error: "Erro ao criar parcelas." };
+  }
+
   revalidatePath("/admin/financeiro");
   revalidateTag("financeiro-data");
-  return { ok: true };
+  return { ok: true, count: parcelasTotal, id: pai.id };
 }
 
 export async function atualizarTransacaoAction(id: string, formData: FormData) {
@@ -1076,6 +1191,9 @@ export async function atualizarTransacaoAction(id: string, formData: FormData) {
   const raw = Object.fromEntries(formData);
   const parsed = transacaoSchema.partial().safeParse(raw);
   if (!parsed.success) return { error: "Dados inválidos." };
+  // Defesa em profundidade: parcelamento é estrutural, não editável por
+  // linha. Mesmo se a UI mandar esses campos por engano, a action ignora
+  // (o schema não os inclui). `parcelas_total` (singular) também não.
   const { error } = await supabase
     .from("transacoes")
     .update(parsed.data)
@@ -1090,6 +1208,8 @@ export async function atualizarTransacaoAction(id: string, formData: FormData) {
 export async function deletarTransacaoAction(id: string) {
   const session = await requireAgenciaMember();
   const supabase = createClient();
+  // Cascade do DB apaga filhas se a excluída for a pai; senão, só apaga
+  // ela mesma (UX atual preservada).
   const { error } = await supabase
     .from("transacoes")
     .delete()
@@ -1099,6 +1219,47 @@ export async function deletarTransacaoAction(id: string) {
   revalidatePath("/admin/financeiro");
   revalidateTag("financeiro-data");
   return { ok: true };
+}
+
+/**
+ * Exclui TODAS as parcelas de um grupo (pai + filhas). Útil quando o
+ * usuário quer desfazer um parcelamento inteiro. Recebe o id de qualquer
+ * transação do grupo — descobre a pai e deleta ela (cascade apaga as
+ * filhas).
+ */
+export async function excluirTodasParcelasAction(id: string) {
+  const session = await requireAgenciaMember();
+  const supabase = createClient();
+  const aid = session.profile.agencia_id!;
+
+  // Descobre a pai: ou o próprio id (se já for pai) ou o transacao_pai_id.
+  const { data: t, error: findErr } = await supabase
+    .from("transacoes")
+    .select("id, transacao_pai_id, parcela_total")
+    .eq("id", id)
+    .eq("agencia_id", aid)
+    .maybeSingle();
+  if (findErr || !t) return { error: "Lançamento não encontrado." };
+  if (!t.parcela_total) return { error: "Este lançamento não é parcelado." };
+
+  const paiId = t.transacao_pai_id ?? t.id;
+
+  // Conta filhas antes (pra mensagem do toast).
+  const { count } = await supabase
+    .from("transacoes")
+    .select("id", { count: "exact", head: true })
+    .eq("transacao_pai_id", paiId);
+
+  const { error: delErr } = await supabase
+    .from("transacoes")
+    .delete()
+    .eq("id", paiId)
+    .eq("agencia_id", aid);
+  if (delErr) return { error: "Erro ao excluir parcelas." };
+
+  revalidatePath("/admin/financeiro");
+  revalidateTag("financeiro-data");
+  return { ok: true, count: count ?? 0 };
 }
 
 // ============================================================================

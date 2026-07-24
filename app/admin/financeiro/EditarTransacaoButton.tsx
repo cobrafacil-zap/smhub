@@ -1,16 +1,22 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Pencil, X, Save } from "lucide-react";
-import { atualizarTransacaoAction } from "@/lib/actions/agencia-actions";
+import { Pencil, X, Save, Trash2 } from "lucide-react";
+import { atualizarTransacaoAction, excluirTodasParcelasAction } from "@/lib/actions/agencia-actions";
 import { Button } from "@/components/ui/Button";
 import { BRLInput } from "@/components/ui/BRLInput";
+import { toast } from "@/components/ui/Toast";
 import type { TransacaoNatureza, TransacaoStatus, TransacaoTipo } from "@/types/database";
 
 /**
  * Botão "Editar" de um lançamento financeiro — abre um dialog com o
  * formulário preenchido. Usa a server action atualizarTransacaoAction
  * (Partial), que respeita RLS pela agencia_id do usuário logado.
+ *
+ * Quando o lançamento é uma parcela de um grupo, o título do dialog
+ * mostra "Editar parcela X/N" e aparece um botão extra "Excluir todas
+ * as parcelas" (só na pai, parcela 1/N), que chama
+ * `excluirTodasParcelasAction` e deleta a pai (cascade apaga as filhas).
  */
 export function EditarTransacaoButton({
   id,
@@ -21,6 +27,8 @@ export function EditarTransacaoButton({
   descricao,
   categoria,
   natureza,
+  parcelaAtual,
+  parcelaTotal,
 }: {
   id: string;
   tipo: TransacaoTipo;
@@ -30,16 +38,22 @@ export function EditarTransacaoButton({
   descricao: string;
   categoria: string;
   natureza: TransacaoNatureza | null;
+  parcelaAtual: number | null;
+  parcelaTotal: number | null;
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [removingAll, setRemovingAll] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     if (open) ref.current?.showModal();
     else ref.current?.close();
   }, [open]);
+
+  const isParcela = !!parcelaTotal && !!parcelaAtual;
+  const isPai = isParcela && parcelaAtual === 1;
 
   async function handleSubmit(formData: FormData) {
     setSaving(true);
@@ -56,6 +70,32 @@ export function EditarTransacaoButton({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro inesperado.");
       setSaving(false);
+    }
+  }
+
+  async function handleExcluirTodas() {
+    if (!confirm(`Excluir todas as ${parcelaTotal} parcelas? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+    setRemovingAll(true);
+    try {
+      const res = await excluirTodasParcelasAction(id);
+      if (res && "error" in res && res.error) {
+        toast.error(res.error);
+        setRemovingAll(false);
+      } else {
+        const count = "count" in res && typeof res.count === "number" ? res.count : 0;
+        toast.success(
+          count > 0
+            ? `${count + 1} parcelas excluídas.`
+            : "Parcelas excluídas."
+        );
+        setRemovingAll(false);
+        setOpen(false);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro inesperado.");
+      setRemovingAll(false);
     }
   }
 
@@ -77,8 +117,17 @@ export function EditarTransacaoButton({
         <div className="p-5">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-base font-semibold text-slate-100">Editar lançamento</h3>
-              <p className="text-xs text-slate-400 mt-1">{descricao}</p>
+              <h3 className="text-base font-semibold text-slate-100">
+                {isParcela ? `Editar parcela ${parcelaAtual}/${parcelaTotal}` : "Editar lançamento"}
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                {descricao}
+                {isParcela && !isPai && (
+                  <span className="block mt-0.5 text-amber-400/80">
+                    Parcela de um grupo. Pra alterar o grupo inteiro, edite a parcela 1/{parcelaTotal}.
+                  </span>
+                )}
+              </p>
             </div>
             <button
               type="button"
@@ -142,17 +191,33 @@ export function EditarTransacaoButton({
                 </select>
               </div>
             </div>
-            <div className="pt-3 border-t border-border flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="px-3 py-1.5 text-sm rounded-md text-slate-300 hover:bg-bg-elevated"
-              >
-                Cancelar
-              </button>
-              <Button type="submit" loading={saving} iconLeft={<Save className="h-4 w-4" />}>
-                Salvar
-              </Button>
+            <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
+              {isPai ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  loading={removingAll}
+                  onClick={handleExcluirTodas}
+                  iconLeft={<Trash2 className="h-4 w-4" />}
+                  className="text-danger-400 hover:text-danger-300 hover:bg-danger-500/10"
+                >
+                  Excluir todas as parcelas
+                </Button>
+              ) : (
+                <span />
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="px-3 py-1.5 text-sm rounded-md text-slate-300 hover:bg-bg-elevated"
+                >
+                  Cancelar
+                </button>
+                <Button type="submit" loading={saving} iconLeft={<Save className="h-4 w-4" />}>
+                  Salvar
+                </Button>
+              </div>
             </div>
           </form>
         </div>

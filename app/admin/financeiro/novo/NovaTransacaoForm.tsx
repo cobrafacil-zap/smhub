@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
@@ -21,11 +21,17 @@ function SubmitButton() {
 export function NovaTransacaoForm() {
   const router = useRouter();
   const [state, action] = useFormState(criarTransacaoAction, undefined);
+  const [parcelado, setParcelado] = useState(false);
 
   // Sucesso: toast + volta para o financeiro.
   useEffect(() => {
     if (state && "ok" in state && state.ok) {
-      toast.success("Lançamento criado!");
+      const count = "count" in state && typeof state.count === "number" ? state.count : 1;
+      if (count > 1) {
+        toast.success(`${count} parcelas criadas!`);
+      } else {
+        toast.success("Lançamento criado!");
+      }
       router.push("/admin/financeiro");
       router.refresh();
     }
@@ -90,6 +96,35 @@ export function NovaTransacaoForm() {
             <p className="text-[11px] text-slate-500 mt-1">
               Ajuda a separar custos previsíveis dos variáveis nos relatórios.
             </p>
+          </div>
+          <div className="sm:col-span-2 space-y-1.5 rounded-lg border border-border bg-bg-elevated/40 p-3">
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-200">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-border accent-royal-500"
+                checked={parcelado}
+                onChange={(e) => setParcelado(e.target.checked)}
+              />
+              É parcelado (gerar N lançamentos mensais)
+            </label>
+            {parcelado && (
+              <div className="flex flex-wrap items-center gap-2 pl-6 pt-1">
+                <label className="text-xs text-slate-400">Nº de parcelas:</label>
+                <input
+                  name="parcelas_total"
+                  type="number"
+                  min="2"
+                  max="60"
+                  defaultValue="2"
+                  className="input h-8 w-20 text-sm !py-0"
+                  required
+                />
+                <span className="text-[11px] text-slate-500">
+                  Cada parcela vence mensalmente a partir da data acima. Status inicial: <strong className="text-slate-300">pendente</strong>.
+                </span>
+              </div>
+            )}
+            {!parcelado && <input type="hidden" name="parcelas_total" value="1" />}
           </div>
         </div>
         <div className="pt-3 border-t border-border flex justify-end gap-2">

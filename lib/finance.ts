@@ -7,7 +7,7 @@ export interface ResumoMes {
   saldo: number;
 }
 
-type TransacaoResumo = Pick<Transacao, "valor" | "tipo" | "data_vencimento">;
+type TransacaoResumo = Pick<Transacao, "valor" | "tipo" | "data_vencimento" | "status">;
 type FaturaPaga = { valor: number | string; competencia: string };
 
 /**
@@ -15,12 +15,16 @@ type FaturaPaga = { valor: number | string; competencia: string };
  * Dashboard do admin quanto pela página Financeiro, para os dois sempre
  * baterem o mesmo número.
  *
- *   receitas = transações do tipo "receita" no mês (independe de status)
+ *   receitas = transações do tipo "receita" PAGAS no mês
  *            + faturas PAGAS cuja competência cai no mês
- *   despesas = transações do tipo "despesa" no mês
+ *   despesas = transações do tipo "despesa" PAGAS no mês
  *            + custoMensal da equipe ativa (folha fixa — não gera
  *              transação, só é somada ao resumo do mês)
  *   saldo    = receitas - despesas
+ *
+ * Pendente **não conta**: o KPI mostra só o que de fato entrou/saiu.
+ * A página Financeiro tem um modo "Previsão" separado (que inclui
+ * transações/faturas pendentes).
  *
  * O botão "Marcar paga" atualiza o `status` de uma FATURA; por isso as
  * faturas pagas (por `competencia`) entram aqui — senão o KPI "Receita do
@@ -44,9 +48,10 @@ export function calcularResumo(
   const noMes = (data: string | null | undefined) =>
     new Date(data ?? "").getTime() >= inicioMs;
 
+  // Só conta o que foi PAGO — pendente/atrasado/cancelado não entra.
   const receitas =
     transacoes
-      .filter((t) => t.tipo === "receita" && noMes(t.data_vencimento))
+      .filter((t) => t.tipo === "receita" && t.status === "pago" && noMes(t.data_vencimento))
       .reduce((s, t) => s + Number(t.valor || 0), 0) +
     faturasPagas
       .filter((f) => noMes(f.competencia))
@@ -54,7 +59,7 @@ export function calcularResumo(
 
   const despesas =
     transacoes
-      .filter((t) => t.tipo === "despesa" && noMes(t.data_vencimento))
+      .filter((t) => t.tipo === "despesa" && t.status === "pago" && noMes(t.data_vencimento))
       .reduce((s, t) => s + Number(t.valor || 0), 0) +
     custoEquipeMensal;
 
@@ -79,7 +84,7 @@ export async function calcularResumoMes(
     await Promise.all([
       supabase
         .from("transacoes")
-        .select("valor, tipo, data_vencimento")
+        .select("valor, tipo, data_vencimento, status")
         .eq("agencia_id", agenciaId)
         .gte("data_vencimento", inicioMesPassado),
       supabase

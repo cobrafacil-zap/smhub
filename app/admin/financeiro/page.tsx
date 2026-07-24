@@ -9,7 +9,7 @@ import { Suspense } from "react";
 import { unstable_cache } from "next/cache";
 import { Wallet, TrendingUp, TrendingDown, Plus, FileText, Zap, Users, UserCog, ArrowRight } from "lucide-react";
 import { FATURA_STATUS } from "@/lib/constants";
-import { formatBRL, formatDate } from "@/lib/utils";
+import { cn, formatBRL, formatDate } from "@/lib/utils";
 import { CountUp } from "@/components/ui/motion/CountUp";
 import { Reveal } from "@/components/ui/motion/Reveal";
 import { FinanceChartClient as FinanceChart } from "@/components/finance/FinanceChartClient";
@@ -42,7 +42,7 @@ const loadFinanceiroData = unstable_cache(
     const [{ data: trans }, { data: fats }, { data: equipeAtiva }] = await Promise.all([
       supabase
         .from("transacoes")
-        .select("id, descricao, categoria, tipo, valor, data_vencimento, natureza, status")
+        .select("id, descricao, categoria, tipo, valor, data_vencimento, natureza, status, parcela_atual, parcela_total")
         .eq("agencia_id", aid)
         .gte("data_vencimento", inicioISO)
         .lt("data_vencimento", fimISO)
@@ -155,13 +155,16 @@ export default async function FinanceiroPage({
   // Só membros ativos com custo > 0 aparecem na seção "Folha de equipe".
   const membrosComCusto = membros.filter((m) => Number(m.custo_mensal ?? 0) > 0);
 
-  // Receita/despesa de transações nos meses selecionados. Transações =
-  // lançamentos já registrados (compromissos); contam nos dois modos.
+  // Receita/despesa de transações PAGAS nos meses selecionados. Pendente
+  // não entra no KPI — o usuário só quer ver o que de fato entrou/saiu
+  // (o modo "Previsão" pode ser reintroduzido depois se necessário, mas
+  // por padrão a página é o "realizado"). Lançamentos com status
+  // "pago" = receita/despesa; demais status = ignorados.
   const receitasTrans = transacoes
-    .filter((t) => t.tipo === "receita" && noPeriodo(t.data_vencimento))
+    .filter((t) => t.tipo === "receita" && t.status === "pago" && noPeriodo(t.data_vencimento))
     .reduce((s, t) => s + Number(t.valor || 0), 0);
   const despesasTrans = transacoes
-    .filter((t) => t.tipo === "despesa" && noPeriodo(t.data_vencimento))
+    .filter((t) => t.tipo === "despesa" && t.status === "pago" && noPeriodo(t.data_vencimento))
     .reduce((s, t) => s + Number(t.valor || 0), 0);
 
   // Faturas dos meses selecionados. REALIZADO = só pagas; PREVISÃO = todas.
@@ -187,11 +190,13 @@ export default async function FinanceiroPage({
 
   // Soma do que está sendo exibido na tabela (só transações — faturas não
   // aparecem aqui). Usado no rodapé: saldo dos lançamentos do período.
+  // Mesma regra dos KPIs: só conta o que está PAGO (pendente fica de fora
+  // do saldo, mas aparece na lista com cor amarela).
   const totalEntradasExib = lancamentosFiltrados
-    .filter((t) => t.tipo === "receita")
+    .filter((t) => t.tipo === "receita" && t.status === "pago")
     .reduce((s, t) => s + Number(t.valor || 0), 0);
   const totalDespesasExib = lancamentosFiltrados
-    .filter((t) => t.tipo === "despesa")
+    .filter((t) => t.tipo === "despesa" && t.status === "pago")
     .reduce((s, t) => s + Number(t.valor || 0), 0);
   const saldoExib = totalEntradasExib - totalDespesasExib;
 
@@ -203,6 +208,8 @@ export default async function FinanceiroPage({
   for (const t of transacoes) {
     const key = monthKeyOf(t.data_vencimento ?? "");
     if (!key || !byMonth[key]) continue;
+    // Só conta o que foi PAGO — mesma regra dos KPIs.
+    if (t.status !== "pago") continue;
     if (t.tipo === "receita") byMonth[key].receita += Number(t.valor || 0);
     else byMonth[key].despesa += Number(t.valor || 0);
   }
@@ -245,8 +252,12 @@ export default async function FinanceiroPage({
           }
           return parts.join(", ");
         })();
-  // Sufixo de modo mostrado nos KPIs: "realizado" (só pago) vs "previsão".
-  const modoLabel = realizado ? "Realizado (pago)" : "Previsão";
+  // Sufixo de modo mostrado nos KPIs: o modo "Só pago" agora afeta APENAS
+  // as faturas (transações já são sempre filtradas por pago — pendente
+  // nunca conta). O rótulo deixa isso explícito.
+  const modoLabel = realizado
+    ? "Faturas pagas (realizado)"
+    : "Faturas (previsão)";
 
   return (
     <div className="space-y-6">
@@ -286,7 +297,8 @@ export default async function FinanceiroPage({
           </p>
           <p className="text-[11px] text-slate-500 mt-1">
             {modoLabel}
-            {!realizado && " — todas as faturas (pagas + a receber)"}
+            {!realizado && " — inclui faturas a receber"}
+            {/* Lançamentos só contam quando pagos, em qualquer modo. */}
           </p>
         </Card>
         <Card>
@@ -577,49 +589,79 @@ export default async function FinanceiroPage({
           <>
             {/* Mobile: cada lançamento vira um cartão empilhado. */}
             <ul className="sm:hidden divide-y divide-border/50">
-              {lancamentosFiltrados.map((t, i) => (
-                <Reveal key={t.id} as="li" delay={Math.min(i, 8) * 50} className="p-4 space-y-2.5 hover-row">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm text-slate-200 truncate">{t.descricao}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {t.data_vencimento ? formatDate(t.data_vencimento) : "—"}
-                        {t.categoria ? ` · ${t.categoria}` : ""}
+              {lancamentosFiltrados.map((t, i) => {
+                const isPendente = t.status === "pendente";
+                return (
+                  <Reveal
+                    key={t.id}
+                    as="li"
+                    delay={Math.min(i, 8) * 50}
+                    className={cn(
+                      "p-4 space-y-2.5 hover-row",
+                      isPendente && "bg-amber-500/[0.08] border-l-2 border-amber-500/40"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm text-slate-200 truncate">
+                          {t.descricao}
+                          {t.parcela_atual && t.parcela_total ? (
+                            <span className="text-[10px] text-slate-400 ml-1.5 font-mono">
+                              ({t.parcela_atual}/{t.parcela_total})
+                            </span>
+                          ) : null}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {t.data_vencimento ? formatDate(t.data_vencimento) : "—"}
+                          {t.categoria ? ` · ${t.categoria}` : ""}
+                        </p>
+                      </div>
+                      <p className={`text-sm font-semibold shrink-0 ${t.tipo === "receita" ? "text-emerald-400" : "text-rose-400"}`}>
+                        {t.tipo === "despesa" ? "-" : "+"} {formatBRL(Number(t.valor) || 0)}
                       </p>
                     </div>
-                    <p className={`text-sm font-semibold shrink-0 ${t.tipo === "receita" ? "text-emerald-400" : "text-rose-400"}`}>
-                      {t.tipo === "despesa" ? "-" : "+"} {formatBRL(Number(t.valor) || 0)}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Badge variant={t.tipo === "receita" ? "success" : "danger"}>
-                        {t.tipo}
-                      </Badge>
-                      {t.natureza === "fixa" ? (
-                        <Badge variant="brand">Fixa</Badge>
-                      ) : (
-                        <Badge variant="default">Variável</Badge>
-                      )}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant={t.tipo === "receita" ? "success" : "danger"}>
+                          {t.tipo}
+                        </Badge>
+                        {t.natureza === "fixa" ? (
+                          <Badge variant="brand">Fixa</Badge>
+                        ) : (
+                          <Badge variant="default">Variável</Badge>
+                        )}
+                        <Badge variant={t.status === "pago" ? "success" : t.status === "pendente" ? "warning" : "default"}>
+                          {t.status === "pago" ? "Pago" : t.status === "pendente" ? "Pendente" : t.status === "atrasado" ? "Atrasado" : "Cancelado"}
+                        </Badge>
+                      </div>
+                      <div className="inline-flex items-center gap-0.5">
+                        <EditarTransacaoButton
+                          id={t.id}
+                          tipo={t.tipo}
+                          status={t.status}
+                          dataVencimento={t.data_vencimento}
+                          valor={Number(t.valor) || 0}
+                          descricao={t.descricao}
+                          categoria={t.categoria}
+                          natureza={t.natureza}
+                          parcelaAtual={t.parcela_atual}
+                          parcelaTotal={t.parcela_total}
+                        />
+                        <ExcluirTransacaoButton
+                          id={t.id}
+                          descricao={t.descricao}
+                          parcelaAtual={t.parcela_atual}
+                          parcelaTotal={t.parcela_total}
+                        />
+                      </div>
                     </div>
-                    <div className="inline-flex items-center gap-0.5">
-                      <EditarTransacaoButton
-                        id={t.id}
-                        tipo={t.tipo}
-                        status={t.status}
-                        dataVencimento={t.data_vencimento}
-                        valor={Number(t.valor) || 0}
-                        descricao={t.descricao}
-                        categoria={t.categoria}
-                        natureza={t.natureza}
-                      />
-                      <ExcluirTransacaoButton id={t.id} descricao={t.descricao} />
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
+                  </Reveal>
+                );
+              })}
               <li className="p-4 flex items-center justify-between border-t border-border bg-bg-elevated/30">
-                <span className="text-xs text-slate-400">Saldo dos lançamentos</span>
+                <span className="text-xs text-slate-400">
+                  Saldo dos lançamentos <span className="text-slate-500">(só pagos)</span>
+                </span>
                 <span className={`font-semibold ${saldoExib >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
                   {formatBRL(saldoExib)}
                 </span>
@@ -635,51 +677,82 @@ export default async function FinanceiroPage({
                   <th className="px-4 py-2 font-medium">Categoria</th>
                   <th className="px-4 py-2 font-medium">Tipo</th>
                   <th className="px-4 py-2 font-medium">Natureza</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
                   <th className="px-4 py-2 font-medium text-right">Valor</th>
                   <th className="px-4 py-2 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {lancamentosFiltrados.map((t, i) => (
-                  <Reveal key={t.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
-                    <td className="px-4 py-2 text-slate-300">{t.data_vencimento ? formatDate(t.data_vencimento) : "—"}</td>
-                    <td className="px-4 py-2 text-slate-200">{t.descricao}</td>
-                    <td className="px-4 py-2 text-slate-400">{t.categoria ?? "—"}</td>
-                    <td className="px-4 py-2 text-slate-400 text-xs uppercase">
-                      {t.tipo}
-                    </td>
-                    <td className="px-4 py-2">
-                      {t.natureza === "fixa" ? (
-                        <Badge variant="brand">Fixa</Badge>
-                      ) : (
-                        <Badge variant="default">Variável</Badge>
+                {lancamentosFiltrados.map((t, i) => {
+                  const isPendente = t.status === "pendente";
+                  return (
+                    <Reveal
+                      key={t.id}
+                      as="tr"
+                      delay={Math.min(i, 8) * 50}
+                      className={cn(
+                        "border-b border-border/50 hover-row",
+                        isPendente && "bg-amber-500/[0.08] border-l-2 border-l-amber-500/40"
                       )}
-                    </td>
-                    <td className={`px-4 py-2 text-right font-semibold ${t.tipo === "receita" ? "text-emerald-400" : "text-rose-400"}`}>
-                      {t.tipo === "despesa" ? "-" : "+"} {formatBRL(Number(t.valor) || 0)}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <div className="inline-flex items-center gap-0.5">
-                        <EditarTransacaoButton
-                          id={t.id}
-                          tipo={t.tipo}
-                          status={t.status}
-                          dataVencimento={t.data_vencimento}
-                          valor={Number(t.valor) || 0}
-                          descricao={t.descricao}
-                          categoria={t.categoria}
-                          natureza={t.natureza}
-                        />
-                        <ExcluirTransacaoButton id={t.id} descricao={t.descricao} />
-                      </div>
-                    </td>
-                  </Reveal>
-                ))}
+                    >
+                      <td className="px-4 py-2 text-slate-300">{t.data_vencimento ? formatDate(t.data_vencimento) : "—"}</td>
+                      <td className="px-4 py-2 text-slate-200">
+                        {t.descricao}
+                        {t.parcela_atual && t.parcela_total ? (
+                          <span className="text-[10px] text-slate-400 ml-1.5 font-mono">
+                            ({t.parcela_atual}/{t.parcela_total})
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-2 text-slate-400">{t.categoria ?? "—"}</td>
+                      <td className="px-4 py-2 text-slate-400 text-xs uppercase">
+                        {t.tipo}
+                      </td>
+                      <td className="px-4 py-2">
+                        {t.natureza === "fixa" ? (
+                          <Badge variant="brand">Fixa</Badge>
+                        ) : (
+                          <Badge variant="default">Variável</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <Badge variant={t.status === "pago" ? "success" : t.status === "pendente" ? "warning" : "default"}>
+                          {t.status === "pago" ? "Pago" : t.status === "pendente" ? "Pendente" : t.status === "atrasado" ? "Atrasado" : "Cancelado"}
+                        </Badge>
+                      </td>
+                      <td className={`px-4 py-2 text-right font-semibold ${t.tipo === "receita" ? "text-emerald-400" : "text-rose-400"}`}>
+                        {t.tipo === "despesa" ? "-" : "+"} {formatBRL(Number(t.valor) || 0)}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <div className="inline-flex items-center gap-0.5">
+                          <EditarTransacaoButton
+                            id={t.id}
+                            tipo={t.tipo}
+                            status={t.status}
+                            dataVencimento={t.data_vencimento}
+                            valor={Number(t.valor) || 0}
+                            descricao={t.descricao}
+                            categoria={t.categoria}
+                            natureza={t.natureza}
+                            parcelaAtual={t.parcela_atual}
+                            parcelaTotal={t.parcela_total}
+                          />
+                          <ExcluirTransacaoButton
+                            id={t.id}
+                            descricao={t.descricao}
+                            parcelaAtual={t.parcela_atual}
+                            parcelaTotal={t.parcela_total}
+                          />
+                        </div>
+                      </td>
+                    </Reveal>
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr className="border-t border-border bg-bg-elevated/30">
-                  <td colSpan={5} className="px-4 py-2.5 text-right text-xs text-slate-400">
-                    Saldo dos lançamentos
+                  <td colSpan={6} className="px-4 py-2.5 text-right text-xs text-slate-400">
+                    Saldo dos lançamentos <span className="text-slate-500">(só pagos)</span>
                   </td>
                   <td
                     className={`px-4 py-2.5 text-right font-semibold ${
