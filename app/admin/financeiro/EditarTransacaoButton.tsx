@@ -52,12 +52,15 @@ export function EditarTransacaoButton({
   const [novoTotal, setNovoTotal] = useState<number | null>(parcelaTotal);
   const ref = useRef<HTMLDialogElement>(null);
 
-  // Reseta estado local quando reabre o dialog.
+  // Reseta estado local + abre/fecha o <dialog> nativo quando `open`
+  // muda. O showModal/close fica aqui (não no onClick) pra cobrir
+  // também o caso de fechar via ESC / clique no backdrop.
   useEffect(() => {
     if (open) {
       setError(null);
       setPropagarValor(true);
       setNovoTotal(parcelaTotal);
+      ref.current?.showModal();
     } else {
       ref.current?.close();
     }
