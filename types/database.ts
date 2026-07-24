@@ -304,6 +304,7 @@ export interface Database {
           arquivado: boolean;
           entrada_id: string | null;
           quadro_id: string;
+          grupo_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -321,6 +322,7 @@ export interface Database {
           arquivado?: boolean;
           entrada_id?: string | null;
           quadro_id: string;
+          grupo_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -361,6 +363,31 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["tarefa_quadros"]["Insert"]>;
+      };
+      tarefa_grupos: {
+        Row: {
+          id: string;
+          agencia_id: string;
+          quadro_id: string;
+          nome: string;
+          cliente_id: string | null;
+          data_entrega: string | null;
+          manual: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agencia_id: string;
+          quadro_id: string;
+          nome: string;
+          cliente_id?: string | null;
+          data_entrega?: string | null;
+          manual?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefa_grupos"]["Insert"]>;
       };
       gravacoes: {
         Row: {
@@ -805,6 +832,7 @@ export type Tarefa = Database["public"]["Tables"]["tarefas"]["Row"];
 export type TarefaResponsavel =
   Database["public"]["Tables"]["tarefa_responsaveis"]["Row"];
 export type TarefaQuadro = Database["public"]["Tables"]["tarefa_quadros"]["Row"];
+export type TarefaGrupo = Database["public"]["Tables"]["tarefa_grupos"]["Row"];
 export type Gravacao = Database["public"]["Tables"]["gravacoes"]["Row"];
 export type PlanejamentoEntrada =
   Database["public"]["Tables"]["planejamento_entradas"]["Row"];
