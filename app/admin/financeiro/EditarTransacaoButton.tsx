@@ -45,15 +45,32 @@ export function EditarTransacaoButton({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [removingAll, setRemovingAll] = useState(false);
+  // Quando é a pai, dois campos extras controlam o comportamento de
+  // propagação/estender. Default = comportamento seguro: propagar
+  // valor/descrição às filhas pendentes, não mexer no total.
+  const [propagarValor, setPropagarValor] = useState(true);
+  const [novoTotal, setNovoTotal] = useState<number | null>(parcelaTotal);
   const ref = useRef<HTMLDialogElement>(null);
 
+  // Reseta estado local quando reabre o dialog.
   useEffect(() => {
-    if (open) ref.current?.showModal();
-    else ref.current?.close();
-  }, [open]);
+    if (open) {
+      setError(null);
+      setPropagarValor(true);
+      setNovoTotal(parcelaTotal);
+    } else {
+      ref.current?.close();
+    }
+  }, [open, parcelaTotal]);
 
   const isParcela = !!parcelaTotal && !!parcelaAtual;
   const isPai = isParcela && parcelaAtual === 1;
+  const filhasNovas =
+    isPai && novoTotal != null && parcelaTotal != null
+      ? Math.max(0, novoTotal - parcelaTotal)
+      : 0;
+  const tentandoDiminuir =
+    isPai && novoTotal != null && parcelaTotal != null && novoTotal < parcelaTotal;
 
   async function handleSubmit(formData: FormData) {
     setSaving(true);
@@ -64,6 +81,14 @@ export function EditarTransacaoButton({
         setError(res.error);
         setSaving(false);
       } else {
+        const count = "count" in res && typeof res.count === "number" ? res.count : 0;
+        if (count > 0) {
+          toast.success(
+            filhasNovas > 0
+              ? `${filhasNovas} nova${filhasNovas > 1 ? "s" : ""} parcela${filhasNovas > 1 ? "s" : ""} adicionada${filhasNovas > 1 ? "s" : ""}.`
+              : `${count} parcela${count > 1 ? "s" : ""} atualizada${count > 1 ? "s" : ""}.`
+          );
+        }
         setSaving(false);
         setOpen(false);
       }
@@ -191,6 +216,69 @@ export function EditarTransacaoButton({
                 </select>
               </div>
             </div>
+
+            {/* Bloco de gerenciamento do grupo — só aparece na PAI
+                (parcela 1/N). Em filhas, edição é individual e a action
+                ignora esses campos. Em transação simples, nunca aparece. */}
+            {isPai && parcelaTotal != null && (
+              <div className="rounded-lg border border-royal-500/30 bg-royal-500/[0.05] p-3 space-y-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-royal-300">
+                  Grupo de parcelas ({parcelaTotal} no total)
+                </p>
+
+                {/* Propagar valor/descrição/categoria/natureza/tipo */}
+                <label className="flex items-start gap-2 cursor-pointer text-sm text-slate-200">
+                  <input
+                    type="checkbox"
+                    name="propagar_valor"
+                    value="1"
+                    checked={propagarValor}
+                    onChange={(e) => setPropagarValor(e.target.checked)}
+                    className="h-4 w-4 mt-0.5 rounded border-border accent-royal-500"
+                  />
+                  <span>
+                    Aplicar valor e descrição a todas as parcelas pendentes
+                    <span className="block text-[11px] text-slate-500 mt-0.5">
+                      Parcelas já <strong className="text-slate-300">pagas</strong> mantêm
+                      o valor original (audit trail do que já foi contabilizado).
+                    </span>
+                  </span>
+                </label>
+
+                {/* Estender Nº de parcelas (só aumentar). */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-royal-500/20">
+                  <label className="text-xs text-slate-300">Nº de parcelas:</label>
+                  <input
+                    name="parcelas_total"
+                    type="number"
+                    min={parcelaTotal}
+                    max={60}
+                    value={novoTotal ?? parcelaTotal}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      setNovoTotal(Number.isFinite(n) ? n : parcelaTotal);
+                    }}
+                    className="input h-8 w-20 text-sm !py-0"
+                    required
+                  />
+                  <span className="text-[11px] text-slate-500">
+                    Atual: {parcelaTotal}. Aumentar adiciona parcelas novas após a
+                    última data de vencimento. Não dá pra diminuir.
+                  </span>
+                </div>
+                {filhasNovas > 0 && (
+                  <p className="text-[11px] text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded px-2 py-1.5">
+                    Serão geradas <strong>+{filhasNovas} parcela{filhasNovas > 1 ? "s" : ""}</strong>{" "}
+                    pendente{filhasNovas > 1 ? "s" : ""} a partir da última data.
+                  </p>
+                )}
+                {tentandoDiminuir && (
+                  <p className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1.5">
+                    O Nº de parcelas não pode ser diminuído. Mantenha em {parcelaTotal} ou mais.
+                  </p>
+                )}
+              </div>
+            )}
             <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
               {isPai ? (
                 <Button
