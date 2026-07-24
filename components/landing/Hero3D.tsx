@@ -187,8 +187,9 @@ export function Hero3D() {
       });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       ring.rotation.x = Math.PI / 2;
-      // No mobile, achata horizontalmente para não parecer uma linha fina de perfil
-      ring.scale.set(isMobile ? 1.12 : 1.0, isMobile ? 0.82 : 1.0, 1.0);
+      // No mobile, mantém escala 1:1 nos dois eixos — o anel continua circular
+      // (antes era 1.12×0.82 pra evitar "linha de perfil", mas ficava oval).
+      ring.scale.set(1.0, 1.0, 1.0);
       universe.add(ring);
 
       // Segundo anel externo mais fino e opaco para dar volume
