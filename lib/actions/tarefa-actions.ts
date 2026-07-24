@@ -20,6 +20,7 @@ const tarefaSchema = z.object({
   prazo: z.string().optional().nullable(),
   cliente_id: z.string().uuid().optional().nullable(),
   quadro_id: z.string().uuid().optional().nullable(),
+  grupo_id: z.string().uuid().optional().nullable(),
   responsaveis: z.array(z.string().uuid()).optional().default([]),
 });
 
@@ -58,6 +59,27 @@ async function resolverQuadroId(
   return geral?.id ?? null;
 }
 
+// Valida que `grupoId` (se enviado) pertence à agência E ao quadro
+// passado. Retorna o id se válido, null se o grupoId for null/empty,
+// ou `false` se o grupo for inválido (não pertence à agência ou
+// pertence a outro quadro).
+async function resolverGrupoId(
+  supabase: ReturnType<typeof createClient>,
+  aid: string,
+  grupoId: string | null | undefined,
+  quadroId: string
+): Promise<string | null | false> {
+  if (!grupoId) return null; // sem agrupamento
+  const { data } = await supabase
+    .from("tarefa_grupos")
+    .select("id, agencia_id, quadro_id")
+    .eq("id", grupoId)
+    .maybeSingle();
+  if (!data || data.agencia_id !== aid) return false; // não pertence à agência
+  if (data.quadro_id !== quadroId) return false; // outro quadro
+  return data.id;
+}
+
 // ============================================================================
 // CRIAR
 // ============================================================================
@@ -85,6 +107,7 @@ export async function criarTarefaAction(
     prazo: formData.get("prazo") || null,
     cliente_id: formData.get("cliente_id") || null,
     quadro_id: formData.get("quadro_id") || null,
+    grupo_id: formData.get("grupo_id") || null,
     responsaveis,
   });
   if (!parsed.success) {
@@ -94,6 +117,10 @@ export async function criarTarefaAction(
   const quadroId = await resolverQuadroId(supabase, aid, parsed.data.quadro_id);
   if (!quadroId) {
     return { error: "Nenhum quadro disponível. Recarregue a página." };
+  }
+  const grupoId = await resolverGrupoId(supabase, aid, parsed.data.grupo_id, quadroId);
+  if (grupoId === false) {
+    return { error: "Agrupamento inválido." };
   }
 
   const { data: tarefa, error } = await supabase
@@ -108,6 +135,7 @@ export async function criarTarefaAction(
       prioridade: parsed.data.prioridade as TarefaPrioridade,
       prazo: parsed.data.prazo || null,
       quadro_id: quadroId,
+      grupo_id: grupoId,
     })
     .select("id")
     .single();
@@ -161,6 +189,7 @@ export async function atualizarTarefaAction(
     prazo: formData.get("prazo") || null,
     cliente_id: formData.get("cliente_id") || null,
     quadro_id: formData.get("quadro_id") || null,
+    grupo_id: formData.get("grupo_id") || null,
     responsaveis,
   });
   if (!parsed.success) {
@@ -170,6 +199,10 @@ export async function atualizarTarefaAction(
   const quadroId = await resolverQuadroId(supabase, aid, parsed.data.quadro_id);
   if (!quadroId) {
     return { error: "Quadro inválido." };
+  }
+  const grupoId = await resolverGrupoId(supabase, aid, parsed.data.grupo_id, quadroId);
+  if (grupoId === false) {
+    return { error: "Agrupamento inválido." };
   }
 
   const { error } = await supabase
@@ -182,6 +215,7 @@ export async function atualizarTarefaAction(
       prazo: parsed.data.prazo || null,
       cliente_id: parsed.data.cliente_id ?? null,
       quadro_id: quadroId,
+      grupo_id: grupoId,
     })
     .eq("id", id)
     .eq("agencia_id", aid);

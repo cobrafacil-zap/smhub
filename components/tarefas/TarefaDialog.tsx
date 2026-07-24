@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, Package, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/Toast";
 import { criarTarefaAction, atualizarTarefaAction } from "@/lib/actions/tarefa-actions";
-import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefas/page";
+import { criarGrupoAction } from "@/lib/actions/grupo-actions";
+import type { ClienteOption, MembroOption, TarefaGrupoOption, TarefaItem } from "@/app/admin/tarefas/page";
 import type { TarefaQuadro } from "@/types/database";
 
 const STATUS_OPCOES = [
@@ -31,6 +33,7 @@ export function TarefaDialog({
   membros,
   clientes,
   quadros,
+  grupos,
   quadroIdInicial,
   onClose,
 }: {
@@ -39,6 +42,7 @@ export function TarefaDialog({
   membros: MembroOption[];
   clientes: ClienteOption[];
   quadros: TarefaQuadro[];
+  grupos: TarefaGrupoOption[];
   quadroIdInicial: string;
   onClose: () => void;
 }) {
@@ -47,17 +51,74 @@ export function TarefaDialog({
   const [pending, startTransition] = useTransition();
   const editing = !!tarefa;
 
+  // Estado do agrupamento. O form serializa via name="grupo_id" — o
+  // input hidden recebe o valor atual. Quando o usuário clica "Criar
+  // novo" abrimos o modo inline; ao salvar, gravamos o id do grupo
+  // criado nesse input.
+  const [grupoId, setGrupoId] = useState<string>(tarefa?.grupo_id ?? "");
+  const [criandoGrupo, setCriandoGrupo] = useState(false);
+  const [novoGrupoNome, setNovoGrupoNome] = useState("");
+  const [novoGrupoClienteId, setNovoGrupoClienteId] = useState<string>("");
+  const [novoGrupoData, setNovoGrupoData] = useState<string>("");
+  const [gruposLista, setGruposLista] = useState<TarefaGrupoOption[]>(grupos);
+  // Mantém a lista em sync se o pai atualizar após criar grupo.
+  useEffect(() => setGruposLista(grupos), [grupos]);
+
   useEffect(() => {
     if (open) {
       setError(null);
+      setGrupoId(tarefa?.grupo_id ?? "");
+      setCriandoGrupo(false);
+      setNovoGrupoNome("");
+      setNovoGrupoClienteId("");
+      setNovoGrupoData("");
       ref.current?.showModal();
     } else {
       ref.current?.close();
     }
-  }, [open]);
+  }, [open, tarefa?.grupo_id]);
 
   function handleClose() {
     if (!pending) onClose();
+  }
+
+  async function handleCriarGrupo() {
+    if (!novoGrupoNome.trim()) return;
+    const fd = new FormData();
+    // O quadro atual: prioriza o selecionado no form (se já trocou), senão
+    // o da tarefa editada / inicial.
+    const quadroSelecionado =
+      (document.getElementById("tarefa-quadro-select") as HTMLSelectElement | null)?.value ||
+      tarefa?.quadro_id ||
+      quadroIdInicial;
+    fd.set("quadro_id", quadroSelecionado);
+    fd.set("nome", novoGrupoNome.trim());
+    if (novoGrupoClienteId) fd.set("cliente_id", novoGrupoClienteId);
+    if (novoGrupoData) fd.set("data_entrega", novoGrupoData);
+    const res = await criarGrupoAction(undefined, fd);
+    if (res?.error) {
+      toast.error(res.error);
+      return;
+    }
+    if (res?.id) {
+      // Adiciona na lista local e seleciona.
+      setGruposLista((prev) => [
+        ...prev,
+        {
+          id: res.id!,
+          nome: res.nome ?? novoGrupoNome.trim(),
+          cliente_id: novoGrupoClienteId || null,
+          data_entrega: novoGrupoData || null,
+          manual: true,
+        },
+      ]);
+      setGrupoId(res.id);
+      setCriandoGrupo(false);
+      setNovoGrupoNome("");
+      setNovoGrupoClienteId("");
+      setNovoGrupoData("");
+      toast.success("Agrupamento criado.");
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -158,6 +219,7 @@ export function TarefaDialog({
         <div className="space-y-1.5">
           <label className="label">Quadro</label>
           <Select
+            id="tarefa-quadro-select"
             name="quadro_id"
             defaultValue={tarefa?.quadro_id ?? quadroIdInicial}
           >
@@ -167,6 +229,93 @@ export function TarefaDialog({
               </option>
             ))}
           </Select>
+        </div>
+
+        {/* Agrupamento (opcional). O valor é serializado como `grupo_id`
+            via input hidden controlado por estado — assim o "Criar novo"
+            pode gravar o id do grupo recém-criado. */}
+        <div className="space-y-1.5">
+          <label className="label flex items-center gap-1.5">
+            <Package className="h-3.5 w-3.5" /> Agrupamento (opcional)
+          </label>
+          <input type="hidden" name="grupo_id" value={grupoId} />
+          <Select
+            value={grupoId}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "__criar__") {
+                setCriandoGrupo(true);
+              } else {
+                setGrupoId(v);
+                setCriandoGrupo(false);
+              }
+            }}
+            disabled={criandoGrupo}
+          >
+            <option value="">— Sem agrupamento —</option>
+            {gruposLista.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.manual ? "📦 " : ""}{g.nome}
+              </option>
+            ))}
+            <option value="__criar__">＋ Criar novo agrupamento…</option>
+          </Select>
+          {criandoGrupo && (
+            <div className="rounded-lg border border-royal-500/30 bg-royal-500/[0.05] p-3 space-y-2">
+              <Input
+                value={novoGrupoNome}
+                onChange={(e) => setNovoGrupoNome(e.target.value)}
+                placeholder="Nome do agrupamento"
+                maxLength={80}
+                className="h-8 text-sm"
+                autoFocus
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <Select
+                  value={novoGrupoClienteId}
+                  onChange={(e) => setNovoGrupoClienteId(e.target.value)}
+                  className="text-sm"
+                >
+                  <option value="">— Sem cliente —</option>
+                  {clientes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome_empresa}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  type="date"
+                  value={novoGrupoData}
+                  onChange={(e) => setNovoGrupoData(e.target.value)}
+                  className="text-sm"
+                  title="Data de entrega (opcional)"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  iconLeft={<Plus className="h-3.5 w-3.5" />}
+                  onClick={handleCriarGrupo}
+                  disabled={!novoGrupoNome.trim() || pending}
+                >
+                  Criar e usar
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCriandoGrupo(false);
+                    setNovoGrupoNome("");
+                    setNovoGrupoClienteId("");
+                    setNovoGrupoData("");
+                  }}
+                  className="text-xs text-slate-400 hover:text-slate-200"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Multi-atribuição */}

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, Check, Package } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn, initials } from "@/lib/utils";
@@ -171,6 +171,15 @@ export function TarefaCard({
       )}
 
       <div className="flex flex-wrap items-center gap-1.5">
+        {tarefa.grupo_nome && (
+          <span
+            className="text-[10px] text-royal-300 bg-royal-500/10 border border-royal-500/30 rounded px-1.5 py-0.5 inline-flex items-center gap-1 max-w-full"
+            title={`Agrupamento: ${tarefa.grupo_nome}`}
+          >
+            <Package className="h-3 w-3 shrink-0" />
+            <span className="truncate">{tarefa.grupo_nome}</span>
+          </span>
+        )}
         {tarefa.cliente_nome && (
           <span className="text-[10px] text-slate-400 bg-bg-elevated border border-border rounded px-1.5 py-0.5">
             {tarefa.cliente_nome}

@@ -9,6 +9,7 @@ import { requireAgenciaAdmin, requireAgenciaMember } from "@/lib/auth/session";
 import { CLIENTE_SEGMENTOS, ENTRY_TIPO_LABEL } from "@/lib/constants";
 import { prazoDaEntrada } from "@/lib/planejamento";
 import { formatDate } from "@/lib/utils";
+import { resolverOuCriarGrupoEntrega } from "@/lib/actions/grupo-actions";
 import type { Cliente, EntradaStatus, PlanejamentoEntrada, Usuario } from "@/types/database";
 
 export type CriarClienteState = { error?: string; ok?: boolean } | undefined;
@@ -772,6 +773,23 @@ async function sincronizarTarefaDaEntrada(
       .from("tarefa_responsaveis")
       .insert({ tarefa_id: existente.id, usuario_id: responsavelId });
     if (respErr) return respErr.message;
+
+    // Re-agrupa automaticamente: se a tarefa já está em outro grupo
+    // (ex: admin mudou o cliente da entrada), move pro grupo certo.
+    // Precisamos do quadro_id pra resolver/criar o grupo.
+    const { data: existenteRow } = await supabase
+      .from("tarefas")
+      .select("quadro_id")
+      .eq("id", existente.id)
+      .maybeSingle();
+    await reagruparTarefaAutomatica(
+      supabase,
+      aid,
+      existente.id,
+      clienteId,
+      prazo,
+      existenteRow?.quadro_id ?? null
+    );
     return null;
   }
 
@@ -818,7 +836,48 @@ async function sincronizarTarefaDaEntrada(
     .from("tarefa_responsaveis")
     .insert({ tarefa_id: tarefa.id, usuario_id: responsavelId });
   if (respErr) return respErr.message;
+
+  // Cria/vincula ao grupo automático de entrega (se houver cliente).
+  await reagruparTarefaAutomatica(supabase, aid, tarefa.id, clienteId, prazo, quadroId);
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Helper: resolve o grupo automático (cliente + prazo) e seta grupo_id na
+// tarefa. Se clienteId for null OU prazo for null, desagrupa (grupo_id=null).
+// Em caso de erro, loga e segue — não bloqueia a sincronização principal.
+// ---------------------------------------------------------------------------
+async function reagruparTarefaAutomatica(
+  supabase: ReturnType<typeof createClient>,
+  aid: string,
+  tarefaId: string,
+  clienteId: string | null,
+  prazo: string | null,
+  quadroId: string | null = null
+): Promise<void> {
+  let grupoId: string | null = null;
+
+  if (clienteId && prazo && quadroId) {
+    // Busca nome do cliente só pra formatar o nome do grupo automático.
+    const { data: cli } = await supabase
+      .from("clientes")
+      .select("nome_empresa")
+      .eq("id", clienteId)
+      .maybeSingle();
+    grupoId = await resolverOuCriarGrupoEntrega({
+      aid,
+      quadroId,
+      clienteId,
+      dataEntrega: prazo,
+      clienteNome: cli?.nome_empresa ?? null,
+    });
+  }
+
+  await supabase
+    .from("tarefas")
+    .update({ grupo_id: grupoId })
+    .eq("id", tarefaId)
+    .eq("agencia_id", aid);
 }
 
 // ---------------------------------------------------------------------------

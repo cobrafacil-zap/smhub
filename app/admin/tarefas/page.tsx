@@ -22,9 +22,19 @@ export type TarefaItem = {
   cliente_nome: string | null;
   criado_por: string | null;
   quadro_id: string;
+  grupo_id: string | null;
+  grupo_nome: string | null;
   responsaveis: { id: string; nome: string }[];
   /** Entrada do planejamento vinculada (quando a tarefa veio de um post). */
   entrada: EntradaResumo | null;
+};
+
+export type TarefaGrupoOption = {
+  id: string;
+  nome: string;
+  cliente_id: string | null;
+  data_entrega: string | null;
+  manual: boolean;
 };
 
 export type EntradaResumo = {
@@ -101,7 +111,7 @@ export default async function TarefasPage({
   const { data: tarefasRaw } = await supabase
     .from("tarefas")
     .select(
-      "id, titulo, descricao, status, prioridade, prazo, arquivado, cliente_id, criado_por, created_at, quadro_id, cliente:clientes(nome_empresa), entrada:planejamento_entradas(id, data, titulo, tipo, copy, hashtags, descricao, midia_url, estilo, status)"
+      "id, titulo, descricao, status, prioridade, prazo, arquivado, cliente_id, criado_por, created_at, quadro_id, grupo_id, cliente:clientes(nome_empresa), grupo:tarefa_grupos(id, nome), entrada:planejamento_entradas(id, data, titulo, tipo, copy, hashtags, descricao, midia_url, estilo, status)"
     )
     .eq("agencia_id", aid)
     .eq("quadro_id", quadroAtivo.id)
@@ -126,6 +136,7 @@ export default async function TarefasPage({
   const itens: TarefaItem[] = tarefas.map((t: any) => {
     const cli = Array.isArray(t.cliente) ? t.cliente[0] : t.cliente;
     const ent = Array.isArray(t.entrada) ? t.entrada[0] : t.entrada;
+    const grp = Array.isArray(t.grupo) ? t.grupo[0] : t.grupo;
     return {
       id: t.id,
       titulo: t.titulo,
@@ -138,6 +149,8 @@ export default async function TarefasPage({
       cliente_nome: cli?.nome_empresa ?? null,
       criado_por: t.criado_por,
       quadro_id: t.quadro_id,
+      grupo_id: t.grupo_id,
+      grupo_nome: grp?.nome ?? null,
       responsaveis: respMap[t.id] ?? [],
       entrada: ent ?? null,
     };
@@ -173,6 +186,23 @@ export default async function TarefasPage({
     nome_empresa: c.nome_empresa,
   }));
 
+  // Agrupamentos do quadro ativo (pra alimentar o Select no TarefaDialog
+  // e os cabeçalhos de grupo no KanbanBoard).
+  const { data: gruposRaw } = await supabase
+    .from("tarefa_grupos")
+    .select("id, nome, cliente_id, data_entrega, manual")
+    .eq("agencia_id", aid)
+    .eq("quadro_id", quadroAtivo.id)
+    .order("manual", { ascending: false }) // automáticos primeiro
+    .order("nome", { ascending: true });
+  const grupos: TarefaGrupoOption[] = (gruposRaw ?? []).map((g: any) => ({
+    id: g.id,
+    nome: g.nome,
+    cliente_id: g.cliente_id,
+    data_entrega: g.data_entrega,
+    manual: g.manual,
+  }));
+
   const podeEditarQuadros = session.profile.role === "admin_agencia";
 
   return (
@@ -197,6 +227,7 @@ export default async function TarefasPage({
         membros={membros}
         clientes={clientes}
         quadros={quadrosList}
+        grupos={grupos}
         quadroAtivoId={quadroAtivo.id}
         meuId={session.profile.id}
         meuRole={session.profile.role}

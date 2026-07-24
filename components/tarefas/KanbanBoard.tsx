@@ -1,18 +1,21 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { Plus, Filter } from "lucide-react";
+import { useMemo, useState, useTransition, useEffect, useRef } from "react";
+import { Plus, Filter, Package, MoreHorizontal, Pencil, Trash2, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Input } from "@/components/ui/Input";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { moverTarefaAction } from "@/lib/actions/tarefa-actions";
+import { renomearGrupoAction, excluirGrupoAction } from "@/lib/actions/grupo-actions";
 import { Reveal } from "@/components/ui/motion/Reveal";
 import { TarefaCard } from "./TarefaCard";
 import { TarefaDialog } from "./TarefaDialog";
 import { TarefaDetailDialog } from "./TarefaDetailDialog";
 import { faixaPrazo, ORDEM_FAIXA } from "@/lib/planejamento";
-import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefas/page";
+import type { ClienteOption, MembroOption, TarefaGrupoOption, TarefaItem } from "@/app/admin/tarefas/page";
 import type { TarefaQuadro } from "@/types/database";
 import type { TarefaStatus } from "@/types/database";
 
@@ -28,6 +31,7 @@ export function KanbanBoard({
   membros,
   clientes,
   quadros,
+  grupos,
   quadroAtivoId,
   meuId,
   meuRole,
@@ -36,6 +40,7 @@ export function KanbanBoard({
   membros: MembroOption[];
   clientes: ClienteOption[];
   quadros: TarefaQuadro[];
+  grupos: TarefaGrupoOption[];
   quadroAtivoId: string;
   meuId: string;
   meuRole: string;
@@ -255,75 +260,67 @@ export function KanbanBoard({
                         </Reveal>
                       ));
 
-                    if (!agruparPorDia) {
-                      // Agrupamento original por cliente
-                      const ordenados = [...itens].sort(
-                        (a, b) =>
-                          (a.cliente_nome ?? "~~sem cliente").localeCompare(
-                            b.cliente_nome ?? "~~sem cliente"
-                          )
-                      );
-                      let ultimoCliente: string | null = "__init__";
-                      return ordenados.map((t, i) => {
-                        const grp = t.cliente_nome ?? null;
-                        const novoGrupo = grp !== ultimoCliente;
-                        ultimoCliente = grp;
-                        return (
-                          <div key={t.id}>
-                            {novoGrupo && (
-                              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-1 pt-1.5 pb-0.5 flex items-center gap-1">
-                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-royal-400" />
-                                {grp ?? "Sem cliente"}
-                              </div>
-                            )}
-                            {renderCards([t], i)}
-                          </div>
-                        );
-                      });
-                    }
+                    // Mapa de grupos pra lookup rápido (nome, manual).
+                    const gruposMap: Record<string, TarefaGrupoOption> = {};
+                    for (const g of grupos) gruposMap[g.id] = g;
 
-                    // Agrupamento por faixa de prazo: ajuda o executor a saber o que fazer por dia
-                    const grupos: Record<string, TarefaItem[]> = {};
+                    // Tarefas COM grupo vão pro cabeçalho de grupo;
+                    // tarefas SEM grupo vão pro agrupamento padrão
+                    // (cliente ou faixa de prazo) como antes.
+                    const comGrupo: TarefaItem[] = [];
+                    const semGrupo: TarefaItem[] = [];
                     for (const t of itens) {
-                      const faixa = faixaPrazo(t.prazo);
-                      (grupos[faixa] ??= []).push(t);
+                      (t.grupo_id ? comGrupo : semGrupo).push(t);
                     }
 
-                    // Ordena cada faixa: primeiro atrasados por dias, depois por prioridade e prazo
-                    for (const faixa of Object.keys(grupos)) {
-                      grupos[faixa].sort((a, b) => {
-                        const prioridadeOrdem = { urgente: 0, alta: 1, media: 2, baixa: 3 };
-                        const pa = prioridadeOrdem[a.prioridade] ?? 99;
-                        const pb = prioridadeOrdem[b.prioridade] ?? 99;
+                    // Agrupa as tarefas com grupo pelo grupo_id. Ordena
+                    // os grupos: automáticos primeiro (alfabético), depois
+                    // manuais. Dentro de cada grupo, por prioridade/prazo.
+                    const gruposPorId: Record<string, TarefaItem[]> = {};
+                    for (const t of comGrupo) {
+                      (gruposPorId[t.grupo_id!] ??= []).push(t);
+                    }
+                    for (const id of Object.keys(gruposPorId)) {
+                      gruposPorId[id].sort((a, b) => {
+                        const po = { urgente: 0, alta: 1, media: 2, baixa: 3 };
+                        const pa = po[a.prioridade] ?? 99;
+                        const pb = po[b.prioridade] ?? 99;
                         if (pa !== pb) return pa - pb;
                         return (a.prazo ?? "9999-99-99").localeCompare(b.prazo ?? "9999-99-99");
                       });
                     }
+                    const gruposOrdenados = Object.keys(gruposPorId).sort((a, b) => {
+                      const ga = gruposMap[a];
+                      const gb = gruposMap[b];
+                      if (!ga || !gb) return 0;
+                      // manuais depois dos automáticos
+                      if (ga.manual !== gb.manual) return ga.manual ? 1 : -1;
+                      return ga.nome.localeCompare(gb.nome);
+                    });
 
-                    let index = 0;
-                    return ORDEM_FAIXA.filter((faixa) => grupos[faixa]?.length).map((faixa) => {
-                      const lista = grupos[faixa];
-                      const groupKey = `${col.status}__${faixa}`;
+                    const renderBlocoGrupo = (gid: string, baseIndex: number) => {
+                      const meta = gruposMap[gid];
+                      if (!meta) return null;
+                      const lista = gruposPorId[gid];
+                      const groupKey = `${col.status}__grupo__${gid}`;
                       const expandido = expandedGroups.has(groupKey);
                       const total = lista.length;
                       const visiveis = expandido ? lista : lista.slice(0, LIMITE_VISIVEL);
                       const ocultos = total - visiveis.length;
-
-                      const faixaColor =
-                        faixa === "Atrasado"
-                          ? "text-danger-400 bg-danger-500/10 border-danger-500/30"
-                          : faixa === "Hoje"
-                            ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30"
-                            : faixa === "Amanhã"
-                              ? "text-royal-300 bg-royal-500/10 border-royal-500/30"
-                              : "text-slate-400 bg-bg-elevated border-border";
-                      const component = (
-                        <div key={faixa} className="space-y-1">
-                          <div className={`text-[10px] font-semibold uppercase tracking-wider rounded-md border px-2 py-1 flex items-center justify-between ${faixaColor}`}>
-                            <span>{faixa}</span>
-                            <span>{total}</span>
-                          </div>
-                          {renderCards(visiveis, index)}
+                      return (
+                        <div key={gid} className="space-y-1">
+                          <GrupoHeader
+                            grupo={meta}
+                            total={total}
+                            admin={podeCriar}
+                            onToggle={() => {
+                              const next = new Set(expandedGroups);
+                              if (next.has(groupKey)) next.delete(groupKey);
+                              else next.add(groupKey);
+                              setExpandedGroups(next);
+                            }}
+                          />
+                          {renderCards(visiveis, baseIndex)}
                           {ocultos > 0 && (
                             <Button
                               variant="ghost"
@@ -341,9 +338,112 @@ export function KanbanBoard({
                           )}
                         </div>
                       );
-                      index += visiveis.length;
-                      return component;
+                    };
+
+                    // Renderiza blocos de grupo (no topo).
+                    let index = 0;
+                    const blocosGrupo = gruposOrdenados.map((gid) => {
+                      const bloco = renderBlocoGrupo(gid, index);
+                      if (bloco) index += (gruposPorId[gid] ?? []).length;
+                      return bloco;
                     });
+
+                    // Renderiza o resto (semGrupo) com a lógica original.
+                    if (semGrupo.length === 0) return blocosGrupo;
+
+                    let blocoResto: React.ReactNode = null;
+                    if (!agruparPorDia) {
+                      const ordenados = [...semGrupo].sort(
+                        (a, b) =>
+                          (a.cliente_nome ?? "~~sem cliente").localeCompare(
+                            b.cliente_nome ?? "~~sem cliente"
+                          )
+                      );
+                      let ultimoCliente: string | null = "__init__";
+                      blocoResto = ordenados.map((t, i) => {
+                        const grp = t.cliente_nome ?? null;
+                        const novoGrupo = grp !== ultimoCliente;
+                        ultimoCliente = grp;
+                        return (
+                          <div key={t.id}>
+                            {novoGrupo && (
+                              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-1 pt-1.5 pb-0.5 flex items-center gap-1">
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-royal-400" />
+                                {grp ?? "Sem cliente"}
+                              </div>
+                            )}
+                            {renderCards([t], index + i)}
+                          </div>
+                        );
+                      });
+                    } else {
+                      // Agrupamento por faixa de prazo.
+                      const gruposPorFaixa: Record<string, TarefaItem[]> = {};
+                      for (const t of semGrupo) {
+                        const faixa = faixaPrazo(t.prazo);
+                        (gruposPorFaixa[faixa] ??= []).push(t);
+                      }
+                      for (const faixa of Object.keys(gruposPorFaixa)) {
+                        gruposPorFaixa[faixa].sort((a, b) => {
+                          const po = { urgente: 0, alta: 1, media: 2, baixa: 3 };
+                          const pa = po[a.prioridade] ?? 99;
+                          const pb = po[b.prioridade] ?? 99;
+                          if (pa !== pb) return pa - pb;
+                          return (a.prazo ?? "9999-99-99").localeCompare(b.prazo ?? "9999-99-99");
+                        });
+                      }
+                      blocoResto = ORDEM_FAIXA.filter((faixa) => gruposPorFaixa[faixa]?.length).map(
+                        (faixa) => {
+                          const lista = gruposPorFaixa[faixa];
+                          const groupKey = `${col.status}__${faixa}`;
+                          const expandido = expandedGroups.has(groupKey);
+                          const total = lista.length;
+                          const visiveis = expandido ? lista : lista.slice(0, LIMITE_VISIVEL);
+                          const ocultos = total - visiveis.length;
+                          const faixaColor =
+                            faixa === "Atrasado"
+                              ? "text-danger-400 bg-danger-500/10 border-danger-500/30"
+                              : faixa === "Hoje"
+                                ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30"
+                                : faixa === "Amanhã"
+                                  ? "text-royal-300 bg-royal-500/10 border-royal-500/30"
+                                  : "text-slate-400 bg-bg-elevated border-border";
+                          return (
+                            <div key={faixa} className="space-y-1">
+                              <div
+                                className={`text-[10px] font-semibold uppercase tracking-wider rounded-md border px-2 py-1 flex items-center justify-between ${faixaColor}`}
+                              >
+                                <span>{faixa}</span>
+                                <span>{total}</span>
+                              </div>
+                              {renderCards(visiveis, index)}
+                              {ocultos > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-xs text-slate-400 hover:text-slate-200"
+                                  onClick={() => {
+                                    const next = new Set(expandedGroups);
+                                    if (next.has(groupKey)) next.delete(groupKey);
+                                    else next.add(groupKey);
+                                    setExpandedGroups(next);
+                                  }}
+                                >
+                                  {expandido ? `Ver menos` : `+ ${ocultos} tarefa${ocultos > 1 ? "s" : ""}`}
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        }
+                      );
+                    }
+
+                    return (
+                      <>
+                        {blocosGrupo}
+                        {blocoResto}
+                      </>
+                    );
                   })()}
                 </div>
               </div>
@@ -358,6 +458,7 @@ export function KanbanBoard({
         membros={membros}
         clientes={clientes}
         quadros={quadros}
+        grupos={grupos}
         quadroIdInicial={quadroAtivoId}
         onClose={() => setDialogOpen(false)}
       />
@@ -369,6 +470,171 @@ export function KanbanBoard({
         onEdit={abrirEditar}
         onClose={() => setVisualizando(null)}
       />
+    </div>
+  );
+}
+
+// ============================================================================
+// CABEÇALHO DE GRUPO
+//
+// Aparece no topo de cada bloco de tarefas agrupadas. Cor neutra (slate)
+// pra não competir com as cores de faixa de prazo (que ficam abaixo dos
+// sem-grupo). Inclui menu `…` com Renomear/Excluir (admin only).
+// ============================================================================
+function GrupoHeader({
+  grupo,
+  total,
+  admin,
+  onToggle,
+}: {
+  grupo: TarefaGrupoOption;
+  total: number;
+  admin: boolean;
+  onToggle: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renomeando, setRenomeando] = useState(false);
+  const [novoNome, setNovoNome] = useState(grupo.nome);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [menuOpen]);
+
+  async function handleRenomear() {
+    const nome = novoNome.trim();
+    if (!nome || nome === grupo.nome) {
+      setRenomeando(false);
+      return;
+    }
+    const res = await renomearGrupoAction(grupo.id, nome);
+    if (res?.error) {
+      alert(res.error);
+      return;
+    }
+    setRenomeando(false);
+  }
+
+  async function handleExcluir() {
+    const res = await excluirGrupoAction(grupo.id);
+    if (res?.error) {
+      alert(res.error);
+    }
+    // revalidatePath já recarrega a página automaticamente.
+  }
+
+  return (
+    <div className="text-[10px] font-semibold uppercase tracking-wider rounded-md border border-royal-500/30 bg-royal-500/10 text-royal-200 px-2 py-1 flex items-center justify-between gap-1">
+      {renomeando ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleRenomear();
+          }}
+          className="flex items-center gap-1 flex-1"
+        >
+          <Input
+            value={novoNome}
+            onChange={(e) => setNovoNome(e.target.value)}
+            maxLength={80}
+            className="h-6 text-[10px] flex-1"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setRenomeando(false);
+                setNovoNome(grupo.nome);
+              }
+            }}
+          />
+          <button
+            type="submit"
+            className="h-6 w-6 inline-flex items-center justify-center rounded text-emerald-400 hover:bg-bg-elevated"
+            title="Salvar"
+          >
+            <Check className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRenomeando(false);
+              setNovoNome(grupo.nome);
+            }}
+            className="h-6 w-6 inline-flex items-center justify-center rounded text-slate-400 hover:bg-bg-elevated"
+            title="Cancelar"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </form>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+            title="Expandir/recoltar"
+          >
+            <Package className="h-3 w-3 shrink-0" />
+            <span className="truncate normal-case font-medium text-xs">{grupo.nome}</span>
+          </button>
+          <span className="text-royal-300/80">{total}</span>
+          {admin && (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="h-5 w-5 inline-flex items-center justify-center rounded text-royal-300 hover:text-royal-100 hover:bg-royal-500/20"
+                title="Ações do agrupamento"
+                aria-label="Ações do agrupamento"
+              >
+                <MoreHorizontal className="h-3 w-3" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-30 w-40 rounded-lg border border-border bg-bg-elevated shadow-xl py-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setRenomeando(true);
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-bg-muted inline-flex items-center gap-2"
+                  >
+                    <Pencil className="h-3 w-3" /> Renomear
+                  </button>
+                  <ConfirmDialog
+                    trigger={
+                      <button
+                        type="button"
+                        onClick={() => setMenuOpen(false)}
+                        className="w-full text-left px-3 py-1.5 text-xs text-danger-400 hover:bg-bg-muted inline-flex items-center gap-2"
+                      >
+                        <Trash2 className="h-3 w-3" /> Excluir
+                      </button>
+                    }
+                    title={`Excluir "${grupo.nome}"?`}
+                    description={
+                      <span>
+                        As tarefas deste agrupamento ficarão sem grupo.
+                        Esta ação não pode ser desfeita.
+                      </span>
+                    }
+                    confirmText="Excluir"
+                    variant="danger"
+                    onConfirm={handleExcluir}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
