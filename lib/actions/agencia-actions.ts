@@ -1185,6 +1185,220 @@ export async function criarTransacaoAction(prev: unknown, formData: FormData) {
   return { ok: true, count: parcelasTotal, id: pai.id };
 }
 
+// ---------------------------------------------------------------------------
+// Helpers da atualizarTransacaoAction (extração da lógica estrutural).
+// Mantemos o arquivo mais legível com 3 caminhos nomeados em vez de um
+// if-else gigante. Cada helper recebe o client supabase, o id da agência
+// e os dados necessários, e devolve { count } ou { error }.
+// ---------------------------------------------------------------------------
+
+type TransacaoEstrutural = {
+  id: string;
+  agencia_id: string;
+  status: string;
+  parcela_atual: number | null;
+  parcela_total: number | null;
+  transacao_pai_id: string | null;
+  data_vencimento: string;
+  valor?: number | null;
+  tipo?: string | null;
+  categoria?: string | null;
+  descricao?: string | null;
+  natureza?: string | null;
+  cliente_id?: string | null;
+};
+
+type HelperResult = { count?: number; error?: string };
+
+/**
+ * Transforma uma transação SIMPLES em parcelada (1/N). A transação original
+ * vira a pai (parcela_atual=1, parcela_total=N); filhas 2..N são inseridas
+ * com data_vencimento a partir da data original + 1m por parcela, status
+ * sempre pendente. A pai mantém o status atual (se já era 'pago', audit
+ * trail preserva).
+ *
+ * Pré-condição: `alvo` é simples (`!alvo.parcela_total`) e `novoTotal >= 2`.
+ */
+async function transformarEmParcelada(
+  supabase: ReturnType<typeof createClient>,
+  aid: string,
+  alvo: TransacaoEstrutural,
+  novoTotal: number
+): Promise<HelperResult> {
+  // Atualiza a transação original pra virar a pai. Mantém status/valor
+  // originais. transacao_pai_id fica null (ela mesma é a raiz).
+  const { error: upErr } = await supabase
+    .from("transacoes")
+    .update({
+      parcela_atual: 1,
+      parcela_total: novoTotal,
+      transacao_pai_id: null,
+    })
+    .eq("id", alvo.id)
+    .eq("agencia_id", aid);
+  if (upErr) return { error: "Erro ao transformar em parcelado." };
+
+  // Snapshot da pai (campos que as filhas herdam).
+  const { data: snap, error: snapErr } = await supabase
+    .from("transacoes")
+    .select("tipo, categoria, descricao, valor, natureza, cliente_id, agencia_id")
+    .eq("id", alvo.id)
+    .single();
+  if (snapErr || !snap) return { error: "Erro ao ler dados pra gerar filhas." };
+
+  const filhas: Array<Record<string, unknown>> = [];
+  for (let i = 2; i <= novoTotal; i++) {
+    filhas.push({
+      ...snap,
+      data_vencimento: addMonths(alvo.data_vencimento, i - 1),
+      data_pagamento: null,
+      status: "pendente",
+      recorrente: false,
+      parcela_atual: i,
+      parcela_total: novoTotal,
+      transacao_pai_id: alvo.id,
+    });
+  }
+
+  const { error: insErr } = await supabase.from("transacoes").insert(filhas);
+  if (insErr) return { error: "Erro ao criar parcelas." };
+
+  return { count: filhas.length };
+}
+
+/**
+ * Estende o nº de parcelas de um grupo (atual < novo). Bloqueia se já há
+ * filhas pagas (não dá pra "atravessar" uma paga). Adiciona filhas novas
+ * após a última existente e sincroniza parcela_total no grupo inteiro.
+ */
+async function estenderGrupo(
+  supabase: ReturnType<typeof createClient>,
+  aid: string,
+  alvo: TransacaoEstrutural,
+  novoTotal: number
+): Promise<HelperResult> {
+  const atual = alvo.parcela_total ?? 1;
+
+  // Bloqueio: alguma paga no caminho? (mesma proteção de antes)
+  const { data: pagasNoCaminho } = await supabase
+    .from("transacoes")
+    .select("id, parcela_atual")
+    .eq("transacao_pai_id", alvo.id)
+    .eq("status", "pago")
+    .eq("agencia_id", aid);
+  if (pagasNoCaminho && pagasNoCaminho.length > 0) {
+    const primeiraPaga = Math.min(
+      ...pagasNoCaminho.map((p) => p.parcela_atual ?? Infinity)
+    );
+    return {
+      error: `Não dá pra estender: a parcela ${primeiraPaga}/${atual} já foi paga. Exclua pagamentos ou ajuste a estratégia.`,
+    };
+  }
+
+  // Data base: a partir da data da ÚLTIMA parcela existente.
+  const { data: ultimaExistente } = await supabase
+    .from("transacoes")
+    .select("data_vencimento, parcela_atual")
+    .eq("transacao_pai_id", alvo.id)
+    .order("parcela_atual", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const dataBase = ultimaExistente?.data_vencimento ?? alvo.data_vencimento;
+  const proximaNumero = (ultimaExistente?.parcela_atual ?? 1) + 1;
+
+  // Snapshot da pai (campos que as filhas herdam).
+  const { data: snap, error: snapErr } = await supabase
+    .from("transacoes")
+    .select("tipo, categoria, descricao, valor, natureza, cliente_id, agencia_id")
+    .eq("id", alvo.id)
+    .single();
+  if (snapErr || !snap) return { error: "Erro ao ler parcela inicial." };
+
+  const faltam = novoTotal - atual;
+  const novas: Array<Record<string, unknown>> = [];
+  for (let i = 0; i < faltam; i++) {
+    const numero = proximaNumero + i;
+    const dataVenc = addMonths(dataBase, i + 1);
+    novas.push({
+      ...snap,
+      data_vencimento: dataVenc,
+      data_pagamento: null,
+      status: "pendente",
+      recorrente: false,
+      parcela_atual: numero,
+      parcela_total: novoTotal,
+      transacao_pai_id: alvo.id,
+    });
+  }
+
+  const { error: insErr } = await supabase.from("transacoes").insert(novas);
+  if (insErr) return { error: "Erro ao estender parcelas." };
+
+  // Sincroniza parcela_total no grupo inteiro (pai + filhas antigas).
+  const { error: upTotalErr } = await supabase
+    .from("transacoes")
+    .update({ parcela_total: novoTotal })
+    .or(`id.eq.${alvo.id},transacao_pai_id.eq.${alvo.id}`)
+    .eq("agencia_id", aid);
+  if (upTotalErr) return { error: "Erro ao sincronizar total de parcelas." };
+
+  return { count: novas.length };
+}
+
+/**
+ * Diminui o nº de parcelas de um grupo (atual > novo). Apaga as filhas
+ * com parcela_atual > novo (e status pendente). Bloqueia se alguma dessas
+ * filhas está com status='pago' (não dá pra apagar histórico financeiro).
+ */
+async function diminuirGrupo(
+  supabase: ReturnType<typeof createClient>,
+  aid: string,
+  alvo: TransacaoEstrutural,
+  novoTotal: number
+): Promise<HelperResult> {
+  const atual = alvo.parcela_total ?? 1;
+
+  // Bloqueio: alguma filha com parcela_atual > novo já foi paga?
+  const { data: pagasNoCaminho } = await supabase
+    .from("transacoes")
+    .select("id, parcela_atual")
+    .eq("transacao_pai_id", alvo.id)
+    .gt("parcela_atual", novoTotal)
+    .eq("status", "pago")
+    .eq("agencia_id", aid);
+  if (pagasNoCaminho && pagasNoCaminho.length > 0) {
+    const primeiraPaga = Math.min(
+      ...pagasNoCaminho.map((p) => p.parcela_atual ?? Infinity)
+    );
+    return {
+      error: `Não dá pra diminuir: a parcela ${primeiraPaga}/${atual} já foi paga.`,
+    };
+  }
+
+  // Apaga filhas com parcela_atual > novo (filtra por status pendente
+  // como defesa em profundidade — o check anterior já garante).
+  const { data: removidas, error: delErr } = await supabase
+    .from("transacoes")
+    .delete()
+    .eq("transacao_pai_id", alvo.id)
+    .gt("parcela_atual", novoTotal)
+    .eq("status", "pendente")
+    .eq("agencia_id", aid)
+    .select("id");
+  if (delErr) return { error: "Erro ao remover parcelas." };
+
+  // Sincroniza parcela_total no grupo (pai + filhas remanescentes).
+  const { error: upTotalErr } = await supabase
+    .from("transacoes")
+    .update({ parcela_total: novoTotal })
+    .or(`id.eq.${alvo.id},transacao_pai_id.eq.${alvo.id}`)
+    .eq("agencia_id", aid);
+  if (upTotalErr) return { error: "Erro ao sincronizar total de parcelas." };
+
+  return { count: removidas?.length ?? 0 };
+}
+
 export async function atualizarTransacaoAction(id: string, formData: FormData) {
   const session = await requireAgenciaMember();
   const supabase = createClient();
@@ -1192,9 +1406,10 @@ export async function atualizarTransacaoAction(id: string, formData: FormData) {
   const raw = Object.fromEntries(formData);
 
   // Campos estruturais lidos ANTES do zod (não fazem parte do schema).
-  // Checkbox `propagar_valor`: presente = "1", ausente = null. Default
-  // = true na UI da pai. Em filhas ou transação simples, esse campo
-  // nem é renderizado, então vem null/false.
+  // - `propagar_valor`: presente = "1" ou "on". Só vale pra PAI; em
+  //   filhas ou transação simples, o checkbox nem é renderizado.
+  // - `parcelas_total`: quando o usuário altera o Nº de parcelas (input
+  //   do bloco estrutural). null/ausente = não muda.
   const propagarValor = raw.propagar_valor === "1" || raw.propagar_valor === "on";
   const novoParcelasTotalRaw = raw.parcelas_total;
   const novoParcelasTotal = novoParcelasTotalRaw != null && novoParcelasTotalRaw !== ""
@@ -1205,8 +1420,7 @@ export async function atualizarTransacaoAction(id: string, formData: FormData) {
   if (!parsed.success) return { error: "Dados inválidos." };
   const dados = parsed.data;
 
-  // Busca a transação alvo com as colunas estruturais (necessárias
-  // para decidir se propaga/estende).
+  // Busca a transação alvo com as colunas estruturais.
   const { data: alvo, error: findErr } = await supabase
     .from("transacoes")
     .select("id, agencia_id, status, parcela_atual, parcela_total, transacao_pai_id, data_vencimento")
@@ -1215,16 +1429,41 @@ export async function atualizarTransacaoAction(id: string, formData: FormData) {
     .maybeSingle();
   if (findErr || !alvo) return { error: "Lançamento não encontrado." };
 
-  const isPai =
-    !!alvo.parcela_total && alvo.parcela_atual === 1;
-  const isParcela = !!alvo.parcela_total;
+  const isPai = !!alvo.parcela_total && alvo.parcela_atual === 1;
+  const isSimples = !alvo.parcela_total;
 
   // ---------------------------------------------------------------------
-  // Caminho simples: não é parcelado, ou o usuário escolheu não propagar.
-  // Update só da própria linha. (Mesmo comportamento de antes — parcelas
-  // pagas/editáveis individualmente por linha.)
+  // Caso 1: transação simples (não é parcela). O único controle
+  // estrutural possível é "transformar em parcelado" (novoParcelasTotal>1).
   // ---------------------------------------------------------------------
-  if (!isPai || !propagarValor) {
+  if (isSimples) {
+    // Update normal da própria linha primeiro.
+    const { error: upErr } = await supabase
+      .from("transacoes")
+      .update(dados)
+      .eq("id", id)
+      .eq("agencia_id", aid);
+    if (upErr) return { error: "Erro." };
+
+    // Transformar em parcelada?
+    if (novoParcelasTotal != null && novoParcelasTotal > 1) {
+      const res = await transformarEmParcelada(supabase, aid, alvo, novoParcelasTotal);
+      if (res.error) return { error: res.error };
+      revalidatePath("/admin/financeiro");
+      revalidateTag("financeiro-data");
+      return { ok: true, count: res.count ?? 0 };
+    }
+
+    revalidatePath("/admin/financeiro");
+    revalidateTag("financeiro-data");
+    return { ok: true };
+  }
+
+  // ---------------------------------------------------------------------
+  // Caso 2: FILHA. Update só dela. Ignora propagar_valor e parcelas_total
+  // (a action não mexe em outras linhas quando o alvo é filha).
+  // ---------------------------------------------------------------------
+  if (!isPai) {
     const { error } = await supabase
       .from("transacoes")
       .update(dados)
@@ -1237,12 +1476,11 @@ export async function atualizarTransacaoAction(id: string, formData: FormData) {
   }
 
   // ---------------------------------------------------------------------
-  // Caminho pai + propagar_valor=1:
-  //   1) atualiza a própria pai;
-  //   2) propaga valor/descricao/categoria/natureza/tipo pras filhas
-  //      pendentes (pagas são intocadas — audit trail);
-  //   3) opcionalmente estende o grupo (novoParcelasTotal > atual).
+  // Caso 3: PAI. Update + propagação (se marcado) + estender/diminuir
+  // (se novoParcelasTotal != atual).
   // ---------------------------------------------------------------------
+
+  // 3a) Update da própria pai.
   const { error: updatePaiErr } = await supabase
     .from("transacoes")
     .update(dados)
@@ -1250,139 +1488,53 @@ export async function atualizarTransacaoAction(id: string, formData: FormData) {
     .eq("agencia_id", aid);
   if (updatePaiErr) return { error: "Erro ao atualizar parcela inicial." };
 
-  // Só propaga os campos "de valor" — não mexe em status/data_pagamento/
-  // data_vencimento/criado por aqui (data_vencimento pode ser alterado
-  // pela pai individualmente, e a propagação do campo é explícita).
-  const propagacao = {
-    valor: dados.valor,
-    descricao: dados.descricao,
-    categoria: dados.categoria,
-    natureza: dados.natureza,
-    tipo: dados.tipo,
-  };
-  // Filtra campos undefined (o usuário pode ter enviado só alguns).
-  const propagacaoLimpa = Object.fromEntries(
-    Object.entries(propagacao).filter(([, v]) => v !== undefined)
-  );
+  let totalCount = 0;
 
-  let filhasAtualizadas = 0;
-  if (Object.keys(propagacaoLimpa).length > 0) {
-    const { data: atualizadas, error: propErr } = await supabase
-      .from("transacoes")
-      .update(propagacaoLimpa)
-      .eq("transacao_pai_id", id)
-      .eq("status", "pendente")
-      .eq("agencia_id", aid)
-      .select("id");
-    if (propErr) return { error: "Erro ao propagar valor pras parcelas." };
-    filhasAtualizadas = atualizadas?.length ?? 0;
+  // 3b) Propagar valor/descrição/categoria/natureza/tipo pras filhas
+  // pendentes (pagas são intocadas — audit trail).
+  if (propagarValor) {
+    const propagacao = {
+      valor: dados.valor,
+      descricao: dados.descricao,
+      categoria: dados.categoria,
+      natureza: dados.natureza,
+      tipo: dados.tipo,
+    };
+    const propagacaoLimpa = Object.fromEntries(
+      Object.entries(propagacao).filter(([, v]) => v !== undefined)
+    );
+    if (Object.keys(propagacaoLimpa).length > 0) {
+      const { data: atualizadas, error: propErr } = await supabase
+        .from("transacoes")
+        .update(propagacaoLimpa)
+        .eq("transacao_pai_id", id)
+        .eq("status", "pendente")
+        .eq("agencia_id", aid)
+        .select("id");
+      if (propErr) return { error: "Erro ao propagar valor pras parcelas." };
+      totalCount += atualizadas?.length ?? 0;
+    }
   }
 
-  // ---------------------------------------------------------------------
-  // Estender nº de parcelas (só aumentar; diminuir é bloqueado).
-  // ---------------------------------------------------------------------
-  let filhasCriadas = 0;
-  if (novoParcelasTotal != null && novoParcelasTotal > (alvo.parcela_total ?? 1)) {
-    // Bloqueia se ALGUMA parcela 2..N existente já foi paga — a
-    // extensão "atravessaria" uma parcela paga, o que desconfigura o
-    // histórico financeiro.
-    const { data: pagasNoCaminho } = await supabase
-      .from("transacoes")
-      .select("id, parcela_atual")
-      .eq("transacao_pai_id", id)
-      .eq("status", "pago")
-      .eq("agencia_id", aid);
-    if (pagasNoCaminho && pagasNoCaminho.length > 0) {
-      const primeiraPaga = Math.min(
-        ...pagasNoCaminho.map((p) => p.parcela_atual ?? Infinity)
-      );
-      return {
-        error: `Não dá pra estender: a parcela ${primeiraPaga}/${alvo.parcela_total} já foi paga. Exclua pagamentos ou ajuste a estratégia.`,
-      };
-    }
-
-    // Data base: a partir da data de vencimento da ÚLTIMA parcela
-    // existente + 1 mês. Pega a parcela com maior parcela_atual.
-    const { data: ultimaExistente } = await supabase
-      .from("transacoes")
-      .select("data_vencimento, parcela_atual")
-      .eq("transacao_pai_id", id)
-      .order("parcela_atual", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let dataBase: string;
-    let proximaNumero: number;
-    if (ultimaExistente) {
-      dataBase = ultimaExistente.data_vencimento;
-      proximaNumero = (ultimaExistente.parcela_atual ?? 1) + 1;
+  // 3c) Mudar nº total de parcelas (estender OU diminuir).
+  const atual = alvo.parcela_total ?? 1;
+  if (novoParcelasTotal != null && novoParcelasTotal !== atual) {
+    if (novoParcelasTotal > atual) {
+      const res = await estenderGrupo(supabase, aid, alvo, novoParcelasTotal);
+      if (res.error) return { error: res.error };
+      totalCount += res.count ?? 0;
+    } else if (novoParcelasTotal >= 2) {
+      const res = await diminuirGrupo(supabase, aid, alvo, novoParcelasTotal);
+      if (res.error) return { error: res.error };
+      totalCount += res.count ?? 0;
     } else {
-      // Sem filhas: estende só a pai? Improvável (criação sempre
-      // gera 2+ quando parcelas_total>1), mas tratamos.
-      dataBase = alvo.data_vencimento;
-      proximaNumero = 2;
+      return { error: "Nº de parcelas deve ser pelo menos 2." };
     }
-
-    // Quantas filhas novas pra criar.
-    const faltam = novoParcelasTotal - (alvo.parcela_total ?? 1);
-
-    // Busca o snapshot da pai (pra copiar valor/descricao/categoria/etc).
-    const { data: paiCompleta } = await supabase
-      .from("transacoes")
-      .select("tipo, categoria, descricao, valor, natureza, cliente_id, agencia_id")
-      .eq("id", id)
-      .single();
-    if (!paiCompleta) return { error: "Erro ao ler parcela inicial." };
-
-    const novasFilhas: Array<Record<string, unknown>> = [];
-    for (let i = 0; i < faltam; i++) {
-      const numero = proximaNumero + i;
-      const mesesApos = numero - 1; // 1/N = 0 meses após base, 2/N = 1, ...
-      // A data da nova parcela é: dataBase + (numero - parcela_atual_ultima) meses.
-      // Simplificado: dataBase + (i + 1) meses — porque dataBase é a
-      // data da última parcela existente, e a próxima é +1 mês dela.
-      const dataVenc = addMonths(dataBase, i + 1);
-      novasFilhas.push({
-        ...paiCompleta,
-        data_vencimento: dataVenc,
-        data_pagamento: null,
-        status: "pendente",
-        recorrente: false,
-        parcela_atual: numero,
-        parcela_total: novoParcelasTotal,
-        transacao_pai_id: id,
-      });
-    }
-
-    const { error: insErr } = await supabase
-      .from("transacoes")
-      .insert(novasFilhas);
-    if (insErr) return { error: "Erro ao estender parcelas." };
-    filhasCriadas = novasFilhas.length;
-
-    // Atualiza parcela_total na pai e em TODAS as filhas antigas (pra
-    // manter coerência — a exibição (X/N) usa parcela_total, então
-    // precisa estar sincronizado).
-    const { error: upTotalErr } = await supabase
-      .from("transacoes")
-      .update({ parcela_total: novoParcelasTotal })
-      .or(`id.eq.${id},transacao_pai_id.eq.${id}`)
-      .eq("agencia_id", aid);
-    if (upTotalErr) return { error: "Erro ao sincronizar total de parcelas." };
-  } else if (
-    novoParcelasTotal != null &&
-    novoParcelasTotal < (alvo.parcela_total ?? 1)
-  ) {
-    return {
-      error: "Não dá pra diminuir o nº de parcelas depois de criado. Exclua o grupo e recrie.",
-    };
   }
 
   revalidatePath("/admin/financeiro");
   revalidateTag("financeiro-data");
-
-  const total = filhasAtualizadas + filhasCriadas;
-  return { ok: true, count: total };
+  return { ok: true, count: totalCount };
 }
 
 export async function deletarTransacaoAction(id: string) {
