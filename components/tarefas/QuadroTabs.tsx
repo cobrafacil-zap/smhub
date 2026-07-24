@@ -141,7 +141,11 @@ function QuadroTab({
             onClick={() => setMenuOpen((v) => !v)}
             className={cn(
               "h-6 w-6 inline-flex items-center justify-center rounded text-slate-400 hover:text-slate-100 hover:bg-bg-elevated",
-              ativo ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100"
+              // Em mobile (<sm) o menu fica sempre visível (não tem hover).
+              // Em sm+ só aparece no hover/focus do tab.
+              ativo
+                ? "opacity-100"
+                : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
             )}
             title="Ações do quadro"
             aria-label="Ações do quadro"
