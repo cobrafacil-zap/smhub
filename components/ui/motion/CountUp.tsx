@@ -46,7 +46,6 @@ export function CountUp({
 }: CountUpProps) {
   const ref = useRef<HTMLSpanElement | null>(null);
   const [display, setDisplay] = useState(0);
-  const started = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -57,33 +56,34 @@ export function CountUp({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
       setDisplay(value);
-      started.current = true;
       return;
     }
 
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting && !started.current) {
-            started.current = true;
-            const start = performance.now();
-            const from = 0;
-            const to = value;
-            const tick = (now: number) => {
-              const p = Math.min((now - start) / duration, 1);
-              setDisplay(from + (to - from) * easeOutExpo(p));
-              if (p < 1) requestAnimationFrame(tick);
-              else setDisplay(to);
-            };
-            requestAnimationFrame(tick);
-            obs.disconnect();
-          }
-        }
-      },
-      { threshold: 0.2 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
+    // Captura o `value` atual como destino da animação e o último `display`
+    // conhecido como ponto de partida. Re-roda a animação toda vez que
+    // `value` muda (ex.: usuário troca o mês no Financeiro e o KPI recalcula
+    // — sem isso, o número ficava preso no último valor animado porque o
+    // guard `started.current` bloqueava re-execuções).
+    const from = (() => {
+      // Lê o último número exibido no DOM (pode ter sido animado
+      // anteriormente). Evita um "pulo" se o `useState` ainda não refletiu.
+      const txt = el.textContent ?? "";
+      const num = Number(
+        txt.replace(/[^\d,-]/g, "").replace(/\./g, "").replace(",", ".")
+      );
+      return Number.isFinite(num) ? num : 0;
+    })();
+    const to = value;
+    if (from === to) return;
+
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1);
+      setDisplay(from + (to - from) * easeOutExpo(p));
+      if (p < 1) requestAnimationFrame(tick);
+      else setDisplay(to);
+    };
+    requestAnimationFrame(tick);
   }, [value, duration]);
 
   return (
