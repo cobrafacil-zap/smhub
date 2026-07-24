@@ -13,6 +13,7 @@ import { TarefaDialog } from "./TarefaDialog";
 import { TarefaDetailDialog } from "./TarefaDetailDialog";
 import { faixaPrazo, ORDEM_FAIXA } from "@/lib/planejamento";
 import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefas/page";
+import type { TarefaQuadro } from "@/types/database";
 import type { TarefaStatus } from "@/types/database";
 
 const COLUNAS: { status: TarefaStatus; label: string; accent: string }[] = [
@@ -26,12 +27,16 @@ export function KanbanBoard({
   tarefas,
   membros,
   clientes,
+  quadros,
+  quadroAtivoId,
   meuId,
   meuRole,
 }: {
   tarefas: TarefaItem[];
   membros: MembroOption[];
   clientes: ClienteOption[];
+  quadros: TarefaQuadro[];
+  quadroAtivoId: string;
   meuId: string;
   meuRole: string;
 }) {
@@ -352,6 +357,8 @@ export function KanbanBoard({
         tarefa={editando}
         membros={membros}
         clientes={clientes}
+        quadros={quadros}
+        quadroIdInicial={quadroAtivoId}
         onClose={() => setDialogOpen(false)}
       />
 

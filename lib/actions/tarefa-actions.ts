@@ -19,10 +19,44 @@ const tarefaSchema = z.object({
   prioridade: z.enum(PRIORIDADE_VALUES as [string, ...string[]]).default("media"),
   prazo: z.string().optional().nullable(),
   cliente_id: z.string().uuid().optional().nullable(),
+  quadro_id: z.string().uuid().optional().nullable(),
   responsaveis: z.array(z.string().uuid()).optional().default([]),
 });
 
 export type TarefaState = { error?: string; ok?: boolean } | undefined;
+
+// ============================================================================
+// HELPER
+// ============================================================================
+//
+// Valida que o `quadro_id` enviado pertence à agência. Se não vier, usa o
+// "Quadro geral" (mais antigo). Garante que toda tarefa tenha um quadro
+// válido antes do insert/update (a coluna é NOT NULL no banco).
+// ============================================================================
+async function resolverQuadroId(
+  supabase: ReturnType<typeof createClient>,
+  aid: string,
+  quadroId: string | null | undefined
+): Promise<string | null> {
+  if (quadroId) {
+    const { data } = await supabase
+      .from("tarefa_quadros")
+      .select("id")
+      .eq("id", quadroId)
+      .eq("agencia_id", aid)
+      .maybeSingle();
+    if (data?.id) return data.id;
+  }
+  // Fallback: quadro geral (mais antigo).
+  const { data: geral } = await supabase
+    .from("tarefa_quadros")
+    .select("id")
+    .eq("agencia_id", aid)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return geral?.id ?? null;
+}
 
 // ============================================================================
 // CRIAR
@@ -50,10 +84,16 @@ export async function criarTarefaAction(
     prioridade: formData.get("prioridade") || "media",
     prazo: formData.get("prazo") || null,
     cliente_id: formData.get("cliente_id") || null,
+    quadro_id: formData.get("quadro_id") || null,
     responsaveis,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const quadroId = await resolverQuadroId(supabase, aid, parsed.data.quadro_id);
+  if (!quadroId) {
+    return { error: "Nenhum quadro disponível. Recarregue a página." };
   }
 
   const { data: tarefa, error } = await supabase
@@ -67,6 +107,7 @@ export async function criarTarefaAction(
       status: parsed.data.status as TarefaStatus,
       prioridade: parsed.data.prioridade as TarefaPrioridade,
       prazo: parsed.data.prazo || null,
+      quadro_id: quadroId,
     })
     .select("id")
     .single();
@@ -119,10 +160,16 @@ export async function atualizarTarefaAction(
     prioridade: formData.get("prioridade") || "media",
     prazo: formData.get("prazo") || null,
     cliente_id: formData.get("cliente_id") || null,
+    quadro_id: formData.get("quadro_id") || null,
     responsaveis,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const quadroId = await resolverQuadroId(supabase, aid, parsed.data.quadro_id);
+  if (!quadroId) {
+    return { error: "Quadro inválido." };
   }
 
   const { error } = await supabase
@@ -134,6 +181,7 @@ export async function atualizarTarefaAction(
       prioridade: parsed.data.prioridade as TarefaPrioridade,
       prazo: parsed.data.prazo || null,
       cliente_id: parsed.data.cliente_id ?? null,
+      quadro_id: quadroId,
     })
     .eq("id", id)
     .eq("agencia_id", aid);

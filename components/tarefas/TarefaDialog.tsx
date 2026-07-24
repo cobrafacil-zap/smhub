@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { cn } from "@/lib/utils";
 import { criarTarefaAction, atualizarTarefaAction } from "@/lib/actions/tarefa-actions";
 import type { ClienteOption, MembroOption, TarefaItem } from "@/app/admin/tarefas/page";
+import type { TarefaQuadro } from "@/types/database";
 
 const STATUS_OPCOES = [
   { value: "destinada", label: "Tarefa destinada" },
@@ -29,12 +30,16 @@ export function TarefaDialog({
   tarefa,
   membros,
   clientes,
+  quadros,
+  quadroIdInicial,
   onClose,
 }: {
   open: boolean;
   tarefa: TarefaItem | null; // null = criação
   membros: MembroOption[];
   clientes: ClienteOption[];
+  quadros: TarefaQuadro[];
+  quadroIdInicial: string;
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -148,6 +153,20 @@ export function TarefaDialog({
               ))}
             </Select>
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="label">Quadro</label>
+          <Select
+            name="quadro_id"
+            defaultValue={tarefa?.quadro_id ?? quadroIdInicial}
+          >
+            {quadros.map((q) => (
+              <option key={q.id} value={q.id}>
+                {q.nome}
+              </option>
+            ))}
+          </Select>
         </div>
 
         {/* Multi-atribuição */}
