@@ -249,7 +249,7 @@ export default async function LandingPage() {
                   </Button>
                 </Link>
                 <Link href="/checkout?plano=pro">
-                  <Button size="sm" magnetic iconRight={<ArrowRight className="h-4 w-4" />}>
+                  <Button variant="gradient" size="sm" magnetic iconRight={<ArrowRight className="h-4 w-4" />}>
                     <span className="hidden sm:inline">Começar grátis</span>
                     <span className="sm:hidden">Começar</span>
                   </Button>
@@ -264,7 +264,7 @@ export default async function LandingPage() {
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 text-center">
         <Hero3D />
         <HeroStars />
-        <div className="relative z-10 pointer-events-none [text-shadow:0_1px_20px_rgb(139_92_246_/_0.12)]">
+        <div className="relative z-10 pointer-events-none">
         <div className="flex justify-center mb-8">
           <Logo variant="full" className="!h-36 sm:!h-44 logo-hero-animated" />
         </div>
@@ -281,7 +281,7 @@ export default async function LandingPage() {
         </p>
         <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 pointer-events-auto">
           <Link href="/checkout?plano=pro" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto glow-hover" iconRight={<ArrowRight className="h-4 w-4" />}>
+            <Button variant="gradient" size="lg" className="w-full sm:w-auto" iconRight={<ArrowRight className="h-4 w-4" />}>
               Testar 7 dias grátis
             </Button>
           </Link>

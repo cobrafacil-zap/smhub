@@ -5,7 +5,7 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Spinner } from "./Spinner";
 import { Magnetic } from "./motion/Magnetic";
 
-type Variant = "primary" | "secondary" | "danger" | "ghost" | "outline";
+type Variant = "primary" | "secondary" | "danger" | "ghost" | "outline" | "gradient";
 type Size = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -25,6 +25,8 @@ const variants: Record<Variant, string> = {
     "bg-bg-elevated border border-border text-slate-200 hover:bg-bg-muted hover:border-royal-500/30 hover:text-royal-300 shadow-sm",
   outline:
     "border border-royal-500/50 text-royal-300 hover:bg-royal-500/10 hover:border-royal-500",
+  gradient:
+    "bg-gradient-to-r from-royal-500 to-royal-700 text-white shadow-[0_8px_24px_-6px_rgba(124,58,214,0.45)] hover:from-royal-400 hover:to-royal-600 hover:shadow-[0_10px_28px_-5px_rgba(139,92,246,0.55)] active:from-royal-600 active:to-royal-800",
   danger: "bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-700",
   ghost: "text-slate-300 hover:bg-bg-elevated hover:text-royal-200",
 };

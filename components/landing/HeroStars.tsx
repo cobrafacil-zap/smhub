@@ -63,8 +63,8 @@ export function HeroStars() {
             : bright
               ? 1.2 + Math.random() * 1.6
               : 0.5 + Math.random() * 0.9,
-          minOpacity: bright ? 0.3 : 0.08,
-          maxOpacity: bright ? 0.85 : 0.38,
+          minOpacity: bright ? 0.35 : (isDark ? 0.08 : 0.18),
+          maxOpacity: bright ? 0.95 : (isDark ? 0.38 : 0.55),
           phase: Math.random() * Math.PI * 2,
           speed: 0.8 + Math.random() * 2.4,
           color: colors[Math.floor(Math.random() * colors.length)],
