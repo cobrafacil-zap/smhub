@@ -42,10 +42,10 @@ export function emailBoasVindas(nome: string) {
   return {
     subject: "Bem-vindo à SM Hub!",
     html: `
-      <h1 style="font-family:Inter,sans-serif;color:#0A1A40;">Olá, ${nome}!</h1>
+      <h1 style="font-family:Inter,sans-serif;color:#1E1B4B;">Olá, ${nome}!</h1>
       <p>Sua agência foi cadastrada com sucesso na SM Hub.</p>
       <p>Você tem <strong>14 dias de trial gratuito</strong> para experimentar todos os recursos.</p>
-      <p><a href="${appUrl}/admin" style="display:inline-block;background:#3D5AFE;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Acessar painel</a></p>
+      <p><a href="${appUrl}/admin" style="display:inline-block;background:#7C3AED;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Acessar painel</a></p>
     `,
   };
 }
@@ -66,14 +66,14 @@ export function emailFatura({
   return {
     subject: `Fatura ${numero} — ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor)}`,
     html: `
-      <h1 style="font-family:Inter,sans-serif;color:#0A1A40;">Olá, ${clienteNome}!</h1>
+      <h1 style="font-family:Inter,sans-serif;color:#1E1B4B;">Olá, ${clienteNome}!</h1>
       <p>Uma nova fatura foi gerada para você.</p>
       <ul>
         <li><strong>Número:</strong> ${numero}</li>
         <li><strong>Valor:</strong> ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor)}</li>
         <li><strong>Vencimento:</strong> ${vencimento}</li>
       </ul>
-      ${link ? `<p><a href="${link}" style="display:inline-block;background:#3D5AFE;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Ver fatura</a></p>` : ""}
+      ${link ? `<p><a href="${link}" style="display:inline-block;background:#7C3AED;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Ver fatura</a></p>` : ""}
     `,
   };
 }
@@ -90,9 +90,9 @@ export function emailContrato({
   return {
     subject: `Contrato disponível para assinatura — ${titulo}`,
     html: `
-      <h1 style="font-family:Inter,sans-serif;color:#0A1A40;">Olá, ${clienteNome}!</h1>
+      <h1 style="font-family:Inter,sans-serif;color:#1E1B4B;">Olá, ${clienteNome}!</h1>
       <p>Há um novo contrato disponível para sua assinatura: <strong>${titulo}</strong>.</p>
-      <p><a href="${link}" style="display:inline-block;background:#3D5AFE;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Visualizar e assinar</a></p>
+      <p><a href="${link}" style="display:inline-block;background:#7C3AED;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Visualizar e assinar</a></p>
       <p style="color:#64748b;font-size:12px;">A assinatura é registrada com data, IP e hash para sua segurança.</p>
     `,
   };
@@ -110,10 +110,10 @@ export function emailBoasVindasPlataforma({
   return {
     subject: `Bem-vindo à SM Hub — defina sua senha`,
     html: `
-      <h1 style="font-family:Inter,sans-serif;color:#0A1A40;">Olá, ${nome}!</h1>
+      <h1 style="font-family:Inter,sans-serif;color:#1E1B4B;">Olá, ${nome}!</h1>
       <p>Recebemos o pagamento da assinatura do plano <strong>SM Hub</strong> para a agência <strong>${nomeAgencia}</strong>.</p>
       <p>Para começar a usar a plataforma, defina sua senha de acesso pelo link abaixo:</p>
-      <p><a href="${link}" style="display:inline-block;background:#3D5AFE;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Definir minha senha</a></p>
+      <p><a href="${link}" style="display:inline-block;background:#7C3AED;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Definir minha senha</a></p>
       <p>Você tem <strong>7 dias grátis</strong> de trial para experimentar todos os recursos antes da primeira cobrança.</p>
       <p style="color:#64748b;font-size:12px;">O link expira em 7 dias. Se precisar de um novo, entre em contato com o suporte.</p>
     `,
@@ -132,10 +132,10 @@ export function emailPagamentoAprovado({
   return {
     subject: `Pagamento aprovado — SM Hub`,
     html: `
-      <h1 style="font-family:Inter,sans-serif;color:#0A1A40;">Olá, ${nome}!</h1>
+      <h1 style="font-family:Inter,sans-serif;color:#1E1B4B;">Olá, ${nome}!</h1>
       <p>Confirmamos o pagamento da sua assinatura no valor de <strong>${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor)}</strong>.</p>
       <p>Sua plataforma está liberada por mais 30 dias. Agradecemos a confiança!</p>
-      <p><a href="${link}" style="display:inline-block;background:#3D5AFE;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Acessar painel</a></p>
+      <p><a href="${link}" style="display:inline-block;background:#7C3AED;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Acessar painel</a></p>
     `,
   };
 }

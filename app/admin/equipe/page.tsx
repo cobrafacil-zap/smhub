@@ -86,7 +86,7 @@ export default async function EquipePage({
     return (
       <div key={u.id} style={{ marginLeft: nivel * 20 }} className="space-y-1.5">
         <div className="flex items-center gap-2 card !p-2">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-royal-500 to-navy-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-royal-500 to-royal-950 flex items-center justify-center text-white text-xs font-semibold shrink-0">
             {(u.nome ?? u.email ?? "?").slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -139,7 +139,7 @@ export default async function EquipePage({
             </div>
             <p className="text-[11px] text-slate-500 max-w-xs text-right">
               Soma dos custos dos membros ativos (sem clientes). Configure cada um em
-              <strong className="text-slate-300"> Editar</strong>.
+              <strong className="text-slate-200"> Editar</strong>.
             </p>
           </div>
         </Card>
@@ -176,7 +176,7 @@ export default async function EquipePage({
                       "px-3.5 py-2 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap inline-flex items-center gap-2",
                       active
                         ? "border-royal-500 text-royal-300"
-                        : "border-transparent text-slate-400 hover:text-slate-200"
+                        : "border-transparent text-slate-400 hover:text-royal-200"
                     )}
                   >
                     {t.label}
@@ -195,7 +195,7 @@ export default async function EquipePage({
                   "px-3 py-1.5 text-xs rounded-md border transition",
                   view === "cards"
                     ? "bg-royal-500/15 text-royal-200 border-royal-500/40"
-                    : "border-border text-slate-400 hover:text-slate-200"
+                    : "border-border text-slate-400 hover:text-royal-200"
                 )}
               >
                 Cards
@@ -206,7 +206,7 @@ export default async function EquipePage({
                   "px-3 py-1.5 text-xs rounded-md border transition inline-flex items-center gap-1",
                   view === "organograma"
                     ? "bg-royal-500/15 text-royal-200 border-royal-500/40"
-                    : "border-border text-slate-400 hover:text-slate-200"
+                    : "border-border text-slate-400 hover:text-royal-200"
                 )}
               >
                 <GitFork className="h-3 w-3" /> Organograma
@@ -226,7 +226,7 @@ export default async function EquipePage({
                 <>
                   {raizes.map((u) => renderNo(u, 0))}
                   <p className="text-[11px] text-slate-500 pt-2">
-                    Defina quem responde a quem em <strong className="text-slate-300">Editar</strong> →
+                    Defina quem responde a quem em <strong className="text-slate-200">Editar</strong> →
                     "Responde a". Clientes não aparecem no organograma.
                   </p>
                 </>
@@ -250,7 +250,7 @@ export default async function EquipePage({
                     <TiltCard className="h-full">
                     <Card className="h-full">
                     <div className="flex items-start gap-3">
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-royal-500 to-navy-700 flex items-center justify-center text-white font-semibold">
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-royal-500 to-royal-950 flex items-center justify-center text-white font-semibold">
                         {(u.nome ?? u.email ?? "?").slice(0, 1).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -270,13 +270,13 @@ export default async function EquipePage({
                     {/* Função + Custo mensal (apenas para membros da equipe) */}
                     {!isCliente && (
                       <div className="mt-3 space-y-1.5 text-xs">
-                        <div className="flex items-center gap-2 text-slate-300">
+                        <div className="flex items-center gap-2 text-slate-400">
                           <Briefcase className="h-3.5 w-3.5 text-slate-500" />
                           <span className="truncate">
                             {u.cargo?.trim() ? u.cargo : <span className="text-slate-500 italic">Sem função</span>}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-slate-300">
+                        <div className="flex items-center gap-2 text-slate-400">
                           <DollarSign className="h-3.5 w-3.5 text-slate-500" />
                           <span>
                             {u.custo_mensal && u.custo_mensal > 0 ? (
@@ -289,7 +289,7 @@ export default async function EquipePage({
                             )}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-slate-300">
+                        <div className="flex items-center gap-2 text-slate-400">
                           <GitFork className="h-3.5 w-3.5 text-slate-500" />
                           <span className="truncate">
                             {supervisorNome ? (

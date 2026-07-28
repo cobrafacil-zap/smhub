@@ -1,5 +1,5 @@
 /**
- * Ícone do app (PWA) — "SM" sobre o gradiente royal→navy, full-bleed.
+ * Ícone do app (PWA) — "SM" sobre o gradiente violeta→roxo profundo, full-bleed.
  * Usado pelos route handlers de ícone (192/512/maskable) e pelo apple-icon.
  *
  * `maskable=true` deixa a fonte menor p/ ficar dentro da safe zone (80%) que
@@ -15,7 +15,7 @@ export function pwaIconGraphic(size: number, maskable = false) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #3D5AFE 0%, #0A1A40 100%)",
+        background: "linear-gradient(135deg, #8B5CF6 0%, #1E1B4B 100%)",
         color: "white",
         fontWeight: 800,
         fontSize,

@@ -34,11 +34,11 @@ export async function Logo({
       >
         <defs>
           <linearGradient id="smhub-mark-sgrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#5045E5" />
-            <stop offset="100%" stopColor="#3D5AFE" />
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#7C3AED" />
           </linearGradient>
         </defs>
-        <path d="M 18 40 A 32 32 0 0 1 82 40" stroke="#3D5AFE" strokeWidth="6" strokeLinecap="round" fill="none" />
+        <path d="M 18 40 A 32 32 0 0 1 82 40" stroke="#7C3AED" strokeWidth="6" strokeLinecap="round" fill="none" />
         <path
           d="M 30 28 Q 22 22 30 18 Q 44 14 56 22 Q 66 30 56 40 Q 46 48 36 52 Q 24 56 22 66 Q 22 80 38 84 Q 56 88 72 78"
           stroke="url(#smhub-mark-sgrad)"
@@ -49,9 +49,9 @@ export async function Logo({
         />
         <path
           d="M 30 28 L 30 84 L 40 84 L 40 50 L 50 70 L 60 50 L 60 84 L 70 84 L 70 28 L 60 28 L 50 50 L 40 28 Z"
-          fill="#0A1A40"
+          fill="#1E1B4B"
         />
-        <path d="M 22 66 A 28 28 0 0 0 78 66" stroke="#0A1A40" strokeWidth="6" strokeLinecap="round" fill="none" />
+        <path d="M 22 66 A 28 28 0 0 0 78 66" stroke="#1E1B4B" strokeWidth="6" strokeLinecap="round" fill="none" />
       </svg>
     );
   }

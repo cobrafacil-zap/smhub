@@ -75,7 +75,7 @@ export const SignaturePad = forwardRef(function SignaturePad(
             setHasInk(!sigRef.current?.isEmpty());
             onChange?.(sigRef.current?.toDataURL("image/png") ?? null);
           }}
-          penColor="#3D5AFE"
+          penColor="#7C3AED"
         />
       </div>
       {hasInk && (

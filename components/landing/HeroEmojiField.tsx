@@ -15,7 +15,7 @@ interface Particle {
 
 /**
  * HeroEmojiField — pequenas estrelas que surgem perto do cursor no hero.
- * Cores azul/neon, piscam suavemente e desaparecem. Desktop e mobile.
+ * Cores violeta/lavanda neon, piscam suavemente e desaparecem. Desktop e mobile.
  */
 export function HeroEmojiField() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -32,7 +32,7 @@ export function HeroEmojiField() {
     let lastX = container.clientWidth / 2;
     let lastY = container.clientHeight / 2;
 
-    const colors = ["#a8b4ff", "#8797ff", "#c3cfff", "#ffffff", "#bfd4ff"];
+    const colors = ["#c4b5fd", "#a78bfa", "#8b5cf6", "#ffffff", "#ddd6fe"];
 
     const spawn = (x: number, y: number) => {
       const el = document.createElement("span");

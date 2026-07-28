@@ -62,7 +62,7 @@ export function ConfiguracoesForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="label">Cor primária</label>
-            <input name="cor_primaria" type="color" className="input h-10" defaultValue={initial.cor_primaria ?? "#3D5AFE"} />
+            <input name="cor_primaria" type="color" className="input h-10" defaultValue={initial.cor_primaria ?? "#7C3AED"} />
           </div>
           <div className="sm:col-span-2">
             <label className="label">Logo da agência</label>

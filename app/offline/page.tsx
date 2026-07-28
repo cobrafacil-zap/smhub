@@ -8,7 +8,7 @@ export default function OfflinePage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #3D5AFE 0%, #0A1A40 100%)",
+        background: "linear-gradient(135deg, #8B5CF6 0%, #1E1B4B 100%)",
         color: "#fff",
         display: "flex",
         alignItems: "center",
@@ -31,7 +31,7 @@ export default function OfflinePage() {
         <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 10 }}>
           Você está offline
         </h1>
-        <p style={{ color: "#B8C0E8", fontSize: 15, lineHeight: 1.5 }}>
+        <p style={{ color: "#C4B5FD", fontSize: 15, lineHeight: 1.5 }}>
           Sem conexão com a internet. Reconecte-se e tente novamente.
         </p>
         <a

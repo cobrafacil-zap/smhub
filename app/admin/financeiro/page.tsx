@@ -334,7 +334,7 @@ export default async function FinanceiroPage({
 
       {chartData.some((d) => d.receita || d.despesa) && (
         <Card>
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">
+          <h3 className="text-sm font-semibold text-slate-400 mb-4">
             Fluxo de caixa — {periodoLabel}
           </h3>
           <FinanceChart data={chartData} />
@@ -343,7 +343,7 @@ export default async function FinanceiroPage({
 
       <Card className="!p-0">
         <div className="p-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
             <FileText className="h-4 w-4" /> Faturas — {periodoLabel}
           </h3>
           <form action={gerarMensaisAction} className="flex items-center gap-2">
@@ -431,9 +431,9 @@ export default async function FinanceiroPage({
                   };
                   return (
                     <Reveal key={f.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
-                      <td className="px-4 py-2 text-slate-300 font-mono text-xs">{f.numero ?? "—"}</td>
+                      <td className="px-4 py-2 text-slate-200 font-mono text-xs">{f.numero ?? "—"}</td>
                       <td className="px-4 py-2 text-slate-100">{f.cliente?.nome_empresa ?? "—"}</td>
-                      <td className="px-4 py-2 text-slate-300">{f.data_vencimento ? formatDate(f.data_vencimento) : "—"}</td>
+                      <td className="px-4 py-2 text-slate-200">{f.data_vencimento ? formatDate(f.data_vencimento) : "—"}</td>
                       <td className="px-4 py-2 text-slate-100 font-semibold">{formatBRL(Number(f.valor) || 0)}</td>
                       <td className="px-4 py-2">
                         <Badge variant={st.color}>{st.label}</Badge>
@@ -472,7 +472,7 @@ export default async function FinanceiroPage({
           Só lista membros ativos com custo_mensal > 0. */}
       <Card className="!p-0">
         <div className="p-4 border-b border-border flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
             <Users className="h-4 w-4 text-royal-300" />
             Folha de equipe
           </h3>
@@ -504,7 +504,7 @@ export default async function FinanceiroPage({
               {membrosComCusto.map((m, i) => (
                 <Reveal key={m.id} as="li" delay={Math.min(i, 8) * 50} className="p-4 flex items-center justify-between gap-3 hover-row">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="h-7 w-7 rounded-full bg-gradient-to-br from-royal-500 to-navy-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                    <span className="h-7 w-7 rounded-full bg-gradient-to-br from-royal-500 to-royal-950 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                       {(m.nome ?? m.email ?? "?").slice(0, 1).toUpperCase()}
                     </span>
                     <div className="min-w-0">
@@ -539,7 +539,7 @@ export default async function FinanceiroPage({
                   <Reveal key={m.id} as="tr" delay={Math.min(i, 8) * 50} className="border-b border-border/50 hover-row">
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-2">
-                        <span className="h-7 w-7 rounded-full bg-gradient-to-br from-royal-500 to-navy-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                        <span className="h-7 w-7 rounded-full bg-gradient-to-br from-royal-500 to-royal-950 flex items-center justify-center text-white text-xs font-semibold shrink-0">
                           {(m.nome ?? m.email ?? "?").slice(0, 1).toUpperCase()}
                         </span>
                         <span className="text-slate-100 truncate">{m.nome ?? m.email ?? "—"}</span>
@@ -581,7 +581,7 @@ export default async function FinanceiroPage({
 
       <Card className="!p-0">
         <div className="p-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-sm font-semibold text-slate-300">Lançamentos — {periodoLabel}</h3>
+          <h3 className="text-sm font-semibold text-slate-400">Lançamentos — {periodoLabel}</h3>
         </div>
         {lancamentosFiltrados.length === 0 ? (
           <p className="p-6 text-sm text-slate-500 text-center">Nenhum lançamento em {periodoLabel}.</p>
@@ -606,7 +606,7 @@ export default async function FinanceiroPage({
                         <p className="text-sm text-slate-200 truncate">
                           {t.descricao}
                           {t.parcela_atual && t.parcela_total ? (
-                            <span className="text-[10px] text-slate-400 ml-1.5 font-mono">
+                            <span className="text-[10px] text-slate-500 ml-1.5 font-mono">
                               ({t.parcela_atual}/{t.parcela_total})
                             </span>
                           ) : null}
@@ -695,11 +695,11 @@ export default async function FinanceiroPage({
                         isPendente && "bg-amber-500/[0.08] border-l-2 border-l-amber-500/40"
                       )}
                     >
-                      <td className="px-4 py-2 text-slate-300">{t.data_vencimento ? formatDate(t.data_vencimento) : "—"}</td>
+                      <td className="px-4 py-2 text-slate-200">{t.data_vencimento ? formatDate(t.data_vencimento) : "—"}</td>
                       <td className="px-4 py-2 text-slate-200">
                         {t.descricao}
                         {t.parcela_atual && t.parcela_total ? (
-                          <span className="text-[10px] text-slate-400 ml-1.5 font-mono">
+                          <span className="text-[10px] text-slate-500 ml-1.5 font-mono">
                             ({t.parcela_atual}/{t.parcela_total})
                           </span>
                         ) : null}
