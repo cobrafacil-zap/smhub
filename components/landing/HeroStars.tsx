@@ -44,7 +44,7 @@ export function HeroStars() {
 
     const colors = isDark
       ? ["#c4b5fd", "#a78bfa", "#8b5cf6", "#7c3aed", "#f5f3ff"]
-      : ["#8b5cf6", "#7c3aed", "#6d28d9", "#a78bfa", "#f5f3ff"];
+      : ["#a78bfa", "#8b5cf6", "#7c3aed", "#c4b5fd", "#f5f3ff"];
 
     const createStars = () => {
       const mobile = width < 768;
@@ -128,8 +128,8 @@ export function HeroStars() {
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
         ctx.fillStyle = s.color;
-        ctx.globalAlpha = opacity;
-        ctx.shadowBlur = s.size * 4;
+        ctx.globalAlpha = opacity * (isDark ? 1 : 1.35);
+        ctx.shadowBlur = s.size * (isDark ? 4 : 6);
         ctx.shadowColor = s.color;
         ctx.fill();
       }

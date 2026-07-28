@@ -95,13 +95,13 @@ export function Hero3D() {
 
       // Iluminação ambiente + neon sutil (mais suave no claro)
       scene.add(new THREE.AmbientLight(isDark ? 0x0b0f19 : 0xf8fafc, isDark ? 1.2 : 1.5));
-      const coreLight = new THREE.PointLight(isDark ? 0x8b5cf6 : 0x7c3aed, isDark ? 22 : 14, 35);
+      const coreLight = new THREE.PointLight(isDark ? 0x8b5cf6 : 0x7c3aed, isDark ? 22 : 28, 35);
       coreLight.position.set(0, 0.3, 0);
       scene.add(coreLight);
-      const neonLight = new THREE.PointLight(isDark ? 0xa78bfa : 0x8b5cf6, isDark ? 12 : 7, 28);
+      const neonLight = new THREE.PointLight(isDark ? 0xa78bfa : 0xa78bfa, isDark ? 12 : 18, 28);
       neonLight.position.set(0, -2, 2);
       scene.add(neonLight);
-      const rimLight = new THREE.PointLight(isDark ? 0xc4b5fd : 0xa78bfa, isDark ? 6 : 4, 28);
+      const rimLight = new THREE.PointLight(isDark ? 0xc4b5fd : 0xc4b5fd, isDark ? 6 : 10, 28);
       rimLight.position.set(0, 3, -3);
       scene.add(rimLight);
 
@@ -115,9 +115,10 @@ export function Hero3D() {
           uColor: { value: new THREE.Color(isDark ? 0xa78bfa : 0x8b5cf6) },
           uCoreColor: { value: new THREE.Color(isDark ? 0xf5f3ff : 0xffffff) },
           uGlowColor: { value: new THREE.Color(isDark ? 0x7c3aed : 0x6d28d9) },
-          uOpacity: { value: isDark ? 0.55 : 0.7 },
+          uOpacity: { value: isDark ? 0.55 : 0.85 },
           uWaveSpeed: { value: 1.2 },
           uDark: { value: isDark ? 1.0 : 0.0 },
+          uLightBoost: { value: isDark ? 1.0 : 1.6 },
         },
         vertexShader: `
           varying vec2 vUv;
@@ -139,6 +140,7 @@ export function Hero3D() {
           uniform float uOpacity;
           uniform float uWaveSpeed;
           uniform float uDark;
+          uniform float uLightBoost;
           varying vec2 vUv;
           varying vec3 vNormal;
           varying vec3 vViewPosition;
@@ -172,9 +174,9 @@ export function Hero3D() {
             vec3 base = mix(uGlowColor, uColor, r);
             vec3 coreGlow = mix(base, uCoreColor, core * 0.85);
             vec3 pulse = coreGlow + traveling * (uCoreColor - coreGlow) * 0.7;
-            vec3 finalColor = pulse + fresnel * uGlowColor * 0.6;
+            vec3 finalColor = (pulse + fresnel * uGlowColor * 0.6) * uLightBoost;
 
-            float alpha = (core * 0.9 + edge * 0.35 + fresnel * 0.25 + traveling * 0.3) * uOpacity;
+            float alpha = (core * 0.9 + edge * 0.45 + fresnel * 0.35 + traveling * 0.35) * uOpacity;
             alpha *= smoothstep(1.0, 0.85, r); // corte limpo na borda
 
             gl_FragColor = vec4(finalColor, alpha);
@@ -197,7 +199,7 @@ export function Hero3D() {
       const rimMat = new THREE.MeshBasicMaterial({
         color: isDark ? 0x8b5cf6 : 0x7c3aed,
         transparent: true,
-        opacity: isDark ? 0.12 : 0.22,
+        opacity: isDark ? 0.12 : 0.38,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -211,7 +213,7 @@ export function Hero3D() {
       const shadowMat = new THREE.MeshBasicMaterial({
         color: isDark ? 0x7c3aed : 0x8b5cf6,
         transparent: true,
-        opacity: isDark ? 0.16 : 0.10,
+        opacity: isDark ? 0.16 : 0.22,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide,
@@ -239,7 +241,7 @@ export function Hero3D() {
         color: isDark ? 0xc4b5fd : 0x8b5cf6,
         size: isMobile ? 0.07 : 0.09,
         transparent: true,
-        opacity: isDark ? 0.55 : 0.35,
+        opacity: isDark ? 0.55 : 0.55,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -248,7 +250,7 @@ export function Hero3D() {
 
 
       // Ícones orbitando
-      const iconStroke = isDark ? "#C4B5FD" : "#5B21B6";
+      const iconStroke = isDark ? "#C4B5FD" : "#7C3AED";
       const textures = await Promise.all(
         ICON_SVGS.map((inner) => makeIconTexture(THREE, inner, iconStroke))
       );
@@ -279,7 +281,7 @@ export function Hero3D() {
         const glowMat = new THREE.MeshBasicMaterial({
           color: 0x8b5cf6,
           transparent: true,
-          opacity: 0.14,
+          opacity: isDark ? 0.14 : 0.26,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         });
@@ -303,7 +305,7 @@ export function Hero3D() {
       const lineMat = new THREE.LineBasicMaterial({
         color: 0xa78bfa,
         transparent: true,
-        opacity: 0.22,
+        opacity: isDark ? 0.22 : 0.32,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
@@ -427,13 +429,13 @@ export function Hero3D() {
         ringMat.uniforms.uTime.value = t;
 
         // Pulso de brilho global sutil (sincronizado com a onda do shader)
-        const pulseBase = isDark ? 0.55 : 0.7;
+        const pulseBase = isDark ? 0.55 : 0.88;
         const pulseIntensity = 0.18;
         const pulseTrigger = Math.sin(t * 0.9 + Math.sin(t * 0.5) * 1.8);
         const pulse = Math.pow(Math.max(0, pulseTrigger), 3.0);
         ringMat.uniforms.uOpacity.value = pulseBase + pulse * pulseIntensity;
-        rimRing.material.opacity = (isDark ? 0.12 : 0.22) + pulse * 0.08;
-        ringShadow.material.opacity = (isMobile ? 0.05 : (isDark ? 0.14 : 0.09)) + pulse * 0.06;
+        rimRing.material.opacity = (isDark ? 0.12 : 0.38) + pulse * 0.08;
+        ringShadow.material.opacity = (isMobile ? 0.05 : (isDark ? 0.14 : 0.22)) + pulse * 0.06;
 
         for (let i = 0; i < nodes.length; i++) {
           const n = nodes[i];
@@ -451,7 +453,7 @@ export function Hero3D() {
           const dy = projected.y - mouse.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           const hover = mouse.active && dist < 0.18 ? 1 : 0;
-          const targetOpacity = 0.14 + hover * 0.4;
+          const targetOpacity = (isDark ? 0.14 : 0.26) + hover * 0.4;
           const glowMat = n.glow.material as ThreeTypes.MeshBasicMaterial;
           glowMat.opacity += (targetOpacity - glowMat.opacity) * 0.12;
 

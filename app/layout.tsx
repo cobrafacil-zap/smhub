@@ -114,7 +114,7 @@ export default function RootLayout({
       <body className="font-sans antialiased min-h-screen bg-bg text-slate-100">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           disableTransitionOnChange
         >
           <ScrollToTop />

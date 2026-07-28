@@ -212,7 +212,7 @@ export default async function LandingPage() {
       {/* Fundo sutil — gradiente radial roxo/lavanda no topo */}
       <div
         aria-hidden
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[700px] bg-gradient-radial rounded-full blur-[120px] pointer-events-none opacity-70"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[700px] bg-gradient-radial rounded-full blur-[120px] pointer-events-none opacity-70 dark:opacity-70 light:opacity-90"
       />
 
       {/* Navbar — sticky com blur */}
@@ -264,7 +264,7 @@ export default async function LandingPage() {
       <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 lg:pt-20 pb-14 sm:pb-20 text-center">
         <Hero3D />
         <HeroStars />
-        <div className="relative z-10 pointer-events-none">
+        <div className="relative z-10 pointer-events-none [text-shadow:0_1px_20px_rgb(139_92_246_/_0.12)]">
         <div className="flex justify-center mb-8">
           <Logo variant="full" className="!h-36 sm:!h-44 logo-hero-animated" />
         </div>
