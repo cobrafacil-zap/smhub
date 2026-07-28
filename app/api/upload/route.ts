@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadFileServer } from "@/lib/storage";
-import { requireAgenciaMember, requireSuperAdmin } from "@/lib/auth/session";
-import { createClient } from "@/lib/supabase/server";
 import { STORAGE_BUCKETS } from "@/lib/constants";
+import { getSessionUser } from "@/lib/auth/session";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
   const form = await req.formData();
@@ -23,15 +22,15 @@ export async function POST(req: NextRequest) {
   // Assets da plataforma (logos claro/escuro etc.) são gerenciados pelo
   // super-admin: não há agencia_id para prefixar o path.
   if (bucket === STORAGE_BUCKETS.platform) {
-    await requireSuperAdmin();
+    const session = await getSessionUser();
+    if (!session || session.profile.role !== "super_admin") {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
+    }
     try {
-      const data = await uploadFileServer({
-        bucket: bucket as never,
-        path: subPath,
-        file,
-        contentType: file.type,
-        token: "", // service-role client no storage server? usa token abaixo
-      });
+      const admin = createAdminClient();
+      const data = await admin.storage
+        .from(bucket)
+        .upload(subPath, file, { contentType: file.type, upsert: true });
       return NextResponse.json({ ok: true, data });
     } catch (err) {
       return NextResponse.json(
@@ -41,19 +40,35 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Demais buckets: agência autenticada, path prefixado por agencia_id.
-  const session = await requireAgenciaMember();
-  const path = `${session.profile.agencia_id}/${subPath}`;
-  const supabase = createClient();
-  const token = (await supabase.auth.getSession()).data.session?.access_token ?? "";
+  // Demais buckets: agência (admin/membro) ou cliente, ambos autenticados.
+  // Path prefixado por agencia_id (a do cliente vem de session.cliente.agencia_id).
+  const session = await getSessionUser();
+  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const role = session.profile.role;
+  const isAgencia = role === "admin_agencia" || role === "membro_equipe";
+  const isCliente = role === "cliente";
+  if (!isAgencia && !isCliente) {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
+  }
+  // Cliente só pode escrever no bucket de assets do cliente (foto de perfil etc.).
+  if (isCliente && bucket !== STORAGE_BUCKETS.client) {
+    return NextResponse.json({ error: "Bucket não permitido para cliente" }, { status: 403 });
+  }
+  const agenciaId = isAgencia
+    ? session.profile.agencia_id
+    : session.cliente?.agencia_id ?? null;
+  if (!agenciaId) {
+    return NextResponse.json({ error: "Sem agência vinculada" }, { status: 400 });
+  }
+
+  const path = `${agenciaId}/${subPath}`;
+  // Service-role no storage: bypassa storage RLS e funciona pra agência e cliente
+  // (o escopo já está garantido pelo agencia_id no path + pela autenticação acima).
   try {
-    const data = await uploadFileServer({
-      bucket: bucket as never,
-      path,
-      file,
-      contentType: file.type,
-      token,
-    });
+    const admin = createAdminClient();
+    const data = await admin.storage
+      .from(bucket)
+      .upload(path, file, { contentType: file.type, upsert: true });
     return NextResponse.json({ ok: true, data });
   } catch (err) {
     return NextResponse.json(

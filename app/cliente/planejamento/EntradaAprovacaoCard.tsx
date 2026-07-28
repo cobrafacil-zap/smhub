@@ -120,8 +120,20 @@ export function EntradaAprovacaoCard({ entrada, showApproveActions = true }: Pro
 
       {expandido && (
         <div className="px-4 pb-4 space-y-4 border-t border-border">
+          {/* Tema / categoria (estilo) */}
+          {entrada.estilo && (
+            <div className="pt-3 flex items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                Tema
+              </span>
+              <Badge variant="default" className="bg-royal-500/10 text-royal-200 border-royal-500/30">
+                {entrada.estilo}
+              </Badge>
+            </div>
+          )}
+
           {/* Formato */}
-          <div className="pt-3 flex items-center gap-2">
+          <div className={entrada.estilo ? "flex items-center gap-2" : "pt-3 flex items-center gap-2"}>
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
               Formato
             </span>

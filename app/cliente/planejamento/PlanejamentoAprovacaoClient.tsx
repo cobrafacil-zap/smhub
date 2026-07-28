@@ -9,12 +9,19 @@ import { ChevronLeft, ChevronRight, CalendarDays, MessageCircle } from "lucide-r
 import { formatLongDate, buildMonthCells } from "@/lib/calendar";
 import { MONTHS_PT } from "@/lib/constants";
 import { EntradaAprovacaoCard } from "./EntradaAprovacaoCard";
-import type { PlanejamentoEntrada } from "@/types/database";
+import { DatasComemorativasSugestoes } from "@/components/calendar/DatasComemorativasSugestoes";
+import { clienteAceitarDataComemorativaAction } from "@/lib/actions/cliente-conta-actions";
+import type { DataComemorativa, PlanejamentoEntrada } from "@/types/database";
 import { Reveal } from "@/components/ui/motion/Reveal";
 
 interface Props {
   entradas: PlanejamentoEntrada[];
   initialDate: string; // YYYY-MM-DD
+  /** Datas comemorativas do mês (sugestões). Se vazio/ausente, a caixa não
+   *  aparece — a page só passa quando a cliente optou por recebê-las. */
+  datasComemorativas?: DataComemorativa[];
+  planejamentoId?: string | null;
+  clienteSegmento?: string | null | undefined;
 }
 
 function ymKey(d: Date): string {
@@ -26,7 +33,13 @@ function parseIso(s: string): Date {
   return new Date(y, m - 1, day);
 }
 
-export function PlanejamentoAprovacaoClient({ entradas, initialDate }: Props) {
+export function PlanejamentoAprovacaoClient({
+  entradas,
+  initialDate,
+  datasComemorativas,
+  planejamentoId,
+  clienteSegmento,
+}: Props) {
   const router = useRouter();
   const [refDate, setRefDate] = useState(() => parseIso(initialDate));
   const [isMobile, setIsMobile] = useState(false);
@@ -130,6 +143,23 @@ export function PlanejamentoAprovacaoClient({ entradas, initialDate }: Props) {
           </Button>
         </div>
       </Card>
+
+      {/* Sugestões de datas comemorativas (cliente aceita/descarta) */}
+      {datasComemorativas && datasComemorativas.length > 0 && (
+        <Reveal>
+          <DatasComemorativasSugestoes
+            datas={datasComemorativas}
+            planejamentoId={planejamentoId ?? null}
+            clienteSegmento={clienteSegmento}
+            datasComEntrada={entradas.map((e) => e.data)}
+            aceitarLabel="Aceitar"
+            onAdicionar={async (d) => {
+              if (!planejamentoId) return { error: "Planejamento não encontrado." };
+              return await clienteAceitarDataComemorativaAction(planejamentoId, d.data, d.nome);
+            }}
+          />
+        </Reveal>
+      )}
 
       {entradas.length === 0 ? (
         <Card>

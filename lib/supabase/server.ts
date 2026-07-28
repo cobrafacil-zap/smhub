@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { withSessionMaxAge } from "@/lib/constants";
 
 /**
  * Cliente Supabase server-side (Server Components / Server Actions / Route Handlers).
@@ -30,7 +31,7 @@ export function createClient() {
         ) {
           try {
             for (const { name, value, options } of cookiesToSet) {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, withSessionMaxAge(name, options));
             }
           } catch {
             // Contexto read-only (Server Component). Middleware cuida do refresh.

@@ -6,7 +6,7 @@ import { CalendarDays, FileText, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { PlanejamentoMesNav } from "./PlanejamentoMesNav";
 import { PlanejamentoCalendarClient } from "./PlanejamentoCalendarClient";
-import { DatasComemorativasSugestoes } from "./DatasComemorativasSugestoes";
+import { DatasComemorativasSugestoes } from "@/components/calendar/DatasComemorativasSugestoes";
 import { PlanejamentoPDFButton } from "@/components/calendar/PlanejamentoPDFButton";
 import { EditarPlanejamentoButton } from "./EditarPlanejamentoButton";
 import type {
@@ -200,12 +200,13 @@ export async function PlanejamentoTab({
         </Link>
       </Card>
 
-      {/* Datas comemorativas (sugestões) */}
-      {datasComem.length > 0 && (
+      {/* Datas comemorativas (sugestões) — só se a cliente optou por receber */}
+      {datasComem.length > 0 && cliente.recebe_datas_comemorativas !== false && (
         <DatasComemorativasSugestoes
           datas={datasComem}
           planejamentoId={plan ? (plan as Planejamento).id : null}
           clienteSegmento={cliente.segmento}
+          datasComEntrada={entradas.map((e) => e.data)}
         />
       )}
 

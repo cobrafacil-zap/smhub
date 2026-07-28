@@ -24,11 +24,6 @@ export default async function ClienteFinanceiroPage() {
     .limit(200);
   const list = (faturas as Fatura[] | null) ?? [];
 
-  const totalPago = list.filter((f) => f.status === "pago").reduce((s, f) => s + f.valor, 0);
-  const totalPendente = list
-    .filter((f) => f.status === "pendente" || f.status === "atrasado")
-    .reduce((s, f) => s + f.valor, 0);
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -37,24 +32,8 @@ export default async function ClienteFinanceiroPage() {
         breadcrumbs={[{ href: "/cliente", label: "Início" }, { label: "Financeiro" }]}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:max-w-xs gap-3">
         <Reveal>
-          <Card>
-            <p className="text-xs text-slate-400 uppercase tracking-wider">Total pago</p>
-            <p className="text-xl sm:text-2xl font-bold kpi-num text-success-400 mt-1 break-words leading-tight">
-              <CountUp value={totalPago} prefix="R$ " decimals={2} />
-            </p>
-          </Card>
-        </Reveal>
-        <Reveal delay={50}>
-          <Card>
-            <p className="text-xs text-slate-400 uppercase tracking-wider">Pendente</p>
-            <p className="text-xl sm:text-2xl font-bold kpi-num text-warning-400 mt-1 break-words leading-tight">
-              <CountUp value={totalPendente} prefix="R$ " decimals={2} />
-            </p>
-          </Card>
-        </Reveal>
-        <Reveal delay={100}>
           <Card>
             <p className="text-xs text-slate-400 uppercase tracking-wider">Faturas</p>
             <p className="text-xl sm:text-2xl font-bold kpi-num text-slate-100 mt-1 break-words leading-tight">

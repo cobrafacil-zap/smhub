@@ -123,16 +123,17 @@ export default async function ClienteDashboardPage({
 
   const primeiroNome = session.profile.nome.split(" ")[0];
   const motivacional = fraseDoDia(hoje);
-  const logoUrl = session.cliente?.logo_url ?? null;
+  // Foto de perfil da cliente (upload dela) tem preferência sobre a logo da empresa.
+  const fotoUrl = session.cliente?.foto_perfil ?? session.cliente?.logo_url ?? null;
   const nomeEmpresa = session.cliente?.nome_empresa ?? "Cliente";
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho: logo do cliente + saudação */}
+      {/* Cabeçalho: foto do cliente + saudação */}
       <div className="flex items-center gap-4">
         <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white font-bold overflow-hidden shrink-0 relative shadow-glow">
-          {logoUrl ? (
-            <Image src={logoUrl} alt={nomeEmpresa} fill sizes="56px" className="object-contain" />
+          {fotoUrl ? (
+            <Image src={fotoUrl} alt={nomeEmpresa} fill sizes="56px" className="object-cover" />
           ) : (
             <span className="text-base">{initials(nomeEmpresa)}</span>
           )}

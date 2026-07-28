@@ -195,6 +195,9 @@ export interface Database {
           dia_vencimento: number | null;
           observacoes: string | null;
           credenciais: Json | null;
+          foto_perfil: string | null;
+          empresas_referencia: Json | null;
+          recebe_datas_comemorativas: boolean | null;
           created_at: string;
           updated_at: string;
         };
@@ -215,6 +218,9 @@ export interface Database {
           dia_vencimento?: number | null;
           observacoes?: string | null;
           credenciais?: Json | null;
+          foto_perfil?: string | null;
+          empresas_referencia?: Json | null;
+          recebe_datas_comemorativas?: boolean | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -827,6 +833,9 @@ export interface Database {
 export type Agencia = Database["public"]["Tables"]["agencias"]["Row"];
 export type Usuario = Database["public"]["Tables"]["usuarios"]["Row"];
 export type Cliente = Database["public"]["Tables"]["clientes"]["Row"];
+
+/** Empresa de referência/inspiração que a cliente gosta (clientes.empresas_referencia). */
+export type EmpresaReferencia = { nome: string; url?: string; motivo?: string };
 export type Planejamento = Database["public"]["Tables"]["planejamentos"]["Row"];
 export type Tarefa = Database["public"]["Tables"]["tarefas"]["Row"];
 export type TarefaResponsavel =

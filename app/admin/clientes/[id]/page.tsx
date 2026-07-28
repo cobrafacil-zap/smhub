@@ -12,7 +12,7 @@ import { FormSkeleton } from "@/components/ui/PageSkeleton";
 import { TabsLink } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { User, FileText, BarChart3, Wallet, ClipboardList, CalendarDays, FolderArchive, AlertCircle, Clock, CheckCircle2, Mail, Phone } from "lucide-react";
+import { User, FileText, BarChart3, Wallet, ClipboardList, CalendarDays, FolderArchive, AlertCircle, Clock, CheckCircle2, Mail, Phone, Video } from "lucide-react";
 import { CLIENTE_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
 import { InfoTab } from "./InfoTab";
@@ -21,6 +21,7 @@ import { RelatoriosTab } from "./RelatoriosTab";
 import { FinanceiroTab } from "./FinanceiroTab";
 import { ContratosTab } from "./ContratosTab";
 import { BriefingTab } from "./BriefingTab";
+import { GravacoesTab } from "./GravacoesTab";
 import { ClienteMiniStats } from "./ClienteMiniStats";
 import { ClienteStatusButtons } from "./ClienteStatusButtons";
 import { ExcluirClienteButton } from "../ExcluirClienteButton";
@@ -32,6 +33,7 @@ const TABS = [
   { key: "contratos", label: "Contratos", icon: <FileText className="h-4 w-4" /> },
   { key: "financeiro", label: "Financeiro", icon: <Wallet className="h-4 w-4" /> },
   { key: "planejamento", label: "Planejamento", icon: <CalendarDays className="h-4 w-4" /> },
+  { key: "gravacoes", label: "Gravações", icon: <Video className="h-4 w-4" /> },
   { key: "relatorios", label: "Relatórios", icon: <BarChart3 className="h-4 w-4" /> },
   { key: "briefing", label: "Briefing", icon: <ClipboardList className="h-4 w-4" /> },
   { key: "arquivos", label: "Arquivos", icon: <FolderArchive className="h-4 w-4" /> },
@@ -276,6 +278,11 @@ export default async function ClienteDetalhePage({
       {tab === "planejamento" && (
         <Suspense fallback={<FormSkeleton />}>
           <PlanejamentoTab cliente={c} searchParams={{ mes: searchParams.mes }} />
+        </Suspense>
+      )}
+      {tab === "gravacoes" && (
+        <Suspense fallback={<FormSkeleton />}>
+          <GravacoesTab cliente={c} searchParams={{ mes: searchParams.mes }} />
         </Suspense>
       )}
       {tab === "relatorios" && (

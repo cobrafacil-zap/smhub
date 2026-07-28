@@ -201,3 +201,23 @@ export const STORAGE_BUCKETS = {
   invoices: "invoices",
   platform: "platform-assets",
 } as const;
+
+// Durão da sessão: 30 dias. Aplicado ao cookie de auth do Supabase para a
+// sessão persistir quando o usuário fecha o site/aplicativo (sem checkbox).
+export const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 dias
+
+/**
+ * Para cookies de sessão do Supabase (nome contém "auth-token", exceto o
+ * "code-verifier" do fluxo OAuth), fixa maxAge em SESSION_COOKIE_MAX_AGE.
+ * Demais cookies passam inalterados. Usado nos setAll de lib/supabase/server.ts
+ * e middleware.ts para que o refresh de token não encolha a sessão de volta.
+ */
+export function withSessionMaxAge(
+  name: string,
+  options?: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  if (!name.includes("auth-token") || name.includes("code-verifier")) {
+    return options;
+  }
+  return { ...(options ?? {}), maxAge: SESSION_COOKIE_MAX_AGE };
+}

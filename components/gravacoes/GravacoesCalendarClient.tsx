@@ -61,6 +61,13 @@ interface Props {
   mesAtivo: string; // YYYY-MM
   basePath: string; // "/cliente/gravacoes" | "/admin/gravacoes"
   modoCliente: boolean; // true = cliente (esconde seletor de cliente)
+  /** Quando informado, fixa o cliente da gravação (esconde o seletor e envia
+   *  um hidden input com este id). Usado na aba de gravações do perfil do
+   *  cliente (admin), para agendar já escopado àquele cliente. */
+  clienteFixoId?: string;
+  /** Parâmetros extras de query preservados ao navegar entre meses (ex.:
+   *  { tab: "gravacoes" } no perfil do cliente). */
+  extraParams?: Record<string, string>;
 }
 
 export function GravacoesCalendarClient({
@@ -69,6 +76,8 @@ export function GravacoesCalendarClient({
   mesAtivo,
   basePath,
   modoCliente,
+  clienteFixoId,
+  extraParams,
 }: Props) {
   const router = useRouter();
   const [editing, setEditing] = useState<GravacaoItem | null>(null);
@@ -101,11 +110,17 @@ export function GravacoesCalendarClient({
     setDialogOpen(true);
   }
 
+  function hrefMes(mes: string) {
+    const params = new URLSearchParams(extraParams);
+    params.set("mes", mes);
+    return `${basePath}?${params.toString()}`;
+  }
+
   function navegar(delta: number) {
-    router.push(`${basePath}?mes=${adicionarMes(mesAtivo, delta)}`, { scroll: false });
+    router.push(hrefMes(adicionarMes(mesAtivo, delta)), { scroll: false });
   }
   function irHoje() {
-    router.push(`${basePath}?mes=${mesAtual()}`, { scroll: false });
+    router.push(hrefMes(mesAtual()), { scroll: false });
   }
 
   return (
@@ -159,6 +174,7 @@ export function GravacoesCalendarClient({
         initialDate={initialDate}
         onCellClick={abrirNovo}
         onEntryClick={abrirEditar}
+        hideHeader
         renderChip={(e) => ({
           label: e.titulo,
           chip: STATUS_CHIP[e.tipo as GravacaoStatus] ?? STATUS_CHIP.agendada,
@@ -184,6 +200,7 @@ export function GravacoesCalendarClient({
           prefillDate={prefillDate}
           clientes={clientes}
           modoCliente={modoCliente}
+          clienteFixoId={clienteFixoId}
           onClose={() => setDialogOpen(false)}
           onSaved={() => {
             setDialogOpen(false);
@@ -203,6 +220,7 @@ function GravacaoDialog({
   prefillDate,
   clientes,
   modoCliente,
+  clienteFixoId,
   onClose,
   onSaved,
 }: {
@@ -210,6 +228,7 @@ function GravacaoDialog({
   prefillDate: string | null;
   clientes: ClienteOption[];
   modoCliente: boolean;
+  clienteFixoId?: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -308,7 +327,9 @@ function GravacaoDialog({
           </div>
         </div>
 
-        {!modoCliente && (
+        {clienteFixoId ? (
+          <input type="hidden" name="cliente_id" value={clienteFixoId} />
+        ) : !modoCliente ? (
           <div className="space-y-1.5">
             <label className="label">Cliente</label>
             <Select name="cliente_id" defaultValue={gravacao?.cliente_id ?? ""} required>
@@ -320,7 +341,7 @@ function GravacaoDialog({
               ))}
             </Select>
           </div>
-        )}
+        ) : null}
 
         <div className="space-y-1.5">
           <label className="label">Descrição</label>

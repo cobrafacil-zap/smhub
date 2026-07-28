@@ -33,6 +33,10 @@ interface EditorialCalendarProps<E extends CalendarEntry> {
   diasPostagem?: number[] | null;
   /** Render opcional do chip de cada entrada. Default: cor/label por tipo (planejamento). */
   renderChip?: (entry: E) => { label: string; chip: string };
+  /** Quando true, oculta o cabeçalho (mês + botões Anterior/Hoje/Próximo). Útil
+   *  quando a página já renderiza seu próprio cabeçalho de navegação (ex.:
+   *  gravações), evitando duplicar o mês na tela. */
+  hideHeader?: boolean;
 }
 
 export function EditorialCalendar<E extends CalendarEntry>({
@@ -45,6 +49,7 @@ export function EditorialCalendar<E extends CalendarEntry>({
   selectedDate,
   diasPostagem,
   renderChip,
+  hideHeader = false,
 }: EditorialCalendarProps<E>) {
   const [refDate, setRefDate] = useState(() => {
     if (initialDate) {
@@ -76,43 +81,45 @@ export function EditorialCalendar<E extends CalendarEntry>({
 
   return (
     <div className="card !p-3 lg:!p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-slate-100 capitalize">
-          {MONTHS_PT[month - 1]} {year}
-        </h2>
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => changeMonth(-1)}
-            iconLeft={<ChevronLeft className="h-4 w-4" />}
-          >
-            Anterior
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              const now = new Date();
-              setRefDate(now);
-              onMonthChange?.(now.getFullYear(), now.getMonth() + 1);
-            }}
-          >
-            Hoje
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => changeMonth(1)}
-            iconRight={<ChevronRight className="h-4 w-4" />}
-          >
-            Próximo
-          </Button>
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-slate-100 capitalize">
+            {MONTHS_PT[month - 1]} {year}
+          </h2>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => changeMonth(-1)}
+              iconLeft={<ChevronLeft className="h-4 w-4" />}
+            >
+              Anterior
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                const now = new Date();
+                setRefDate(now);
+                onMonthChange?.(now.getFullYear(), now.getMonth() + 1);
+              }}
+            >
+              Hoje
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => changeMonth(1)}
+              iconRight={<ChevronRight className="h-4 w-4" />}
+            >
+              Próximo
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Em telas estreitas (celular), 7 colunas ficam minúsculas e as
           entradas truncam pra nada. Wrap em scroll horizontal com largura

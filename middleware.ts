@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
+import { withSessionMaxAge } from "@/lib/constants";
 import type { UserRole } from "@/types/database";
 
 type CookieToSet = { name: string; value: string; options?: Record<string, unknown> };
@@ -58,7 +59,9 @@ export async function middleware(request: NextRequest) {
             }
             response = NextResponse.next({ request });
             for (const { name, value, options } of cookiesToSet) {
-              response.cookies.set(name, value, options);
+              // Sessão de 30 dias: sobrescreve maxAge nos cookies de auth-token
+              // (senão o refresh rebaixaria para o default a cada ~1h).
+              response.cookies.set(name, value, withSessionMaxAge(name, options));
             }
           },
         },

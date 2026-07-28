@@ -8,10 +8,11 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { atualizarClienteAction } from "@/lib/actions/agencia-actions";
 import { Save, Building2, KeyRound } from "lucide-react";
-import type { Cliente } from "@/types/database";
+import type { Cliente, EmpresaReferencia } from "@/types/database";
 import { toast } from "@/components/ui/Toast";
 import { ConvidarClienteForm } from "@/components/clientes/ConvidarClienteForm";
 import { CredenciaisAcesso } from "./CredenciaisAcesso";
+import { EmpresasReferenciaCard } from "./EmpresasReferenciaCard";
 import { ConectarRedesSociais } from "./ConectarRedesSociais";
 import { CLIENTE_SEGMENTOS } from "@/lib/constants";
 import type { ConexaoRede } from "@/types/database";
@@ -146,6 +147,10 @@ export function InfoTab({
     <CredenciaisAcesso
       clienteId={cliente.id}
       initial={(cliente.credenciais as unknown as Array<{ label: string; url?: string; usuario?: string; senha?: string; observacao?: string }> | null) ?? []}
+    />
+
+    <EmpresasReferenciaCard
+      referencias={(cliente.empresas_referencia as unknown as EmpresaReferencia[] | null) ?? []}
     />
 
     <ConectarRedesSociais

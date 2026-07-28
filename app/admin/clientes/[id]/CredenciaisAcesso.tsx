@@ -70,8 +70,8 @@ export function CredenciaisAcesso({
         )}
       </div>
       <p className="text-sm text-slate-400 mb-4">
-        Armazene logins, senhas e links de painéis do cliente. Esses dados ficam visíveis apenas
-        para a sua agência.
+        Armazene logins, senhas e links de painéis do cliente. Esses dados são compartilhados com a
+        própria cliente em "Minha conta".
       </p>
 
       {/* Form de adicionar */}
