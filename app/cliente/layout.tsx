@@ -20,11 +20,11 @@ export default async function ClienteLayout({
           contextLabel={session.cliente?.nome_empresa}
           homeHref="/cliente"
         />
-        <main className="flex-1 px-4 lg:px-6 py-6 pb-20 lg:pb-6">
+        <main className="flex-1 px-4 lg:px-6 py-6">
           <PageTransition>{children}</PageTransition>
         </main>
+        <BottomNav variant="cliente" />
       </div>
-      <BottomNav variant="cliente" />
     </div>
   );
 }

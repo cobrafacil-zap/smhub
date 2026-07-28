@@ -100,13 +100,13 @@ export default async function PlanejamentosPage() {
             </div>
             <div className="text-xs text-slate-400 lg:text-right">
               <p>
-                <span className="text-slate-300 font-medium">{entreguesMes}</span> prontos
+                <span className="text-slate-200 font-medium">{entreguesMes}</span> prontos
                 {" • "}
                 <span className="text-warning-300 font-medium">{pendentesMes.length}</span> pendentes
               </p>
               <p className="mt-0.5">
                 <span className="text-slate-500">Próximo mês ({proxLabel}):</span>{" "}
-                <span className="text-slate-300 font-medium">
+                <span className="text-slate-200 font-medium">
                   {clientesComPlanProx.size}/{totalAtivos}
                 </span>
               </p>
@@ -122,7 +122,7 @@ export default async function PlanejamentosPage() {
                   <Link
                     key={c.id}
                     href={`/admin/clientes/${c.id}?tab=planejamento`}
-                    className="text-xs px-2.5 py-1 rounded-md bg-bg-elevated hover:bg-royal-500/20 hover:text-royal-200 text-slate-300 border border-border"
+                    className="text-xs px-2.5 py-1 rounded-md bg-bg-elevated hover:bg-royal-500/20 hover:text-royal-200 text-slate-400 border border-border"
                   >
                     {c.nome_empresa}
                   </Link>
@@ -156,7 +156,7 @@ export default async function PlanejamentosPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-slate-400 border-b border-border">
+                <tr className="text-left text-slate-500 border-b border-border">
                   <th className="px-4 py-3 font-medium">Cliente</th>
                   <th className="px-4 py-3 font-medium">Mês</th>
                   <th className="px-4 py-3 font-medium">Status</th>
@@ -170,7 +170,7 @@ export default async function PlanejamentosPage() {
                     <td className="px-4 py-3 text-slate-100 font-medium">
                       {p.cliente?.nome_empresa ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-slate-200">
                       {new Date(p.mes_referencia).toLocaleDateString("pt-BR", {
                         month: "long",
                         year: "numeric",

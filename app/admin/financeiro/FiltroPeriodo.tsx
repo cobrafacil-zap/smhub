@@ -95,7 +95,7 @@ export function FiltroPeriodo({
 
   return (
     <div className="flex items-center gap-2">
-      <label className="inline-flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer select-none whitespace-nowrap">
+      <label className="inline-flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none whitespace-nowrap">
         <input
           type="checkbox"
           checked={realizado}

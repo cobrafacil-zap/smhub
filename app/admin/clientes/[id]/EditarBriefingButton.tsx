@@ -49,7 +49,7 @@ export function EditarBriefingButton({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="p-1.5 rounded text-slate-400 hover:text-slate-100 hover:bg-bg-elevated"
+                className="p-1.5 rounded text-slate-400 hover:text-royal-300 hover:bg-bg-elevated"
               >
                 <X className="h-4 w-4" />
               </button>

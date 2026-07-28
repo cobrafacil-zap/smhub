@@ -29,11 +29,11 @@ interface LogoItem {
 }
 
 const LOGOS: LogoItem[] = [
-  { nome: "Instagram", Icon: Instagram, cor: "text-slate-300" },
-  { nome: "Facebook", Icon: Facebook, cor: "text-slate-300" },
-  { nome: "YouTube", Icon: Youtube, cor: "text-slate-300" },
-  { nome: "LinkedIn", Icon: Linkedin, cor: "text-slate-300" },
-  { nome: "X (Twitter)", Icon: Twitter, cor: "text-slate-300" },
+  { nome: "Instagram", Icon: Instagram, cor: "text-royal-300" },
+  { nome: "Facebook", Icon: Facebook, cor: "text-royal-300" },
+  { nome: "YouTube", Icon: Youtube, cor: "text-royal-300" },
+  { nome: "LinkedIn", Icon: Linkedin, cor: "text-royal-300" },
+  { nome: "X (Twitter)", Icon: Twitter, cor: "text-royal-300" },
 ];
 
 export function EcossistemaMarquee() {
@@ -57,7 +57,7 @@ function LogoPill({ item }: { item: LogoItem }) {
   return (
     <div className="flex items-center gap-2 px-4 sm:px-5 py-3 rounded-lg bg-bg-elevated/40 border border-border/60 shrink-0 min-w-[150px] sm:min-w-[180px] justify-center hover:border-royal-500/30 transition-colors duration-300">
       <item.Icon className={`h-5 w-5 ${item.cor}`} />
-      <span className="text-sm text-slate-400 whitespace-nowrap">
+      <span className="text-sm text-slate-500 whitespace-nowrap">
         {item.nome}
       </span>
     </div>

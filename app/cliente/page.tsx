@@ -131,7 +131,7 @@ export default async function ClienteDashboardPage({
     <div className="space-y-6">
       {/* Cabeçalho: foto do cliente + saudação */}
       <div className="flex items-center gap-4">
-        <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white font-bold overflow-hidden shrink-0 relative shadow-glow">
+        <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-royal-500 via-royal-550 to-royal-700 flex items-center justify-center text-white font-bold overflow-hidden shrink-0 relative shadow-glow">
           {fotoUrl ? (
             <Image src={fotoUrl} alt={nomeEmpresa} fill sizes="56px" className="object-cover" />
           ) : (

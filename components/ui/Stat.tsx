@@ -26,7 +26,7 @@ const toneStyles: Record<StatTone, { bg: string; text: string; iconBg: string }>
   brand: {
     bg: "bg-gradient-to-br from-royal-500/15 to-royal-700/5 border-royal-500/30",
     text: "text-slate-100",
-    iconBg: "bg-royal-500/20 text-royal-300",
+    iconBg: "bg-royal-500/20 text-royal-200",
   },
   success: {
     bg: "bg-success-500/10 border-success-500/30",

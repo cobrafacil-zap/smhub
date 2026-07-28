@@ -47,7 +47,7 @@ function getIniciais(nome: string): string {
 function avatarBgFor(nome: string): string {
   // Gera uma cor consistente baseada no nome
   const cores = [
-    "from-royal-500 to-royal-700",
+    "from-royal-500 via-royal-550 to-royal-700",
     "from-purple-500 to-purple-700",
     "from-emerald-500 to-emerald-700",
     "from-amber-500 to-amber-700",
@@ -160,7 +160,7 @@ export function ClienteCard({ cliente, proximaFatura, faturasAtrasadasCount = 0,
             <Link
               key={s.key}
               href={`/admin/clientes/${cliente.id}?tab=${s.key}`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-bg-elevated hover:bg-royal-500/15 hover:text-royal-200 text-[11px] font-medium text-slate-300 transition"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-bg-elevated hover:bg-royal-500/15 hover:text-royal-200 text-[11px] font-medium text-slate-400 transition"
             >
               <Icon className="h-3 w-3 icon-pop" />
               {s.label}

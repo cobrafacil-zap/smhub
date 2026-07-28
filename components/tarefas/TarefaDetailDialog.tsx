@@ -30,7 +30,7 @@ const PRIORIDADE_LABEL: Record<string, string> = {
 
 function avatarColor(nome: string) {
   const colors = [
-    "from-royal-500 to-royal-700",
+    "from-royal-500 via-royal-550 to-royal-700",
     "from-emerald-500 to-emerald-700",
     "from-amber-500 to-amber-700",
     "from-pink-500 to-pink-700",
@@ -103,7 +103,7 @@ export function TarefaDetailDialog({
               )}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-200 shrink-0">
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-royal-200 shrink-0">
             <X className="h-5 w-5" />
           </button>
         </div>

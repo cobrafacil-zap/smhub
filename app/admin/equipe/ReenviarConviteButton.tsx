@@ -81,7 +81,7 @@ export function ReenviarConviteButton({
               <button
                 type="button"
                 onClick={fechar}
-                className="text-slate-400 hover:text-slate-200"
+                className="text-slate-400 hover:text-royal-200"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -95,7 +95,7 @@ export function ReenviarConviteButton({
 
             {link && (
               <>
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-slate-400">
                   Envie este link para {email ? <strong className="text-slate-100">{email}</strong> : "o membro"}.
                   Ele define (ou redefina) a própria senha. Links anteriores foram invalidados.
                 </p>

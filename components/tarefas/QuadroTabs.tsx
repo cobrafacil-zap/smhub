@@ -97,7 +97,7 @@ function QuadroTab({
         "group relative flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition shrink-0",
         ativo
           ? "bg-royal-500/15 text-royal-200 border-royal-500/40"
-          : "text-slate-300 border-border hover:bg-bg-elevated hover:text-slate-100"
+          : "text-slate-400 border-border hover:bg-bg-elevated hover:text-royal-300"
       )}
     >
       <Layers className="h-3.5 w-3.5 opacity-70" />
@@ -140,7 +140,7 @@ function QuadroTab({
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             className={cn(
-              "h-6 w-6 inline-flex items-center justify-center rounded text-slate-400 hover:text-slate-100 hover:bg-bg-elevated",
+              "h-6 w-6 inline-flex items-center justify-center rounded text-slate-400 hover:text-royal-300 hover:bg-bg-elevated",
               // Em mobile (<sm) o menu fica sempre visível (não tem hover).
               // Em sm+ só aparece no hover/focus do tab.
               ativo
@@ -304,7 +304,7 @@ function NovoQuadroBotao() {
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-royal-500/40 hover:bg-royal-500/5 transition"
+        className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm font-medium text-slate-400 hover:text-royal-200 hover:border-royal-500/40 hover:bg-royal-500/5 transition"
       >
         <Plus className="h-3.5 w-3.5" /> Novo quadro
       </button>

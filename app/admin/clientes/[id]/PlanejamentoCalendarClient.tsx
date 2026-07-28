@@ -306,7 +306,7 @@ export function PlanejamentoCalendarClient({
       {canEdit && planejamentoId && loteOpen && (
         <div className="mb-3 rounded-lg border border-border bg-bg-elevated/40 px-3 py-2.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-300">Atribuir todos os posts a:</span>
+            <span className="text-xs font-semibold text-slate-400">Atribuir todos os posts a:</span>
             <select
               className="input max-w-[220px]"
               value={loteResp}
@@ -331,7 +331,7 @@ export function PlanejamentoCalendarClient({
             <button
               type="button"
               onClick={() => setLoteOpen(false)}
-              className="text-slate-400 hover:text-slate-100 text-xs"
+              className="text-slate-400 hover:text-royal-300 text-xs"
             >
               Cancelar
             </button>
@@ -345,7 +345,7 @@ export function PlanejamentoCalendarClient({
 
       {!planejamentoId && canEdit ? (
         <Card>
-          <p className="text-sm text-slate-300 mb-3">
+          <p className="text-sm text-slate-400 mb-3">
             Você ainda não tem um planejamento para <strong>{mesLabel}</strong>. Comece criando o
             planejamento do mês — depois você adiciona as entradas.
           </p>
@@ -358,7 +358,7 @@ export function PlanejamentoCalendarClient({
           {canEdit && planejamentoId && (
             <div className="mb-3 rounded-lg border border-border bg-bg-surface px-3 py-2.5">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Dias de postagem
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -375,7 +375,7 @@ export function PlanejamentoCalendarClient({
                           "text-xs font-medium px-2.5 py-1 rounded-md border transition disabled:opacity-50",
                           ativo
                             ? "bg-royal-500/15 border-royal-500/40 text-royal-200"
-                            : "bg-bg-elevated border-border text-slate-400 hover:text-slate-200 hover:border-royal-500/30"
+                            : "bg-bg-elevated border-border text-slate-400 hover:text-royal-200 hover:border-royal-500/30"
                         )}
                         title={ativo ? "Remover dia de postagem" : "Marcar como dia de postagem"}
                       >
@@ -406,7 +406,7 @@ export function PlanejamentoCalendarClient({
       {planejamentoId && lista.length > 0 && (
         <Card>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-300">Todas as entradas de {mesLabel}</h3>
+            <h3 className="text-sm font-semibold text-slate-400">Todas as entradas de {mesLabel}</h3>
             <Badge variant="default">{lista.length}</Badge>
           </div>
           <ul className="divide-y divide-border">
@@ -486,7 +486,7 @@ export function PlanejamentoCalendarClient({
                               type="button"
                               onClick={() => handleAdminStatus(e, "pendente")}
                               disabled={pending}
-                              className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded bg-bg-elevated hover:bg-bg-elevated/70 text-slate-300 border border-border"
+                              className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded bg-bg-elevated hover:bg-bg-elevated/70 text-slate-400 border border-border"
                             >
                               <RotateCcw className="h-3 w-3" /> Voltar para pendente
                             </button>
@@ -551,7 +551,7 @@ export function PlanejamentoCalendarClient({
               <button
                 type="button"
                 onClick={() => setEditing(null)}
-                className="p-1.5 rounded text-slate-400 hover:text-slate-100 hover:bg-bg-elevated"
+                className="p-1.5 rounded text-slate-400 hover:text-royal-300 hover:bg-bg-elevated"
               >
                 <X className="h-4 w-4" />
               </button>

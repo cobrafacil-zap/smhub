@@ -21,7 +21,7 @@ export default async function NovaAgenciaPage() {
         actions={
           <Link
             href="/super-admin/agencias"
-            className="text-xs text-slate-400 hover:text-slate-200 transition"
+            className="text-xs text-slate-400 hover:text-royal-200 transition"
           >
             ← Voltar para agências
           </Link>

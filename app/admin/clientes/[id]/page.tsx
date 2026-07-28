@@ -222,13 +222,13 @@ export default async function ClienteDetalhePage({
             {c.nome_responsavel || "—"}
           </span>
           {c.email && (
-            <span className="inline-flex items-center gap-2 text-slate-300 min-w-0">
+            <span className="inline-flex items-center gap-2 text-slate-200 min-w-0">
               <Mail className="h-4 w-4 text-slate-400 shrink-0" />
               <span className="break-all">{c.email}</span>
             </span>
           )}
           {c.telefone && (
-            <span className="inline-flex items-center gap-2 text-slate-300">
+            <span className="inline-flex items-center gap-2 text-slate-200">
               <Phone className="h-4 w-4 text-slate-400 shrink-0" />
               {c.telefone}
             </span>
@@ -240,7 +240,7 @@ export default async function ClienteDetalhePage({
             </span>
           )}
           {c.dia_vencimento && (
-            <span className="inline-flex items-center gap-2 text-slate-300">
+            <span className="inline-flex items-center gap-2 text-slate-200">
               <CalendarDays className="h-4 w-4 text-slate-400 shrink-0" />
               Vence dia {c.dia_vencimento}
             </span>

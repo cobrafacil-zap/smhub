@@ -127,7 +127,7 @@ export function LogoUpload({
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-royal-500 hover:bg-royal-600 text-white disabled:opacity-50 transition"
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-gradient-to-r from-royal-500 via-royal-550 to-royal-700 hover:from-royal-600 hover:via-royal-600 hover:to-royal-800 text-white disabled:opacity-50 transition"
             >
               {uploading ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

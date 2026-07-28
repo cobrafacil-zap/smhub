@@ -117,7 +117,7 @@ export function TarefasPeriodoNav({
               "px-3 py-1.5 text-sm font-medium transition",
               periodo === p
                 ? "bg-royal-500/15 text-royal-200"
-                : "text-slate-400 hover:text-slate-200 hover:bg-bg-elevated"
+                : "text-slate-400 hover:text-royal-200 hover:bg-bg-elevated"
             )}
           >
             {p === "semana" ? "Semana" : "Mês"}
@@ -130,7 +130,7 @@ export function TarefasPeriodoNav({
         <button
           type="button"
           onClick={anterior}
-          className="h-8 w-8 inline-flex items-center justify-center rounded-md text-slate-300 hover:bg-bg-elevated hover:text-slate-100 border border-border"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300 border border-border"
           title={periodo === "semana" ? "Semana anterior" : "Mês anterior"}
         >
           <ChevronLeft className="h-4 w-4" />
@@ -141,7 +141,7 @@ export function TarefasPeriodoNav({
         <button
           type="button"
           onClick={proximo}
-          className="h-8 w-8 inline-flex items-center justify-center rounded-md text-slate-300 hover:bg-bg-elevated hover:text-slate-100 border border-border"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300 border border-border"
           title={periodo === "semana" ? "Próxima semana" : "Próximo mês"}
         >
           <ChevronRight className="h-4 w-4" />
@@ -165,7 +165,7 @@ export function TarefasPeriodoNav({
                 "text-xs rounded-md px-2 py-1 border transition",
                 ativa
                   ? "bg-royal-500/15 text-royal-200 border-royal-500/40"
-                  : "text-slate-300 border-border hover:bg-bg-elevated hover:text-slate-100"
+                  : "text-slate-400 border-border hover:bg-bg-elevated hover:text-royal-300"
               )}
             >
               {faixa}

@@ -94,14 +94,14 @@ export function Hero3D() {
       scene.add(universe);
 
       // Iluminação ambiente + neon sutil (mais suave no claro)
-      scene.add(new THREE.AmbientLight(isDark ? 0x0b0f19 : 0xf1f5f9, isDark ? 1.2 : 1.5));
-      const coreLight = new THREE.PointLight(isDark ? 0x586cf0 : 0x5f6fff, isDark ? 22 : 14, 35);
+      scene.add(new THREE.AmbientLight(isDark ? 0x0b0f19 : 0xf8fafc, isDark ? 1.2 : 1.5));
+      const coreLight = new THREE.PointLight(isDark ? 0x8b5cf6 : 0x7c3aed, isDark ? 22 : 14, 35);
       coreLight.position.set(0, 0.3, 0);
       scene.add(coreLight);
-      const neonLight = new THREE.PointLight(isDark ? 0x8797ff : 0x7b8cff, isDark ? 12 : 7, 28);
+      const neonLight = new THREE.PointLight(isDark ? 0xa78bfa : 0x8b5cf6, isDark ? 12 : 7, 28);
       neonLight.position.set(0, -2, 2);
       scene.add(neonLight);
-      const rimLight = new THREE.PointLight(isDark ? 0xb9c2ff : 0xa8b4ff, isDark ? 6 : 4, 28);
+      const rimLight = new THREE.PointLight(isDark ? 0xc4b5fd : 0xa78bfa, isDark ? 6 : 4, 28);
       rimLight.position.set(0, 3, -3);
       scene.add(rimLight);
 
@@ -112,9 +112,9 @@ export function Hero3D() {
       const ringMat = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
-          uColor: { value: new THREE.Color(isDark ? 0x7486ff : 0x5f6fff) },
-          uCoreColor: { value: new THREE.Color(isDark ? 0xe8ecff : 0xffffff) },
-          uGlowColor: { value: new THREE.Color(isDark ? 0x3b4fd8 : 0x4f5bff) },
+          uColor: { value: new THREE.Color(isDark ? 0xa78bfa : 0x8b5cf6) },
+          uCoreColor: { value: new THREE.Color(isDark ? 0xf5f3ff : 0xffffff) },
+          uGlowColor: { value: new THREE.Color(isDark ? 0x7c3aed : 0x6d28d9) },
           uOpacity: { value: isDark ? 0.55 : 0.7 },
           uWaveSpeed: { value: 1.2 },
           uDark: { value: isDark ? 1.0 : 0.0 },
@@ -195,7 +195,7 @@ export function Hero3D() {
       // Segundo anel externo mais fino e opaco para dar volume
       const rimGeo = new THREE.TorusGeometry(RING_RADIUS + (isMobile ? 0.18 : 0.22), isMobile ? 0.025 : 0.035, 24, 140);
       const rimMat = new THREE.MeshBasicMaterial({
-        color: isDark ? 0x4f5bff : 0x6b7cff,
+        color: isDark ? 0x8b5cf6 : 0x7c3aed,
         transparent: true,
         opacity: isDark ? 0.12 : 0.22,
         blending: THREE.AdditiveBlending,
@@ -209,7 +209,7 @@ export function Hero3D() {
       // Sombra/projeção do anel no centro (disco translúcido)
       const shadowGeo = new THREE.CircleGeometry(isMobile ? 1.35 : 2.25, 64);
       const shadowMat = new THREE.MeshBasicMaterial({
-        color: isDark ? 0x586cf0 : 0x8797ff,
+        color: isDark ? 0x7c3aed : 0x8b5cf6,
         transparent: true,
         opacity: isDark ? 0.16 : 0.10,
         blending: THREE.AdditiveBlending,
@@ -236,7 +236,7 @@ export function Hero3D() {
       const orbitGeo = new THREE.BufferGeometry();
       orbitGeo.setAttribute("position", new THREE.BufferAttribute(orbitPos, 3));
       const orbitMat = new THREE.PointsMaterial({
-        color: isDark ? 0xa8b4ff : 0x4f5bff,
+        color: isDark ? 0xc4b5fd : 0x8b5cf6,
         size: isMobile ? 0.07 : 0.09,
         transparent: true,
         opacity: isDark ? 0.55 : 0.35,
@@ -248,7 +248,7 @@ export function Hero3D() {
 
 
       // Ícones orbitando
-      const iconStroke = isDark ? "#AEB9D6" : "#4a5d8a";
+      const iconStroke = isDark ? "#C4B5FD" : "#5B21B6";
       const textures = await Promise.all(
         ICON_SVGS.map((inner) => makeIconTexture(THREE, inner, iconStroke))
       );
@@ -277,7 +277,7 @@ export function Hero3D() {
         universe.add(sprite);
 
         const glowMat = new THREE.MeshBasicMaterial({
-          color: 0x586cf0,
+          color: 0x8b5cf6,
           transparent: true,
           opacity: 0.14,
           blending: THREE.AdditiveBlending,
@@ -301,7 +301,7 @@ export function Hero3D() {
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute("position", new THREE.BufferAttribute(linePositions, 3));
       const lineMat = new THREE.LineBasicMaterial({
-        color: 0x7486ff,
+        color: 0xa78bfa,
         transparent: true,
         opacity: 0.22,
         blending: THREE.AdditiveBlending,
@@ -340,7 +340,7 @@ export function Hero3D() {
       const starMat = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
-          uColor: { value: new THREE.Color(isDark ? 0x9aaae0 : 0x6b7cff) },
+          uColor: { value: new THREE.Color(isDark ? 0xc4b5fd : 0x8b5cf6) },
         },
         vertexShader: `
           attribute float phase;

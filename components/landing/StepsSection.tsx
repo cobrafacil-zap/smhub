@@ -49,8 +49,8 @@ export function StepsSection() {
       className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12"
     >
       <div className="text-center mb-6 sm:mb-8">
-        <p className="text-xs text-slate-500 font-medium">Como funciona</p>
-        <h2 className="text-2xl sm:text-3xl font-bold mt-1.5">
+        <p className="text-xs text-royal-300 font-medium">Como funciona</p>
+        <h2 className="text-2xl sm:text-3xl font-bold mt-1.5 text-slate-100">
           Três passos pra começar
         </h2>
       </div>
@@ -97,7 +97,7 @@ export function StepsSection() {
                     <h3 className={`font-semibold text-slate-100 transition-all duration-500 ${isActive ? "text-xl" : "text-sm whitespace-nowrap [writing-mode:vertical-rl] rotate-180"}`}>
                       {s.title}
                     </h3>
-                    <p className={`text-sm text-slate-400 mt-2 leading-relaxed transition-all duration-700 ${isActive ? "opacity-100 max-h-32" : "opacity-0 max-h-0 overflow-hidden"}`}>
+                    <p className={`text-sm text-slate-500 mt-2 leading-relaxed transition-all duration-700 ${isActive ? "opacity-100 max-h-32" : "opacity-0 max-h-0 overflow-hidden"}`}>
                       {s.desc}
                     </p>
                   </div>
@@ -120,7 +120,7 @@ export function StepsSection() {
                 onClick={() => setActive(isActive ? -1 : i)}
                 className={`w-full rounded-2xl border text-left transition-all duration-500 ${
                   isActive
-                    ? "border-royal-500/30 bg-bg-surface shadow-[0_0_40px_-12px_rgba(88,108,240,0.22)]"
+                    ? "border-royal-500/30 bg-bg-surface shadow-[0_0_40px_-12px_rgba(139,92,246,0.22)]"
                     : "border-border/60 bg-bg-surface/60"
                 }`}
               >
@@ -146,7 +146,7 @@ export function StepsSection() {
                 <div
                   className={`overflow-hidden transition-all duration-500 ${isActive ? "max-h-40" : "max-h-0"}`}
                 >
-                  <p className="px-4 pb-4 text-sm text-slate-400 leading-relaxed">
+                  <p className="px-4 pb-4 text-sm text-slate-500 leading-relaxed">
                     {s.desc}
                   </p>
                 </div>              </button>
@@ -172,7 +172,7 @@ export function StepsSection() {
             >
               <span
                 className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
-                  isActive ? "bg-royal-500 text-white" : "bg-slate-700 text-slate-400"
+                  isActive ? "bg-royal-500 text-white" : "bg-slate-700 text-slate-300"
                 }`}
               >
                 {s.n}

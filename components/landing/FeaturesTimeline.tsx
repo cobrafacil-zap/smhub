@@ -121,11 +121,11 @@ export function FeaturesTimeline() {
       className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-20"
     >
       <div className="text-center mb-12 sm:mb-16">
-        <p className="text-xs text-slate-500 font-medium">Funcionalidades</p>
-        <h2 className="text-2xl sm:text-4xl font-bold mt-2">
+        <p className="text-xs text-royal-300 font-medium">Funcionalidades</p>
+        <h2 className="text-2xl sm:text-4xl font-bold mt-2 text-slate-100">
           Do briefing ao fechamento
         </h2>
-        <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
+        <p className="text-slate-500 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
           Cada etapa da operação da sua agência em um só fluxo, sem planilhas
           soltas.
         </p>
@@ -145,22 +145,22 @@ export function FeaturesTimeline() {
           className="hidden md:block absolute left-1/2 -translate-x-1/2 top-0 w-[2px] z-0 pointer-events-none transition-[height] duration-75 ease-linear"
           style={{ height: lineHeight }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-royal-250 via-royal-300 to-royal-500 shadow-[0_0_22px_4px_rgba(139,92,246,0.55)]" />
         </div>
         <div
           className="md:hidden absolute left-16 top-0 w-[2px] z-0 pointer-events-none transition-[height] duration-75 ease-linear"
           style={{ height: lineHeight }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-royal-300 via-royal-400 to-royal-500 shadow-[0_0_22px_4px_rgba(88,108,240,0.55)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-royal-250 via-royal-300 to-royal-500 shadow-[0_0_22px_4px_rgba(139,92,246,0.55)]" />
         </div>
 
         {/* Nó neon na ponta — acima da linha, abaixo dos marcadores */}
         <div
-          className="hidden md:block absolute z-[5] left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(116,134,255,0.75)] transition-[top] duration-75 ease-linear pointer-events-none"
+          className="hidden md:block absolute z-[5] left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(167,139,250,0.75)] transition-[top] duration-75 ease-linear pointer-events-none"
           style={{ top: lineHeight }}
         />
         <div
-          className="md:hidden absolute z-[5] left-16 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(116,134,255,0.75)] transition-[top] duration-75 ease-linear pointer-events-none"
+          className="md:hidden absolute z-[5] left-16 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-royal-300 shadow-[0_0_28px_8px_rgba(167,139,250,0.75)] transition-[top] duration-75 ease-linear pointer-events-none"
           style={{ top: lineHeight }}
         />
 
@@ -181,8 +181,8 @@ export function FeaturesTimeline() {
                   <div
                     className={`absolute top-1/2 -translate-y-1/2 z-[6] flex h-11 w-11 rounded-full border transition-all duration-500 items-center justify-center left-16 -translate-x-1/2 md:left-1/2 md:-translate-x-1/2 ${
                       isActive
-                        ? "border-royal-300/70 shadow-[0_0_30px_-4px_rgba(116,134,255,0.65)]"
-                        : "border-royal-500/30 shadow-[0_0_24px_-8px_rgba(88,108,240,0.35)]"
+                        ? "border-royal-300/70 shadow-[0_0_30px_-4px_rgba(167,139,250,0.65)]"
+                        : "border-royal-500/30 shadow-[0_0_24px_-8px_rgba(139,92,246,0.35)]"
                     }`}
                   >
                     <div
@@ -213,14 +213,14 @@ export function FeaturesTimeline() {
                     <div
                       className={`rounded-xl border px-5 py-5 transition-all duration-500 ${
                         isActive
-                          ? "border-royal-500/40 bg-bg-surface shadow-[0_0_40px_-12px_rgba(88,108,240,0.25)]"
+                          ? "border-royal-500/40 bg-bg-surface shadow-[0_0_40px_-12px_rgba(139,92,246,0.25)]"
                           : "border-border/60 bg-bg-surface/60 card-hover"
                       }`}
                     >
                       <h3 className="text-base font-semibold text-slate-100">
                         {f.title}
                       </h3>
-                      <p className="text-sm text-slate-400 mt-1.5 leading-relaxed">
+                      <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
                         {f.desc}
                       </p>
                     </div>

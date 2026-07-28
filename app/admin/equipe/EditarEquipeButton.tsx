@@ -70,7 +70,7 @@ export function EditarEquipeButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 text-xs text-slate-300 hover:text-royal-300 px-2 py-1 rounded hover:bg-bg-elevated transition"
+        className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-royal-300 px-2 py-1 rounded hover:bg-bg-elevated transition"
         title="Editar membro"
       >
         <Pencil className="h-3.5 w-3.5" />
@@ -90,7 +90,7 @@ export function EditarEquipeButton({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-slate-400 hover:text-slate-200"
+              className="text-slate-400 hover:text-royal-200"
             >
               <X className="h-4 w-4" />
             </button>
@@ -149,7 +149,7 @@ export function EditarEquipeButton({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="px-3 py-1.5 text-sm rounded-md text-slate-300 hover:bg-bg-elevated"
+                className="px-3 py-1.5 text-sm rounded-md text-slate-400 hover:bg-bg-elevated"
               >
                 Cancelar
               </button>

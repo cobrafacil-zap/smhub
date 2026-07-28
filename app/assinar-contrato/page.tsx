@@ -33,7 +33,7 @@ export default async function AssinarContratoPage({
           <Logo variant="full" className="!h-10 mx-auto mb-4" />
           <XCircle className="h-10 w-10 text-danger-400 mx-auto mb-3" />
           <h1 className="text-lg font-semibold text-slate-100 mb-2">Link inválido</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Este link não existe ou foi removido. Peça um novo link à sua agência.
           </p>
         </Card>
@@ -49,7 +49,7 @@ export default async function AssinarContratoPage({
           <Logo variant="full" className="!h-10 mx-auto mb-4" />
           <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto mb-3" />
           <h1 className="text-lg font-semibold text-slate-100 mb-2">Contrato já assinado</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Este contrato já foi assinado digitalmente. Entre em contato com a agência se precisar de uma via.
           </p>
         </Card>
@@ -65,7 +65,7 @@ export default async function AssinarContratoPage({
           <Logo variant="full" className="!h-10 mx-auto mb-4" />
           <XCircle className="h-10 w-10 text-danger-400 mx-auto mb-3" />
           <h1 className="text-lg font-semibold text-slate-100 mb-2">Contrato indisponível</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Este contrato foi {contrato.status}. Entre em contato com a agência.
           </p>
         </Card>
@@ -81,7 +81,7 @@ export default async function AssinarContratoPage({
           <Logo variant="full" className="!h-10 mx-auto mb-4" />
           <Clock className="h-10 w-10 text-amber-400 mx-auto mb-3" />
           <h1 className="text-lg font-semibold text-slate-100 mb-2">Link expirado</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Este link expirou em {formatDate(contrato.token_expira_em)}.
             Peça um novo link à sua agência.
           </p>
@@ -131,12 +131,12 @@ export default async function AssinarContratoPage({
         </Card>
 
         {/* Conteúdo do contrato */}
-        <Card>
+        <Card className="prose-wrapper">
           <h2 className="text-sm font-semibold text-slate-300 mb-3">Conteúdo</h2>
           <div
-            className="prose prose-invert prose-sm max-w-none text-slate-200
+            className="prose prose-invert dark:prose-invert prose-sm max-w-none text-slate-300
               prose-headings:text-slate-100 prose-h1:text-xl prose-h2:text-base
-              prose-strong:text-slate-100"
+              prose-strong:text-slate-100 prose-p:text-slate-400"
             dangerouslySetInnerHTML={{ __html: contrato.conteudo }}
           />
         </Card>
@@ -144,7 +144,7 @@ export default async function AssinarContratoPage({
         {/* Assinatura */}
         <Card>
           <h2 className="text-sm font-semibold text-slate-300 mb-3">Assinatura digital</h2>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             Ao assinar, você concorda com todos os termos acima. Sua assinatura será registrada
             com data, hora, IP e hash de validação.
           </p>

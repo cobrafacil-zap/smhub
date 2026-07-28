@@ -123,11 +123,11 @@ export function InteractiveShowcase() {
   return (
     <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
       <div className="text-center mb-6 sm:mb-8">
-        <p className="text-xs text-slate-500 font-medium">Módulos</p>
-        <h2 className="text-2xl sm:text-4xl font-bold mt-2">
+        <p className="text-xs text-royal-300 font-medium">Módulos</p>
+        <h2 className="text-2xl sm:text-4xl font-bold mt-2 text-slate-100">
           Uma plataforma, todas as etapas
         </h2>
-        <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
+        <p className="text-slate-500 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
           Arraste para o lado ou clique nos módulos abaixo para explorar.
         </p>
       </div>
@@ -178,7 +178,7 @@ export function InteractiveShowcase() {
                 className={cn(
                   "rounded-[1.5rem] border p-4 sm:p-5 flex flex-col gap-3 transition-all duration-300",
                   isActive
-                    ? "border-royal-500/45 bg-bg-surface shadow-[0_0_48px_-10px_rgba(88,108,240,0.32)]"
+                    ? "border-royal-500/45 bg-bg-surface shadow-[0_0_48px_-10px_rgba(139,92,246,0.32)]"
                     : "border-border/60 bg-bg-surface/60 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.45)] group-hover:border-royal-400/40 group-hover:bg-bg-surface/80"
                 )}
               >
@@ -190,7 +190,7 @@ export function InteractiveShowcase() {
                     <h3 className="text-base sm:text-lg font-semibold text-slate-100 leading-tight">
                       {m.title}
                     </h3>
-                    <p className="text-[11px] sm:text-xs text-slate-400 leading-snug mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-slate-500 leading-snug mt-0.5">
                       {m.tagline}
                     </p>
                   </div>
@@ -199,7 +199,7 @@ export function InteractiveShowcase() {
                   {m.bullets.map((b) => (
                     <li
                       key={b}
-                      className="flex items-start gap-2 text-[13px] leading-snug text-slate-300"
+                      className="flex items-start gap-2 text-[13px] leading-snug text-slate-400"
                     >
                       <Check className="h-4 w-4 shrink-0 mt-0.5 text-royal-300" />
                       <span>{b}</span>
@@ -229,8 +229,8 @@ export function InteractiveShowcase() {
               onClick={() => setActive(i)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
                 isActive
-                  ? "bg-royal-500 text-white border-royal-500 shadow-[0_0_12px_-2px_rgba(88,108,240,0.4)]"
-                  : "bg-bg-surface/60 border-border text-slate-400 hover:text-slate-200 hover:border-royal-400/40 hover:bg-bg-elevated"
+                  ? "bg-royal-500 text-white border-royal-500 shadow-[0_0_12px_-2px_rgba(139,92,246,0.4)]"
+                  : "bg-bg-surface/60 border-border text-slate-500 hover:text-royal-300 hover:border-royal-400/40 hover:bg-bg-elevated"
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -249,7 +249,7 @@ export function InteractiveShowcase() {
             <span
               key={i}
               className={`block h-1.5 rounded-full transition-all duration-300 ${
-                i === active ? "w-4 bg-royal-400" : "w-1.5 bg-slate-600"
+                i === active ? "w-4 bg-royal-400" : "w-1.5 bg-slate-600 dark:bg-slate-700"
               }`}
             />
           ))}

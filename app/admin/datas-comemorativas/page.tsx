@@ -60,7 +60,7 @@ export default async function DatasComemorativasPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
-          <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2 mb-3">
             <Plus className="h-4 w-4 text-royal-300" /> Nova data
           </h3>
           <DataComemorativaForm action={criar} />
@@ -68,7 +68,7 @@ export default async function DatasComemorativasPage() {
 
         <Card className="lg:col-span-2 !p-0">
           <div className="p-4 border-b border-border">
-            <h3 className="text-sm font-semibold text-slate-300">Cadastradas ({list.length})</h3>
+            <h3 className="text-sm font-semibold text-slate-400">Cadastradas ({list.length})</h3>
           </div>
           {list.length === 0 ? (
             <EmptyState

@@ -105,17 +105,17 @@ export default async function ContratoDetalhePage({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
-          <h3 className="text-sm font-semibold text-slate-300 mb-3">Status</h3>
+          <h3 className="text-sm font-semibold text-slate-400 mb-3">Status</h3>
           <Badge variant={st.color} className="text-sm">{st.label}</Badge>
         </Card>
         <Card>
-          <h3 className="text-sm font-semibold text-slate-300 mb-3">Valor mensal</h3>
+          <h3 className="text-sm font-semibold text-slate-400 mb-3">Valor mensal</h3>
           <p className="text-2xl font-bold kpi-num text-slate-100">
             {c.valor_mensal ? formatBRL(c.valor_mensal) : "—"}
           </p>
         </Card>
         <Card>
-          <h3 className="text-sm font-semibold text-slate-300 mb-3">Vigência</h3>
+          <h3 className="text-sm font-semibold text-slate-400 mb-3">Vigência</h3>
           <p className="text-sm text-slate-200">
             {c.data_inicio ? formatDate(c.data_inicio) : "—"} até{" "}
             {c.data_fim ? formatDate(c.data_fim) : "—"}
@@ -153,7 +153,7 @@ export default async function ContratoDetalhePage({
       </div>
 
       <Card>
-        <h3 className="text-sm font-semibold text-slate-300 mb-2">Cliente</h3>
+        <h3 className="text-sm font-semibold text-slate-400 mb-2">Cliente</h3>
         {(cliente as Cliente | null) ? (
           <div>
             <p className="font-medium text-slate-100">{(cliente as Cliente).nome_empresa}</p>
@@ -167,7 +167,7 @@ export default async function ContratoDetalhePage({
       </Card>
 
       <Card>
-        <h3 className="text-sm font-semibold text-slate-300 mb-2">Conteúdo do contrato</h3>
+        <h3 className="text-sm font-semibold text-slate-400 mb-2">Conteúdo do contrato</h3>
         <div
           className="prose prose-invert prose-sm max-w-none text-slate-200
             prose-headings:text-slate-100 prose-h1:text-xl prose-h2:text-base
@@ -177,7 +177,7 @@ export default async function ContratoDetalhePage({
       </Card>
 
       <Card>
-        <h3 className="text-sm font-semibold text-slate-300 mb-3">Assinaturas</h3>
+        <h3 className="text-sm font-semibold text-slate-400 mb-3">Assinaturas</h3>
         {assinaturas.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhuma assinatura registrada ainda.</p>
         ) : (

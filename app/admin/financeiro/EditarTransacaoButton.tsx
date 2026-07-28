@@ -189,7 +189,7 @@ export function EditarTransacaoButton({
         type="button"
         onClick={() => setOpen(true)}
         title="Editar lançamento"
-        className="inline-flex items-center justify-center text-slate-300 hover:text-royal-300 hover:bg-bg-elevated p-1.5 rounded-md transition"
+        className="inline-flex items-center justify-center text-slate-400 hover:text-royal-300 hover:bg-bg-elevated p-1.5 rounded-md transition"
       >
         <Pencil className="h-3.5 w-3.5" />
       </button>
@@ -220,7 +220,7 @@ export function EditarTransacaoButton({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="text-slate-400 hover:text-slate-200"
+              className="text-slate-400 hover:text-royal-200"
             >
               <X className="h-4 w-4" />
             </button>
@@ -327,7 +327,7 @@ export function EditarTransacaoButton({
                     <span>
                       Aplicar valor e descrição a todas as parcelas pendentes
                       <span className="block text-[11px] text-slate-500 mt-0.5">
-                        Parcelas já <strong className="text-slate-300">pagas</strong> mantêm
+                        Parcelas já <strong className="text-slate-200">pagas</strong> mantêm
                         o valor original (audit trail do que já foi contabilizado).
                       </span>
                     </span>
@@ -337,7 +337,7 @@ export function EditarTransacaoButton({
                 {/* ---- Input "Nº de parcelas" (sempre, condicional à UI de cada caso) ---- */}
                 {((isPai) || (isSimples && parcelarSimples)) && (
                   <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-royal-500/20">
-                    <label className="text-xs text-slate-300">Nº de parcelas:</label>
+                    <label className="text-xs text-slate-400">Nº de parcelas:</label>
                     <input
                       name="parcelas_total"
                       type="number"
@@ -429,7 +429,7 @@ export function EditarTransacaoButton({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="px-3 py-1.5 text-sm rounded-md text-slate-300 hover:bg-bg-elevated"
+                  className="px-3 py-1.5 text-sm rounded-md text-slate-400 hover:bg-bg-elevated"
                 >
                   Cancelar
                 </button>

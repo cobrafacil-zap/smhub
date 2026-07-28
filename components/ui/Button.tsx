@@ -20,13 +20,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-gradient-to-r from-royal-500 to-royal-700 text-white shadow-sm hover:from-royal-400 hover:to-royal-600 active:from-royal-700 active:to-royal-800 shine glow-hover",
+    "bg-gradient-to-r from-royal-500 via-royal-550 to-royal-700 text-white shadow-sm hover:from-royal-400 hover:via-royal-500 hover:to-royal-600 active:from-royal-700 active:via-royal-600 active:to-royal-800 shine glow-hover",
   secondary:
-    "bg-bg-elevated border border-border text-slate-200 hover:bg-bg-muted hover:border-border-muted shadow-sm",
+    "bg-bg-elevated border border-border text-slate-200 hover:bg-bg-muted hover:border-royal-500/30 hover:text-royal-300 shadow-sm",
   outline:
     "border border-royal-500/50 text-royal-300 hover:bg-royal-500/10 hover:border-royal-500",
   danger: "bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-700",
-  ghost: "text-slate-300 hover:bg-bg-elevated",
+  ghost: "text-slate-300 hover:bg-bg-elevated hover:text-royal-200",
 };
 
 const sizes: Record<Size, string> = {

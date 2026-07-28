@@ -91,10 +91,10 @@ export default async function ContratosPage() {
                       <td className="px-4 py-3 text-slate-200">
                         {c.valor_mensal ? formatBRL(c.valor_mensal) : "—"}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-slate-200">
                         {c.duracao_meses ?? "—"} {c.duracao_meses ? "meses" : ""}
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-slate-200">
                         {c.data_inicio ? formatDate(c.data_inicio) : "—"}
                       </td>
                       <td className="px-4 py-3">

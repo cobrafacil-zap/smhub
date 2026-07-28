@@ -9,21 +9,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Paleta principal SM Hub — gradiente de azul royal → marinho
+        // Paleta principal SM Hub — violeta / lavanda / neon.
+        // No dark fica neon/roxo; no claro vira violeta sólido e legível.
         royal: {
-          50: "#EEF1FF",
-          100: "#D9DEFF",
+          50: "#F5F3FF",
+          100: "#EDE9FE",
+          150: "rgb(var(--royal-150) / <alpha-value>)",
           200: "rgb(var(--royal-200) / <alpha-value>)",
+          250: "rgb(var(--royal-250) / <alpha-value>)",
           300: "rgb(var(--royal-300) / <alpha-value>)",
           400: "rgb(var(--royal-400) / <alpha-value>)",
-          500: "#3D5AFE", // primária
-          600: "#2D44D6",
-          700: "#1F30AD",
-          800: "#152285",
-          900: "#0D1759",
-          950: "#0A1A40", // secundária
+          500: "#7C3AED", // primária (violet-600)
+          550: "#6D28D9",
+          600: "#5B21B6",
+          700: "#4C1D95",
+          800: "#3730A3",
+          900: "#312E81",
+          950: "#1E1B4B",
         },
-        // Escala "navy" — base do dark mode
+        // Escala "navy" — base do dark mode (fria, quase preta azulada)
         navy: {
           50: "#E6E9F2",
           100: "#C2C8DD",
@@ -35,7 +39,7 @@ const config: Config = {
           700: "#080E1C",
           800: "#060A14",
           900: "#03060D",
-          950: "#0A1A40",
+          950: "#02040A",
         },
         // Backgrounds semânticos — flipam com o tema via CSS vars (canais RGB).
         // rgb(var(--token) / <alpha-value>) permite bg-bg/80, bg-bg-elevated/60 etc.
@@ -85,18 +89,18 @@ const config: Config = {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       backgroundImage: {
-        "gradient-royal": "linear-gradient(135deg, #3D5AFE 0%, #0A1A40 100%)",
+        "gradient-royal": "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 50%, #1E1B4B 100%)",
         "gradient-royal-soft":
-          "linear-gradient(135deg, rgba(61,90,254,0.18) 0%, rgba(10,26,64,0.10) 100%)",
+          "linear-gradient(135deg, rgba(139,92,246,0.22) 0%, rgba(124,58,214,0.12) 50%, rgba(30,27,75,0.08) 100%)",
         "gradient-radial":
-          "radial-gradient(circle at top left, rgba(61,90,254,0.18), transparent 50%)",
+          "radial-gradient(circle at top left, rgba(139,92,246,0.20), transparent 50%)",
       },
       boxShadow: {
         soft: "var(--shadow-soft)",
         card: "var(--shadow-card)",
         elevated: "var(--shadow-elevated)",
-        glow: "0 0 0 4px rgba(61, 90, 254, 0.18)",
-        ring: "0 0 0 1px rgba(61, 90, 254, 0.35)",
+        glow: "0 0 0 4px rgba(139, 92, 246, 0.22)",
+        ring: "0 0 0 1px rgba(139, 92, 246, 0.40)",
       },
       keyframes: {
         "fade-in": {
@@ -149,9 +153,9 @@ const config: Config = {
           "50%": { backgroundPosition: "100% 50%" },
         },
         "pulse-ring": {
-          "0%": { boxShadow: "0 0 0 0 rgba(61,90,254,0.45)" },
-          "70%": { boxShadow: "0 0 0 8px rgba(61,90,254,0)" },
-          "100%": { boxShadow: "0 0 0 0 rgba(61,90,254,0)" },
+          "0%": { boxShadow: "0 0 0 0 rgba(139,92,246,0.45)" },
+          "70%": { boxShadow: "0 0 0 8px rgba(139,92,246,0)" },
+          "100%": { boxShadow: "0 0 0 0 rgba(139,92,246,0)" },
         },
         "shine-sweep": {
           "0%": { transform: "translateX(-130%) skewX(-12deg)" },

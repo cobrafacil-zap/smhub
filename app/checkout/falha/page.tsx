@@ -16,22 +16,22 @@ export default function CheckoutFalhaPage() {
           <div className="text-center">
             <XCircle className="h-10 w-10 text-danger-400 mx-auto mb-3" />
             <h1 className="text-xl font-semibold text-slate-100">Pagamento não concluído</h1>
-            <p className="text-sm text-slate-400 mt-2">
+            <p className="text-sm text-slate-500 mt-2">
               Não conseguimos processar seu pagamento. Nenhuma cobrança foi efetuada.
             </p>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Você pode tentar novamente com outro método de pagamento.
             </p>
             <div className="mt-6 space-y-2">
               <Link
                 href="/"
-                className="block w-full text-center bg-gradient-to-r from-royal-500 to-royal-700 text-white font-medium rounded-lg py-2.5 hover:from-royal-400 hover:to-royal-600"
+                className="block w-full text-center bg-gradient-to-r from-royal-500 via-royal-550 to-royal-700 text-white font-medium rounded-lg py-2.5 hover:from-royal-400 hover:via-royal-500 hover:to-royal-600"
               >
                 Voltar para a página inicial
               </Link>
               <Link
                 href="/checkout?plano=pro"
-                className="block w-full text-center bg-bg-elevated border border-border text-slate-200 font-medium rounded-lg py-2.5 hover:bg-bg-muted"
+                className="block w-full text-center bg-bg-elevated border border-border text-slate-200 font-medium rounded-lg py-2.5 hover:bg-bg-muted hover:text-royal-300"
               >
                 Tentar novamente
               </Link>

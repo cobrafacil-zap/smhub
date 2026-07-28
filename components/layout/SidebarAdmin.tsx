@@ -84,7 +84,7 @@ export function SidebarAdmin({
     <aside className="hidden lg:flex lg:flex-col w-64 bg-bg-surface border-r border-border min-h-screen">
       <div className="px-5 py-5 border-b border-border">
         <Link href="/admin" className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white font-bold text-sm shadow-glow overflow-hidden shrink-0 relative">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-royal-500 via-royal-550 to-royal-700 flex items-center justify-center text-white font-bold text-sm shadow-glow overflow-hidden shrink-0 relative">
             {agencyLogoUrl ? (
               <Image
                 src={agencyLogoUrl}
@@ -130,7 +130,7 @@ export function SidebarAdmin({
                       "group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                       active
                         ? "bg-royal-500/15 text-royal-200"
-                        : "text-slate-400 hover:bg-bg-elevated hover:text-slate-100 hover:translate-x-0.5"
+                        : "text-slate-400 hover:bg-bg-elevated hover:text-royal-200 hover:translate-x-0.5"
                     )}
                   >
                     {/* Barra vertical indicadora — cresce no ativo */}
@@ -146,7 +146,7 @@ export function SidebarAdmin({
                         "inline-flex items-center justify-center h-7 w-7 rounded-md text-sm transition-transform group-hover:scale-110",
                         active
                           ? "bg-royal-500/20 text-royal-200"
-                          : "bg-bg-elevated text-slate-400 group-hover:text-slate-200"
+                          : "bg-bg-elevated text-slate-400 group-hover:text-royal-300"
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -163,7 +163,7 @@ export function SidebarAdmin({
 
       <div className="px-4 py-4 border-t border-border">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-xs font-semibold">
+          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal-500 via-royal-550 to-royal-700 flex items-center justify-center text-white text-xs font-semibold">
             {userName
               .trim()
               .split(/\s+/)

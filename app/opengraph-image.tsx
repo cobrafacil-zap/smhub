@@ -7,7 +7,7 @@ export const contentType = "image/png";
 
 /**
  * Imagem Open Graph dinâmica (1200x630) compartilhada em redes sociais.
- * Visual alinhado à identidade SM Hub: gradiente royal → navy.
+ * Visual alinhado à identidade SM Hub: gradiente violeta → roxo profundo.
  */
 export default function OpengraphImage() {
   return new ImageResponse(
@@ -21,7 +21,7 @@ export default function OpengraphImage() {
           justifyContent: "space-between",
           padding: "64px",
           background:
-            "linear-gradient(135deg, #152285 0%, #0A1A40 55%, #060A14 100%)",
+            "linear-gradient(135deg, #4C1D95 0%, #1E1B4B 55%, #0F0A1A 100%)",
           color: "white",
           fontFamily: "sans-serif",
         }}
@@ -36,7 +36,7 @@ export default function OpengraphImage() {
             height: 520,
             borderRadius: "9999px",
             background:
-              "radial-gradient(circle, rgba(61,90,254,0.45), rgba(61,90,254,0) 70%)",
+              "radial-gradient(circle, rgba(139,92,246,0.45), rgba(139,92,246,0) 70%)",
             display: "flex",
           }}
         />
@@ -48,7 +48,7 @@ export default function OpengraphImage() {
             gap: 12,
             fontSize: 26,
             fontWeight: 600,
-            color: "#B0BBFF",
+            color: "#DDD6FE",
           }}
         >
           <div
@@ -59,7 +59,7 @@ export default function OpengraphImage() {
               width: 56,
               height: 56,
               borderRadius: 14,
-              background: "linear-gradient(135deg, #5E74FF, #3D5AFE)",
+              background: "linear-gradient(135deg, #A78BFA, #7C3AED)",
               fontSize: 28,
               fontWeight: 800,
             }}
@@ -85,7 +85,7 @@ export default function OpengraphImage() {
           <div
             style={{
               fontSize: 32,
-              color: "#9AA6D6",
+              color: "#C4B5FD",
               maxWidth: 900,
               display: "flex",
             }}
@@ -110,9 +110,9 @@ export default function OpengraphImage() {
               display: "flex",
               padding: "10px 22px",
               borderRadius: 9999,
-              background: "rgba(61,90,254,0.18)",
-              border: "1px solid rgba(135,151,255,0.4)",
-              color: "#D9DEFF",
+              background: "rgba(124,58,214,0.18)",
+              border: "1px solid rgba(167,139,250,0.4)",
+              color: "#EDE9FE",
             }}
           >
             7 dias grátis · Sem cartão de crédito

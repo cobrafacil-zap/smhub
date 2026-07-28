@@ -209,10 +209,10 @@ export default async function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
 
-      {/* Fundo sutil — um único gradiente radial calmo no topo */}
+      {/* Fundo sutil — gradiente radial roxo/lavanda no topo */}
       <div
         aria-hidden
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-royal-500/[0.07] rounded-full blur-[100px] pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[700px] bg-gradient-radial rounded-full blur-[120px] pointer-events-none opacity-70"
       />
 
       {/* Navbar — sticky com blur */}
@@ -221,14 +221,14 @@ export default async function LandingPage() {
           <Link href="/" aria-label="SM Hub — início">
             <Logo variant="full" className="!h-12 sm:!h-14" />
           </Link>
-          <nav className="hidden md:flex items-center gap-7 text-sm text-slate-300">
-            <a href="#funcionalidades" className="hover:text-slate-100 transition-colors">
+          <nav className="hidden md:flex items-center gap-7 text-sm text-slate-500">
+            <a href="#funcionalidades" className="hover:text-royal-300 transition-colors">
               Funcionalidades
             </a>
-            <a href="#planos" className="hover:text-slate-100 transition-colors">
+            <a href="#planos" className="hover:text-royal-300 transition-colors">
               Planos
             </a>
-            <a href="#faq" className="hover:text-slate-100 transition-colors">
+            <a href="#faq" className="hover:text-royal-300 transition-colors">
               FAQ
             </a>
           </nav>
@@ -270,11 +270,11 @@ export default async function LandingPage() {
         </div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
           Menos ferramenta,{" "}
-          <span className="bg-gradient-to-r from-royal-300 via-royal-400 to-royal-500 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-royal-250 via-royal-300 to-royal-500 bg-clip-text text-transparent">
             mais resultado
           </span>
         </h1>
-        <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto">
+        <p className="mt-5 sm:mt-6 text-base sm:text-lg text-slate-400 max-w-2xl mx-auto">
           A SM Hub reúne clientes, planejamento editorial, relatórios, financeiro e
           contratos digitais em um só fluxo. Sua agência ganha tempo para criar
           enquanto a operação roda organizada.
@@ -305,10 +305,10 @@ export default async function LandingPage() {
               className="rounded-xl border border-border/60 bg-bg-surface/60 px-4 py-4 sm:py-5 text-left card-hover"
             >
               <s.icon className="h-5 w-5 text-royal-300 mb-2" />
-              <p className="text-xl sm:text-2xl font-bold text-slate-100 leading-tight">
+              <p className="text-xl sm:text-2xl font-bold text-slate-200 leading-tight">
                 {s.value}
               </p>
-              <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{s.label}</p>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{s.label}</p>
             </Reveal>
           ))}
         </div>
@@ -321,11 +321,11 @@ export default async function LandingPage() {
       {/* Nosso Ecossistema — loop infinito de logos */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
         <div className="text-center mb-8">
-          <p className="text-xs text-slate-500 font-medium">Integrações</p>
-          <h2 className="text-xl sm:text-3xl font-bold mt-2">
+          <p className="text-xs text-royal-300 font-medium">Integrações</p>
+          <h2 className="text-xl sm:text-3xl font-bold mt-2 text-slate-100">
             Conectado com as redes que você já usa
           </h2>
-          <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm">
+          <p className="text-slate-500 mt-3 max-w-2xl mx-auto text-sm">
             Puxe métricas e monte relatórios sem sair da SM Hub.
           </p>
         </div>
@@ -341,11 +341,11 @@ export default async function LandingPage() {
       {/* Planos */}
       <section id="planos" className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-20">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs text-slate-500 font-medium">Planos</p>
-          <h2 className="text-2xl sm:text-4xl font-bold mt-2">
+          <p className="text-xs text-royal-300 font-medium">Planos</p>
+          <h2 className="text-2xl sm:text-4xl font-bold mt-2 text-slate-100">
             Escolha o plano ideal
           </h2>
-          <p className="text-slate-400 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
+          <p className="text-slate-500 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
             7 dias grátis em todos. Cancele quando quiser.
           </p>
         </div>
@@ -370,8 +370,8 @@ export default async function LandingPage() {
       {/* Depoimentos */}
       <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs text-slate-500 font-medium">Depoimentos</p>
-          <h2 className="text-2xl sm:text-4xl font-bold mt-2">
+          <p className="text-xs text-royal-300 font-medium">Depoimentos</p>
+          <h2 className="text-2xl sm:text-4xl font-bold mt-2 text-slate-100">
             O que dizem quem usa
           </h2>
         </div>
@@ -380,15 +380,15 @@ export default async function LandingPage() {
             <Reveal key={d.nome} delay={i * 90}>
               <Card hoverable className="h-full">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal-500 to-royal-700 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal-500 via-royal-550 to-royal-700 flex items-center justify-center text-white text-sm font-bold shrink-0">
                     {d.iniciais}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-slate-100">{d.nome}</p>
-                    <p className="text-xs text-slate-400">{d.cargo}</p>
+                    <p className="text-xs text-slate-500">{d.cargo}</p>
                   </div>
                 </div>
-                <p className="text-sm text-slate-300 leading-relaxed">&ldquo;{d.texto}&rdquo;</p>
+                <p className="text-sm text-slate-400 leading-relaxed">&ldquo;{d.texto}&rdquo;</p>
               </Card>
             </Reveal>
           ))}
@@ -401,8 +401,8 @@ export default async function LandingPage() {
       {/* FAQ */}
       <section id="faq" className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 scroll-mt-20">
         <div className="text-center mb-10 sm:mb-12">
-          <p className="text-xs text-slate-500 font-medium">Dúvidas frequentes</p>
-          <h2 className="text-2xl sm:text-4xl font-bold mt-2">Perguntas e respostas</h2>
+          <p className="text-xs text-royal-300 font-medium">Dúvidas frequentes</p>
+          <h2 className="text-2xl sm:text-4xl font-bold mt-2 text-slate-100">Perguntas e respostas</h2>
         </div>
         <div className="space-y-3">
           {FAQ.map((f, i) => (
@@ -414,7 +414,7 @@ export default async function LandingPage() {
                   {f.q}
                   <Plus className="h-5 w-5 shrink-0 text-royal-300 icon-wiggle-hover transition-transform duration-300 group-open:rotate-45" />
                 </summary>
-                <p className="mt-3 text-sm text-slate-400 leading-relaxed">{f.a}</p>
+                <p className="mt-3 text-sm text-slate-500 leading-relaxed">{f.a}</p>
               </details>
             </Reveal>
           ))}
@@ -427,7 +427,7 @@ export default async function LandingPage() {
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
             Pronto pra organizar sua agência?
           </h2>
-          <p className="text-slate-300 mt-2 max-w-xl mx-auto text-sm sm:text-base">
+          <p className="text-slate-500 mt-2 max-w-xl mx-auto text-sm sm:text-base">
             Teste a SM Hub por 7 dias. Sem cartão e sem compromisso.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -450,7 +450,7 @@ export default async function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="col-span-2 lg:col-span-1">
             <Logo variant="full" className="!h-12" />
-            <p className="text-sm text-slate-400 mt-3 max-w-xs">
+            <p className="text-sm text-slate-500 mt-3 max-w-xs">
               A plataforma completa para agências de marketing gerenciarem clientes,
               planejamentos, relatórios e financeiro em um só lugar.
             </p>
@@ -459,26 +459,26 @@ export default async function LandingPage() {
             <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3">
               Produto
             </p>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li><a href="#funcionalidades" className="hover:text-slate-200">Funcionalidades</a></li>
-              <li><a href="#planos" className="hover:text-slate-200">Planos</a></li>
-              <li><a href="#faq" className="hover:text-slate-200">FAQ</a></li>
+            <ul className="space-y-2 text-sm text-slate-500">
+              <li><a href="#funcionalidades" className="hover:text-royal-300 transition-colors">Funcionalidades</a></li>
+              <li><a href="#planos" className="hover:text-royal-300 transition-colors">Planos</a></li>
+              <li><a href="#faq" className="hover:text-royal-300 transition-colors">FAQ</a></li>
             </ul>
           </div>
           <div>
             <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3">
               Conta
             </p>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li><Link href="/login" className="hover:text-slate-200">Entrar</Link></li>
-              <li><Link href="/checkout?plano=pro" className="hover:text-slate-200">Assinar</Link></li>
+            <ul className="space-y-2 text-sm text-slate-500">
+              <li><Link href="/login" className="hover:text-royal-300 transition-colors">Entrar</Link></li>
+              <li><Link href="/checkout?plano=pro" className="hover:text-royal-300 transition-colors">Assinar</Link></li>
             </ul>
           </div>
           <div>
             <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3">
               Recursos
             </p>
-            <ul className="space-y-2 text-sm text-slate-400">
+            <ul className="space-y-2 text-sm text-slate-500">
               <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400" /> Suporte por e-mail</li>
               <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-400" /> Atualizações grátis</li>
               <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-royal-300" /> Dados em nuvem</li>
@@ -491,8 +491,8 @@ export default async function LandingPage() {
               © {new Date().getFullYear()} SM Hub. Todos os direitos reservados.
             </p>
             <div className="flex items-center gap-4 text-xs text-slate-500">
-              <Link href="/login" className="hover:text-slate-300">Entrar</Link>
-              <Link href="/checkout?plano=pro" className="hover:text-slate-300">Assinar</Link>
+              <Link href="/login" className="hover:text-royal-300 transition-colors">Entrar</Link>
+              <Link href="/checkout?plano=pro" className="hover:text-royal-300 transition-colors">Assinar</Link>
             </div>
           </div>
         </div>

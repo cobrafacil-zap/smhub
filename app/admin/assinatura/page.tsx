@@ -234,7 +234,7 @@ export default async function AssinaturaPage({
           </Card>
 
           <div className="text-center">
-            <Link href="/admin" className="text-sm text-slate-400 hover:text-slate-200">
+            <Link href="/admin" className="text-sm text-slate-400 hover:text-royal-200">
               ← Voltar para o painel
             </Link>
           </div>

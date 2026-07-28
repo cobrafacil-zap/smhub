@@ -9,7 +9,7 @@ const variants: Record<Variant, string> = {
   danger: "bg-danger-500/15 text-danger-400 border border-danger-500/30",
   warning: "bg-warning-500/15 text-warning-400 border border-warning-500/30",
   info: "bg-accent-500/15 text-accent-500 border border-accent-500/30",
-  brand: "bg-royal-500/15 text-royal-300 border border-royal-500/30",
+  brand: "bg-royal-500/15 text-royal-200 border border-royal-500/30",
 };
 
 export function Badge({

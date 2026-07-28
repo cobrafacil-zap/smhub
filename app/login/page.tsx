@@ -32,7 +32,7 @@ export default async function LoginPage({
         </div>
         <div className="card">
           <h1 className="text-xl font-semibold text-slate-100">Entrar na sua conta</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Acesse o painel da sua agência ou o portal do cliente.
           </p>
           <div className="mt-6">

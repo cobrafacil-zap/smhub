@@ -41,29 +41,29 @@ export function PlanoCard({
           "bg-bg-surface shadow-soft",
           destaque
             ? "gradient-border border-transparent shadow-elevated ring-1 ring-royal-500/25 relative"
-            : "border-white/[0.07] lift hover:shadow-elevated"
+            : "border-border/60 lift hover:shadow-elevated hover:border-royal-500/25"
         )}
       >
         {destaque && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-royal-500 to-royal-700 text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-royal-500 via-royal-550 to-royal-700 text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
             Mais popular
           </div>
         )}
         <div className="mb-4">
           <h3 className="text-lg font-semibold text-slate-100">{nome}</h3>
           {descricao && (
-            <p className="text-sm text-slate-400 mt-1">{descricao}</p>
+            <p className="text-sm text-slate-500 mt-1">{descricao}</p>
           )}
         </div>
         <div className="mb-6">
           <div className="flex items-baseline gap-1">
             <span className="text-3xl font-bold text-slate-100">{formatBRL(valorMensal)}</span>
-            <span className="text-sm text-slate-400">/mês</span>
+            <span className="text-sm text-slate-500">/mês</span>
           </div>
         </div>
         <ul className="space-y-2.5 mb-6 flex-1">
           {features.map((f, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+            <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
               <Check className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0 icon-pop" />
               <span>{f}</span>
             </li>

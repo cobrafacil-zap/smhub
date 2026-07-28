@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ENTRY_STATUS, ENTRY_TIPO_LABEL } from "@/lib/constants";
 import { clienteAprovarEntradaAction } from "@/lib/actions/cliente-convite-actions";
-import { formatLongDate } from "@/lib/calendar";
+import { formatDayWeekday } from "@/lib/calendar";
 import { toast } from "sonner";
 import {
   Check,
@@ -100,10 +100,26 @@ export function EntradaAprovacaoCard({ entrada, showApproveActions = true }: Pro
             <CalendarIcon className="h-4 w-4 text-royal-300" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-slate-100 truncate">{entrada.titulo}</p>
-            <p className="text-[11px] text-slate-500 truncate">
-              {formatLongDate(entrada.data)} • {tipoLabel}
+            <p className="font-semibold text-slate-100 leading-tight">
+              {formatDayWeekday(entrada.data)}
             </p>
+            {/* Tema/descrição: o título do post, sem truncate (até 2 linhas). */}
+            <p className="text-sm text-slate-200 line-clamp-2 leading-snug mt-0.5">
+              {entrada.titulo}
+            </p>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <Badge variant="brand" className="!text-[10px] !px-1.5 !py-0">
+                {tipoLabel}
+              </Badge>
+              {entrada.estilo && (
+                <Badge
+                  variant="default"
+                  className="!text-[10px] !px-1.5 !py-0 bg-royal-500/10 text-royal-200 border-royal-500/30"
+                >
+                  {entrada.estilo}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -120,28 +136,8 @@ export function EntradaAprovacaoCard({ entrada, showApproveActions = true }: Pro
 
       {expandido && (
         <div className="px-4 pb-4 space-y-4 border-t border-border">
-          {/* Tema / categoria (estilo) */}
-          {entrada.estilo && (
-            <div className="pt-3 flex items-center gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                Tema
-              </span>
-              <Badge variant="default" className="bg-royal-500/10 text-royal-200 border-royal-500/30">
-                {entrada.estilo}
-              </Badge>
-            </div>
-          )}
-
-          {/* Formato */}
-          <div className={entrada.estilo ? "flex items-center gap-2" : "pt-3 flex items-center gap-2"}>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-              Formato
-            </span>
-            <Badge variant="brand">{tipoLabel}</Badge>
-          </div>
-
           {/* Arte (mídia) — separada do texto da legenda */}
-          <div>
+          <div className="pt-3">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1">
               <ImageIcon className="h-3 w-3" /> Arte
             </p>

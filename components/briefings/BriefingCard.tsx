@@ -141,7 +141,7 @@ export function BriefingCard({
               <button
                 type="button"
                 onClick={() => setVer(false)}
-                className="p-1.5 rounded text-slate-400 hover:text-slate-100 hover:bg-bg-elevated shrink-0"
+                className="p-1.5 rounded text-slate-400 hover:text-royal-300 hover:bg-bg-elevated shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -177,7 +177,7 @@ export function BriefingCard({
               <button
                 type="button"
                 onClick={() => setVer(false)}
-                className="text-sm text-slate-300 hover:text-slate-100 px-3 py-1.5 rounded-md border border-border hover:bg-bg-elevated"
+                className="text-sm text-slate-400 hover:text-royal-300 px-3 py-1.5 rounded-md border border-border hover:bg-bg-elevated"
               >
                 Fechar
               </button>

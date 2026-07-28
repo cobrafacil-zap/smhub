@@ -62,7 +62,7 @@ export default async function AgenciasPage() {
         actions={
           <Link
             href="/super-admin/agencias/novo"
-            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-md bg-royal-500 hover:bg-royal-600 text-white transition"
+            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-md bg-gradient-to-r from-royal-500 via-royal-550 to-royal-700 hover:from-royal-600 hover:via-royal-600 hover:to-royal-800 text-white transition"
           >
             <Plus className="h-4 w-4" />
             Nova agência

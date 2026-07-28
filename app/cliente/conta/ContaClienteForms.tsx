@@ -192,7 +192,7 @@ export function EmpresaInfoForm({
                   <button
                     type="button"
                     onClick={() => setRevealed((r) => ({ ...r, [i]: !r[i] }))}
-                    className="p-2 rounded text-slate-400 hover:text-slate-100 shrink-0"
+                    className="p-2 rounded text-slate-400 hover:text-royal-300 shrink-0"
                     title={revealed[i] ? "Ocultar" : "Mostrar"}
                   >
                     {revealed[i] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

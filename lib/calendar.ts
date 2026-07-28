@@ -67,3 +67,13 @@ export function formatLongDate(dateStr: string): string {
   const day = String(d).padStart(2, "0");
   return `${weekday}, ${day} de ${month}`;
 }
+
+/** Data curta p/ cabeçalho de card. Ex: "23/08 (Qui)". */
+export function formatDayWeekday(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dObj = new Date(y, m - 1, d);
+  const weekday = WEEKDAYS_PT[dObj.getDay()];
+  const day = String(d).padStart(2, "0");
+  const month = String(m).padStart(2, "0");
+  return `${day}/${month} (${weekday})`;
+}

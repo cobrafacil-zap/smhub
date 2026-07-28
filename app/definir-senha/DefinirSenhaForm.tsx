@@ -29,7 +29,7 @@ export function DefinirSenhaForm({ token }: { token: string }) {
         </p>
         <Link
           href="/login"
-          className="block w-full text-center bg-royal-500 hover:bg-royal-600 text-white font-medium rounded-lg py-2.5"
+          className="block w-full text-center bg-gradient-to-r from-royal-500 via-royal-550 to-royal-700 hover:from-royal-600 hover:via-royal-600 hover:to-royal-800 text-white font-medium rounded-lg py-2.5"
         >
           Ir para o login
         </Link>

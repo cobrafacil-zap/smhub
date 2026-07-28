@@ -27,7 +27,7 @@ export default async function AtivarContaPage({
         <Card className="max-w-md w-full text-center">
           <Logo variant="full" className="!h-10 mx-auto mb-4" />
           <h1 className="text-lg font-semibold text-slate-100 mb-2">Link inválido</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Este link não existe ou foi removido. Verifique o e-mail recebido.
           </p>
         </Card>
@@ -41,7 +41,7 @@ export default async function AtivarContaPage({
         <Card className="max-w-md w-full text-center">
           <Logo variant="full" className="!h-10 mx-auto mb-4" />
           <h1 className="text-lg font-semibold text-slate-100 mb-2">Conta já ativada</h1>
-          <p className="text-sm text-slate-400 mb-4">
+          <p className="text-sm text-slate-500 mb-4">
             Esta conta já foi ativada. Você pode entrar diretamente.
           </p>
           <a href="/login" className="text-royal-300 hover:text-royal-200 text-sm font-medium">
@@ -58,7 +58,7 @@ export default async function AtivarContaPage({
         <Card className="max-w-md w-full text-center">
           <Logo variant="full" className="!h-10 mx-auto mb-4" />
           <h1 className="text-lg font-semibold text-slate-100 mb-2">Link expirado</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Este link expirou. Entre em contato com o suporte para gerar um novo.
           </p>
         </Card>
@@ -75,7 +75,7 @@ export default async function AtivarContaPage({
         </div>
         <Card>
           <h1 className="text-xl font-semibold text-slate-100">Bem-vindo à SM Hub!</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Confirme os dados da sua agência e defina sua senha para começar.
           </p>
           <div className="mt-6">

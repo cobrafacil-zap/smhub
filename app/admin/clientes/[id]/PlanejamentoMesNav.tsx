@@ -45,7 +45,7 @@ export function PlanejamentoMesNav({
       <button
         type="button"
         onClick={() => irPara(adicionarMes(mesAtivo, -1))}
-        className="p-1.5 rounded text-slate-400 hover:text-slate-100 hover:bg-bg-muted"
+        className="p-1.5 rounded text-slate-400 hover:text-royal-300 hover:bg-bg-muted"
         title="Mês anterior"
       >
         <ChevronLeft className="h-4 w-4" />
@@ -60,7 +60,7 @@ export function PlanejamentoMesNav({
       <button
         type="button"
         onClick={() => irPara(adicionarMes(mesAtivo, 1))}
-        className="p-1.5 rounded text-slate-400 hover:text-slate-100 hover:bg-bg-muted"
+        className="p-1.5 rounded text-slate-400 hover:text-royal-300 hover:bg-bg-muted"
         title="Próximo mês"
       >
         <ChevronRight className="h-4 w-4" />

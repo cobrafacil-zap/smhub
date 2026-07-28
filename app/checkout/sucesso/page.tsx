@@ -16,7 +16,7 @@ export default function CheckoutSucessoPage() {
         <Card>
           <div className="text-center">
             <h1 className="text-xl font-semibold text-slate-100">Pagamento aprovado!</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Estamos processando sua assinatura. Isso leva apenas alguns segundos.
             </p>
             <div className="mt-6">

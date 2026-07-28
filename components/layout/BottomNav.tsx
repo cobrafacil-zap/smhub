@@ -73,7 +73,9 @@ export function BottomNav({
   const key = variant === "admin" && role === "membro_equipe" ? "admin-membro" : variant;
   const items = ITEMS[key as "admin" | "admin-membro" | "cliente" | "super-admin"];
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-bg-surface/95 backdrop-blur border-t border-border">
+    <nav
+      className="lg:hidden border-t border-border bg-bg-surface/95 backdrop-blur pb-[env(safe-area-inset-bottom)]"
+    >
       <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((item) => {
           const Icon = item.icon;
@@ -83,21 +85,21 @@ export function BottomNav({
               key={item.href}
               href={item.href}
               className={cn(
-                "group relative flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors",
-                active ? "text-royal-300" : "text-slate-500 hover:text-slate-300"
+                "group relative flex flex-col items-center justify-center gap-1.5 py-3 text-[11px] font-medium transition-colors",
+                active ? "text-royal-300" : "text-slate-500 hover:text-royal-300"
               )}
             >
               <span
                 aria-hidden
                 className={cn(
-                  "absolute top-1 h-1 w-1 rounded-full bg-royal-400 transition-transform duration-300",
+                  "absolute top-1.5 h-1 w-1 rounded-full bg-royal-400 transition-transform duration-300",
                   active ? "scale-100" : "scale-0"
                 )}
               />
               <Icon
                 className={cn(
-                  "h-5 w-5 transition-transform duration-300",
-                  active ? "scale-110" : "group-hover:scale-110"
+                  "h-6 w-6 transition-transform duration-300",
+                  active ? "scale-110 text-royal-300" : "group-hover:scale-110 group-hover:text-royal-300"
                 )}
               />
               {item.label}

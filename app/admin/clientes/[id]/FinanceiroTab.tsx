@@ -82,7 +82,7 @@ export async function FinanceiroTab({ cliente }: { cliente: Cliente }) {
 
       <Card className="!p-0">
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-300">Faturas do cliente</h3>
+          <h3 className="text-sm font-semibold text-slate-400">Faturas do cliente</h3>
           <p className="text-[11px] text-slate-500 inline-flex items-center gap-1">
             <Paperclip className="h-3 w-3" />
             Clique em "Anexar" para enviar boleto / NF
@@ -129,7 +129,7 @@ export async function FinanceiroTab({ cliente }: { cliente: Cliente }) {
             <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-slate-400 border-b border-border">
+                <tr className="text-left text-slate-500 border-b border-border">
                   <th className="px-4 py-2 font-medium">Número</th>
                   <th className="px-4 py-2 font-medium">Vencimento</th>
                   <th className="px-4 py-2 font-medium">Valor</th>
@@ -147,7 +147,7 @@ export async function FinanceiroTab({ cliente }: { cliente: Cliente }) {
                       <td className="px-4 py-2 text-slate-200 font-mono text-xs">
                         {f.numero ?? "—"}
                       </td>
-                      <td className="px-4 py-2 text-slate-300">{formatDate(f.data_vencimento)}</td>
+                      <td className="px-4 py-2 text-slate-200">{formatDate(f.data_vencimento)}</td>
                       <td className="px-4 py-2 text-slate-100 font-semibold">{formatBRL(f.valor)}</td>
                       <td className="px-4 py-2">
                         <Badge variant={st.color}>{st.label}</Badge>

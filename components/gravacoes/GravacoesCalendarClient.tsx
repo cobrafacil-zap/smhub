@@ -284,7 +284,7 @@ function GravacaoDialog({
           <h2 className="text-base font-semibold text-slate-100">
             {editing ? "Editar gravação" : "Nova gravação"}
           </h2>
-          <button type="button" onClick={handleClose} className="text-slate-400 hover:text-slate-200">
+          <button type="button" onClick={handleClose} className="text-slate-400 hover:text-royal-200">
             <X className="h-5 w-5" />
           </button>
         </div>

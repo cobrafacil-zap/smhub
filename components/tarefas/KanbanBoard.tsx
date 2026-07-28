@@ -325,7 +325,7 @@ export function KanbanBoard({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="w-full text-xs text-slate-400 hover:text-slate-200"
+                              className="w-full text-xs text-slate-400 hover:text-royal-200"
                               onClick={() => {
                                 const next = new Set(expandedGroups);
                                 if (next.has(groupKey)) next.delete(groupKey);
@@ -421,7 +421,7 @@ export function KanbanBoard({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="w-full text-xs text-slate-400 hover:text-slate-200"
+                                  className="w-full text-xs text-slate-400 hover:text-royal-200"
                                   onClick={() => {
                                     const next = new Set(expandedGroups);
                                     if (next.has(groupKey)) next.delete(groupKey);

@@ -137,7 +137,7 @@ export function CredenciaisAcesso({
                           <button
                             type="button"
                             onClick={() => setRevealed({ ...revealed, [idx]: !revealed[idx] })}
-                            className="p-1 rounded text-slate-400 hover:text-slate-100"
+                            className="p-1 rounded text-slate-400 hover:text-royal-300"
                             title={revealed[idx] ? "Ocultar" : "Mostrar"}
                           >
                             {revealed[idx] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}

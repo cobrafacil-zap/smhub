@@ -32,7 +32,7 @@ const PRIORIDADE_LABEL: Record<string, string> = {
 
 function avatarColor(nome: string) {
   const colors = [
-    "from-royal-500 to-royal-700",
+    "from-royal-500 via-royal-550 to-royal-700",
     "from-emerald-500 to-emerald-700",
     "from-amber-500 to-amber-700",
     "from-pink-500 to-pink-700",
@@ -234,7 +234,7 @@ export function TarefaCard({
             stop(e);
             mover(STATUS_ORDEM[idx - 1]);
           }}
-          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300 disabled:opacity-30 disabled:hover:bg-transparent"
           title="Mover para a coluna anterior"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -250,7 +250,7 @@ export function TarefaCard({
             stop(e);
             mover(STATUS_ORDEM[idx + 1]);
           }}
-          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300 disabled:opacity-30 disabled:hover:bg-transparent"
           title="Mover para a próxima coluna"
         >
           <ChevronRight className="h-4 w-4" />
@@ -272,7 +272,7 @@ export function TarefaCard({
               stop(e);
               onEdit(tarefa);
             }}
-            className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100"
+            className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300"
             title="Editar"
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -286,7 +286,7 @@ export function TarefaCard({
             stop(e);
             arquivar(!tarefa.arquivado);
           }}
-          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-slate-100"
+          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300"
           title={tarefa.arquivado ? "Desarquivar" : "Arquivar"}
         >
           {tarefa.arquivado ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}

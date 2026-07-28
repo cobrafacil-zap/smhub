@@ -50,11 +50,11 @@ export default async function AdminLayout({
         <Suspense fallback={null}>
           <AssinaturaBannerAsync aid={aid} />
         </Suspense>
-        <main className="flex-1 px-4 lg:px-6 py-6 pb-20 lg:pb-6">
+        <main className="flex-1 px-4 lg:px-6 py-6">
           <PageTransition>{children}</PageTransition>
         </main>
+        <BottomNav role={session.profile.role as "admin_agencia" | "membro_equipe"} />
       </div>
-      <BottomNav role={session.profile.role as "admin_agencia" | "membro_equipe"} />
     </div>
   );
 }

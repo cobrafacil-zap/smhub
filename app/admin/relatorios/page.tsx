@@ -74,16 +74,16 @@ export default async function RelatoriosPage() {
                     <td className="px-4 py-3 text-slate-100 font-medium">
                       {r.cliente?.nome_empresa ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-4 py-3 text-slate-200">
                       {new Date(r.mes_referencia).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="brand">{PLATAFORMA_LABELS[r.plataforma] ?? r.plataforma}</Badge>
                     </td>
-                    <td className="px-4 py-3 text-slate-300 text-right">
+                    <td className="px-4 py-3 text-slate-200 text-right">
                       <CountUp value={Number(r.alcance_total) || 0} />
                     </td>
-                    <td className="px-4 py-3 text-slate-300 text-right">
+                    <td className="px-4 py-3 text-slate-200 text-right">
                       <CountUp value={Number(r.leads_validados) || 0} />
                     </td>
                     <td className="px-4 py-3 text-slate-100 text-right font-semibold">

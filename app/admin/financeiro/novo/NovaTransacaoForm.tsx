@@ -62,7 +62,7 @@ export function NovaTransacaoForm() {
               <option value="pago">Pago</option>
             </select>
             <p className="text-[11px] text-slate-500 mt-1">
-              Marcar como <strong className="text-slate-300">Pago</strong> faz a receita entrar
+              Marcar como <strong className="text-slate-200">Pago</strong> faz a receita entrar
               no KPI &ldquo;Receita do mês&rdquo; do dashboard imediatamente.
             </p>
           </div>
@@ -120,7 +120,7 @@ export function NovaTransacaoForm() {
                   required
                 />
                 <span className="text-[11px] text-slate-500">
-                  Cada parcela vence mensalmente a partir da data acima. Status inicial: <strong className="text-slate-300">pendente</strong>.
+                  Cada parcela vence mensalmente a partir da data acima. Status inicial: <strong className="text-slate-200">pendente</strong>.
                 </span>
               </div>
             )}

@@ -77,7 +77,7 @@ export function FaturaArquivosCell({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="p-0.5 rounded text-slate-400 hover:text-slate-100"
+              className="p-0.5 rounded text-slate-400 hover:text-royal-300"
             >
               <X className="h-3.5 w-3.5" />
             </button>

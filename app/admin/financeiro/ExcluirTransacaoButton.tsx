@@ -107,7 +107,7 @@ export function ExcluirTransacaoButton({
               type="button"
               onClick={() => setOpen(false)}
               disabled={pending}
-              className="px-3 py-1.5 text-sm rounded-md text-slate-300 hover:bg-bg-elevated disabled:opacity-50"
+              className="px-3 py-1.5 text-sm rounded-md text-slate-400 hover:bg-bg-elevated disabled:opacity-50"
             >
               Cancelar
             </button>

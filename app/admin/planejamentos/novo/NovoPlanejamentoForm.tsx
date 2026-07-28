@@ -117,7 +117,7 @@ export function NovoPlanejamentoForm({ clientes }: { clientes: Pick<Cliente, "id
           {clienteSelecionado && (
             <div className="rounded-md bg-bg-elevated/40 border border-border px-3 py-2 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-success-400" />
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-slate-400">
                 Será criado o planejamento de <strong className="text-slate-100">{mesLabel}</strong>{" "}
                 para <strong className="text-slate-100">{clienteSelecionado.nome_empresa}</strong>.
               </p>

@@ -190,7 +190,7 @@ export async function ContratosTab({ cliente }: { cliente: Cliente }) {
                         </>
                       )}
                       {c.valor_mensal && (
-                        <> • <span className="text-slate-300">{formatBRL(c.valor_mensal)} / mês</span></>
+                        <> • <span className="text-slate-200">{formatBRL(c.valor_mensal)} / mês</span></>
                       )}
                       {c.duracao_meses && <> • {c.duracao_meses} meses</>}
                     </p>

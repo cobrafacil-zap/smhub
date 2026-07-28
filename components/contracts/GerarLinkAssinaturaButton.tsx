@@ -15,7 +15,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     <button
       type="submit"
       disabled={pending || disabled}
-      className="inline-flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-md bg-royal-500 hover:bg-royal-600 text-white disabled:opacity-50 transition"
+      className="inline-flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-md bg-gradient-to-r from-royal-500 via-royal-550 to-royal-700 hover:from-royal-600 hover:via-royal-600 hover:to-royal-800 text-white disabled:opacity-50 transition"
     >
       <Link2 className="h-4 w-4" />
       {pending ? "Gerando..." : "Gerar link para o cliente assinar"}
@@ -81,17 +81,17 @@ export function GerarLinkAssinaturaButton({ contratoId }: { contratoId: string }
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="p-1.5 rounded text-slate-400 hover:text-slate-100 hover:bg-bg-elevated"
+                className="p-1.5 rounded text-slate-400 hover:text-royal-300 hover:bg-bg-elevated"
                 title="Fechar"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 mt-3">
+            <p className="text-xs text-slate-500 mt-3">
               Ao abrir o link, o cliente vê o contrato, digita o nome e desenha a assinatura
               digital, que é registrada no contrato com IP, hash e timestamp.
-              <strong className="text-slate-300"> Expira em {success.expiraEm}.</strong>
+              <strong className="text-slate-200"> Expira em {success.expiraEm}.</strong>
             </p>
 
             <div className="rounded-md bg-bg-elevated border border-border p-3 mt-3">

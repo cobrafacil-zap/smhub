@@ -195,7 +195,7 @@ export default async function PlanosPage() {
       {/* Planos disponíveis */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-slate-300">Planos disponíveis</h2>
+          <h2 className="text-sm font-semibold text-slate-400">Planos disponíveis</h2>
         </div>
         {planosList.length === 0 ? (
           <Card>
@@ -229,7 +229,7 @@ export default async function PlanosPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-royal-300" />
-            <p className="text-sm text-slate-300">
+            <p className="text-sm text-slate-400">
               Pagamento mensal via cartão, PIX ou boleto. Cancele quando quiser.
             </p>
           </div>

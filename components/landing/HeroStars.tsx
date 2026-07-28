@@ -43,8 +43,8 @@ export function HeroStars() {
     const isDark = document.documentElement.classList.contains("dark");
 
     const colors = isDark
-      ? ["#a8b4ff", "#8797ff", "#c3cfff", "#586cf0", "#ffffff"]
-      : ["#6b7cff", "#8797ff", "#4f5bff", "#586cf0", "#a8b4ff"];
+      ? ["#c4b5fd", "#a78bfa", "#8b5cf6", "#7c3aed", "#f5f3ff"]
+      : ["#8b5cf6", "#7c3aed", "#6d28d9", "#a78bfa", "#f5f3ff"];
 
     const createStars = () => {
       const mobile = width < 768;
@@ -160,8 +160,8 @@ export function HeroStars() {
         const tailY = shooting.y - shooting.vy * (shooting.length / shooting.vy);
 
         const grad = ctx.createLinearGradient(shooting.x, shooting.y, tailX, tailY);
-        grad.addColorStop(0, "rgba(191, 212, 255, " + opacity + ")");
-        grad.addColorStop(1, "rgba(191, 212, 255, 0)");
+        grad.addColorStop(0, "rgba(221, 214, 254, " + opacity + ")");
+        grad.addColorStop(1, "rgba(221, 214, 254, 0)");
 
         ctx.beginPath();
         ctx.moveTo(shooting.x, shooting.y);
@@ -171,7 +171,7 @@ export function HeroStars() {
         ctx.lineCap = "round";
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 8;
-        ctx.shadowColor = "#bfd4ff";
+        ctx.shadowColor = "#ddd6fe";
         ctx.stroke();
 
         if (shooting.life >= shooting.maxLife || shooting.x > width + 100 || shooting.y > height + 100) {

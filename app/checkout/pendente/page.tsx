@@ -16,21 +16,21 @@ export default function CheckoutPendentePage() {
           <div className="text-center">
             <Clock className="h-10 w-10 text-warning-400 mx-auto mb-3" />
             <h1 className="text-xl font-semibold text-slate-100">Pagamento pendente</h1>
-            <p className="text-sm text-slate-400 mt-2">
+            <p className="text-sm text-slate-500 mt-2">
               Recebemos seu pedido e estamos aguardando a confirmação do pagamento.
             </p>
-            <div className="mt-4 p-3 rounded-lg bg-bg-elevated/50 text-xs text-slate-300 text-left">
-              <p><strong>Boleto:</strong> pode levar até 3 dias úteis.</p>
-              <p className="mt-1"><strong>PIX:</strong> a confirmação costuma ser instantânea.</p>
+            <div className="mt-4 p-3 rounded-lg bg-bg-elevated/50 text-xs text-slate-400 text-left">
+              <p><strong className="text-slate-200">Boleto:</strong> pode levar até 3 dias úteis.</p>
+              <p className="mt-1"><strong className="text-slate-200">PIX:</strong> a confirmação costuma ser instantânea.</p>
             </div>
-            <p className="text-sm text-slate-400 mt-3">
+            <p className="text-sm text-slate-500 mt-3">
               Assim que o pagamento for confirmado, sua conta será ativada automaticamente
               e você receberá um e-mail com as instruções de acesso.
             </p>
             <div className="mt-6">
               <Link
                 href="/"
-                className="block w-full text-center bg-bg-elevated border border-border text-slate-200 font-medium rounded-lg py-2.5 hover:bg-bg-muted"
+                className="block w-full text-center bg-bg-elevated border border-border text-slate-200 font-medium rounded-lg py-2.5 hover:bg-bg-muted hover:text-royal-300"
               >
                 Voltar para a página inicial
               </Link>

@@ -150,7 +150,7 @@ export function TarefaDialog({
           <h2 className="text-base font-semibold text-slate-100">
             {editing ? "Editar tarefa" : "Nova tarefa"}
           </h2>
-          <button type="button" onClick={handleClose} className="text-slate-400 hover:text-slate-200">
+          <button type="button" onClick={handleClose} className="text-slate-400 hover:text-royal-200">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -309,7 +309,7 @@ export function TarefaDialog({
                     setNovoGrupoClienteId("");
                     setNovoGrupoData("");
                   }}
-                  className="text-xs text-slate-400 hover:text-slate-200"
+                  className="text-xs text-slate-400 hover:text-royal-200"
                 >
                   Cancelar
                 </button>
@@ -332,7 +332,7 @@ export function TarefaDialog({
               return (
                 <label
                   key={m.id}
-                  className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer hover:text-slate-100"
+                  className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer hover:text-royal-300"
                 >
                   <input
                     type="checkbox"
