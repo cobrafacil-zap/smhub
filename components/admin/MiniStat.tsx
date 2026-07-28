@@ -63,7 +63,7 @@ export function MiniStat({ label, value, icon, tone = "default", hint }: MiniSta
       <p className="text-lg sm:text-xl font-bold text-slate-100 leading-tight break-words kpi-num">
         {isNumber ? <CountUp value={value as number} /> : value}
       </p>
-      {hint && <p className="text-[11px] text-slate-500">{hint}</p>}
+      {hint && <p className="text-[11px] text-slate-400">{hint}</p>}
     </Reveal>
   );
 }

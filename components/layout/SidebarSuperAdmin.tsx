@@ -47,7 +47,8 @@ export function SidebarSuperAdmin({ userName }: { userName: string }) {
         </p>
         {items.map((item) => {
           const Icon = item.icon as ComponentType<{ className?: string }>;
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isRoot = item.href.split("/").length === 2;
+          const active = pathname === item.href || (!isRoot && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.href}

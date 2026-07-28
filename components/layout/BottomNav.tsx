@@ -79,7 +79,8 @@ export function BottomNav({
       <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isRoot = item.href.split("/").length === 2;
+          const active = pathname === item.href || (!isRoot && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.href}

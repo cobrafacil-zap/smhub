@@ -121,7 +121,8 @@ export function SidebarAdmin({
             <div className="space-y-0.5">
               {items.map((item) => {
                 const Icon = item.icon;
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const isRoot = item.href.split("/").length === 2;
+                const active = pathname === item.href || (!isRoot && pathname.startsWith(`${item.href}/`));
                 return (
                   <Link
                     key={item.href}

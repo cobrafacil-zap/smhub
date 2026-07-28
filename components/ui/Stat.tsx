@@ -99,7 +99,7 @@ export function Stat({
             {trend.suffix}
           </span>
         )}
-        {hint && <span className="text-slate-500">{hint}</span>}
+        {hint && <span className="text-slate-400">{hint}</span>}
       </div>
     </Reveal>
   );
