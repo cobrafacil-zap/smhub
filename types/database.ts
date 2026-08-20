@@ -34,7 +34,16 @@ export interface PlatformConfig {
 export type AgenciaStatus = "ativa" | "suspensa" | "cancelada";
 export type UserRole = "super_admin" | "admin_agencia" | "membro_equipe" | "cliente";
 export type ClienteStatus = "ativo" | "inativo" | "pausado";
-export type TarefaStatus = "destinada" | "em_andamento" | "pronta" | "entregue";
+/**
+ * Slug canônico de uma coluna do quadro de tarefas (migration 0040).
+ * Mantido como union dos 4 valores históricos pra dar autocomplete e
+ * checagem em código. Colunas extras criadas pelo admin recebem slug
+ * `custom-<uuid>` (ver migration 0040).
+ */
+export type TarefaColunaSlug = "destinada" | "em_andamento" | "pronta" | "entregue";
+
+/** @deprecated desde migration 0040. Mantido só para referência histórica. */
+export type TarefaStatus = TarefaColunaSlug;
 export type TarefaPrioridade = "baixa" | "media" | "alta" | "urgente";
 export type GravacaoStatus = "agendada" | "confirmada" | "concluida" | "cancelada";
 export type PlanejamentoStatus = "rascunho" | "aprovado" | "em_execucao" | "concluido";
@@ -303,7 +312,8 @@ export interface Database {
           criado_por: string | null;
           titulo: string;
           descricao: string | null;
-          status: TarefaStatus;
+          /** Coluna do quadro (FK para tarefa_colunas) — substituiu o `status` TEXT da migration 0040. */
+          tarefa_coluna_id: string;
           prioridade: TarefaPrioridade;
           prazo: string | null;
           ordem: number;
@@ -321,7 +331,7 @@ export interface Database {
           criado_por?: string | null;
           titulo: string;
           descricao?: string | null;
-          status?: TarefaStatus;
+          tarefa_coluna_id: string;
           prioridade?: TarefaPrioridade;
           prazo?: string | null;
           ordem?: number;
@@ -394,6 +404,31 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["tarefa_grupos"]["Insert"]>;
+      };
+      tarefa_colunas: {
+        Row: {
+          id: string;
+          agencia_id: string;
+          quadro_id: string;
+          slug: string;
+          nome: string;
+          ordem: number;
+          arquivada: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agencia_id: string;
+          quadro_id: string;
+          slug: string;
+          nome: string;
+          ordem?: number;
+          arquivada?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefa_colunas"]["Insert"]>;
       };
       gravacoes: {
         Row: {
@@ -842,6 +877,7 @@ export type TarefaResponsavel =
   Database["public"]["Tables"]["tarefa_responsaveis"]["Row"];
 export type TarefaQuadro = Database["public"]["Tables"]["tarefa_quadros"]["Row"];
 export type TarefaGrupo = Database["public"]["Tables"]["tarefa_grupos"]["Row"];
+export type TarefaColuna = Database["public"]["Tables"]["tarefa_colunas"]["Row"];
 export type Gravacao = Database["public"]["Tables"]["gravacoes"]["Row"];
 export type PlanejamentoEntrada =
   Database["public"]["Tables"]["planejamento_entradas"]["Row"];

@@ -4,18 +4,22 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireAgenciaMember } from "@/lib/auth/session";
-import type { TarefaPrioridade, TarefaStatus } from "@/types/database";
+import type { TarefaPrioridade } from "@/types/database";
 
 // ============================================================================
 // SCHEMAS
 // ============================================================================
-const STATUS_VALUES: TarefaStatus[] = ["destinada", "em_andamento", "pronta", "entregue"];
+// Slugs canônicos da coluna (mesmo conjunto do enum antigo). A migration 0040
+// também aceita `custom-<uuid>` pra colunas extras, mas pra validação no
+// form-data usamos o conjunto fechado — colunas custom são criadas pela
+// action de coluna e já existem no banco antes de uma tarefa apontar pra elas.
+const COLUNA_SLUGS = ["destinada", "em_andamento", "pronta", "entregue"] as const;
 const PRIORIDADE_VALUES: TarefaPrioridade[] = ["baixa", "media", "alta", "urgente"];
 
 const tarefaSchema = z.object({
   titulo: z.string().min(2, "Título é obrigatório."),
   descricao: z.string().optional().nullable(),
-  status: z.enum(STATUS_VALUES as [string, ...string[]]).default("destinada"),
+  tarefa_coluna_id: z.string().uuid("Coluna inválida."),
   prioridade: z.enum(PRIORIDADE_VALUES as [string, ...string[]]).default("media"),
   prazo: z.string().optional().nullable(),
   cliente_id: z.string().uuid().optional().nullable(),
@@ -27,7 +31,7 @@ const tarefaSchema = z.object({
 export type TarefaState = { error?: string; ok?: boolean } | undefined;
 
 // ============================================================================
-// HELPER
+// HELPERS
 // ============================================================================
 //
 // Valida que o `quadro_id` enviado pertence à agência. Se não vier, usa o
@@ -57,6 +61,24 @@ async function resolverQuadroId(
     .limit(1)
     .maybeSingle();
   return geral?.id ?? null;
+}
+
+/** Valida que `colunaId` pertence à agência E ao quadro passado. */
+async function resolverColunaId(
+  supabase: ReturnType<typeof createClient>,
+  aid: string,
+  colunaId: string | null | undefined,
+  quadroId: string
+): Promise<string | null | false> {
+  if (!colunaId) return null;
+  const { data } = await supabase
+    .from("tarefa_colunas")
+    .select("id, agencia_id, quadro_id")
+    .eq("id", colunaId)
+    .maybeSingle();
+  if (!data || data.agencia_id !== aid) return false;
+  if (data.quadro_id !== quadroId) return false;
+  return data.id;
 }
 
 // Valida que `grupoId` (se enviado) pertence à agência E ao quadro
@@ -102,7 +124,7 @@ export async function criarTarefaAction(
   const parsed = tarefaSchema.safeParse({
     titulo: formData.get("titulo"),
     descricao: formData.get("descricao") || null,
-    status: formData.get("status") || "destinada",
+    tarefa_coluna_id: formData.get("tarefa_coluna_id") || null,
     prioridade: formData.get("prioridade") || "media",
     prazo: formData.get("prazo") || null,
     cliente_id: formData.get("cliente_id") || null,
@@ -118,6 +140,18 @@ export async function criarTarefaAction(
   if (!quadroId) {
     return { error: "Nenhum quadro disponível. Recarregue a página." };
   }
+  const colunaId = await resolverColunaId(
+    supabase,
+    aid,
+    parsed.data.tarefa_coluna_id,
+    quadroId
+  );
+  if (colunaId === false) {
+    return { error: "Coluna inválida (não pertence ao quadro)." };
+  }
+  if (!colunaId) {
+    return { error: "Selecione uma coluna para a tarefa." };
+  }
   const grupoId = await resolverGrupoId(supabase, aid, parsed.data.grupo_id, quadroId);
   if (grupoId === false) {
     return { error: "Agrupamento inválido." };
@@ -131,7 +165,7 @@ export async function criarTarefaAction(
       criado_por: session.profile.id,
       titulo: parsed.data.titulo,
       descricao: parsed.data.descricao ?? null,
-      status: parsed.data.status as TarefaStatus,
+      tarefa_coluna_id: colunaId,
       prioridade: parsed.data.prioridade as TarefaPrioridade,
       prazo: parsed.data.prazo || null,
       quadro_id: quadroId,
@@ -170,7 +204,7 @@ export async function atualizarTarefaAction(
 ): Promise<TarefaState> {
   const session = await requireAgenciaMember();
   // Só admin edita a tarefa (título, atribuição de responsáveis etc.).
-  // Membros continuam podendo MOVER (mudar status) via moverTarefaAction.
+  // Membros continuam podendo MOVER (mudar coluna) via moverTarefaAction.
   if (session.profile.role !== "admin_agencia") {
     return { error: "Apenas administradores podem editar tarefas." };
   }
@@ -184,7 +218,7 @@ export async function atualizarTarefaAction(
   const parsed = tarefaSchema.safeParse({
     titulo: formData.get("titulo"),
     descricao: formData.get("descricao") || null,
-    status: formData.get("status") || "destinada",
+    tarefa_coluna_id: formData.get("tarefa_coluna_id") || null,
     prioridade: formData.get("prioridade") || "media",
     prazo: formData.get("prazo") || null,
     cliente_id: formData.get("cliente_id") || null,
@@ -200,6 +234,18 @@ export async function atualizarTarefaAction(
   if (!quadroId) {
     return { error: "Quadro inválido." };
   }
+  const colunaId = await resolverColunaId(
+    supabase,
+    aid,
+    parsed.data.tarefa_coluna_id,
+    quadroId
+  );
+  if (colunaId === false) {
+    return { error: "Coluna inválida (não pertence ao quadro)." };
+  }
+  if (!colunaId) {
+    return { error: "Selecione uma coluna para a tarefa." };
+  }
   const grupoId = await resolverGrupoId(supabase, aid, parsed.data.grupo_id, quadroId);
   if (grupoId === false) {
     return { error: "Agrupamento inválido." };
@@ -210,7 +256,7 @@ export async function atualizarTarefaAction(
     .update({
       titulo: parsed.data.titulo,
       descricao: parsed.data.descricao ?? null,
-      status: parsed.data.status as TarefaStatus,
+      tarefa_coluna_id: colunaId,
       prioridade: parsed.data.prioridade as TarefaPrioridade,
       prazo: parsed.data.prazo || null,
       cliente_id: parsed.data.cliente_id ?? null,
@@ -238,27 +284,43 @@ export async function atualizarTarefaAction(
 }
 
 // ============================================================================
-// MOVER (mudar status = coluna do kanban)
+// MOVER (mudar coluna do kanban)
 //
-// A action altera APENAS o status. O prazo é independente e representa
-// "data prevista" — não a data de conclusão. Ao mover para "entregue", o
-// prazo definido antes (ex: 06/08/2026) é preservado, em vez de ser
-// sobrescrito pela data de hoje. Isso mantém a tarefa visível no período
-// que o usuário está inspecionando (semana anterior, atual, próxima).
-// Mover de volta para outro status também não mexe no prazo.
+// Recebe o `tarefa_coluna_id` (UUID) da coluna de destino. Valida que a
+// coluna pertence à agência e ao quadro atual da tarefa — assim a action
+// recusa mover entre quadros diferentes (o KanbanBoard passa a coluna do
+// mesmo quadro selecionado).
 // ============================================================================
-export async function moverTarefaAction(id: string, status: string): Promise<TarefaState> {
+export async function moverTarefaAction(
+  id: string,
+  colunaId: string
+): Promise<TarefaState> {
   const session = await requireAgenciaMember();
   const supabase = createClient();
   const aid = session.profile.agencia_id!;
 
-  if (!STATUS_VALUES.includes(status as TarefaStatus)) {
-    return { error: "Status inválido." };
+  if (!/^[0-9a-f-]{36}$/i.test(colunaId)) {
+    return { error: "Coluna inválida." };
+  }
+
+  // Busca a tarefa pra saber o quadro.
+  const { data: tarefa } = await supabase
+    .from("tarefas")
+    .select("id, quadro_id")
+    .eq("id", id)
+    .eq("agencia_id", aid)
+    .maybeSingle();
+  if (!tarefa) return { error: "Tarefa não encontrada." };
+
+  // Valida que a coluna alvo pertence ao quadro da tarefa.
+  const valid = await resolverColunaId(supabase, aid, colunaId, tarefa.quadro_id);
+  if (!valid) {
+    return { error: "Coluna inválida (não pertence ao quadro da tarefa)." };
   }
 
   const { error } = await supabase
     .from("tarefas")
-    .update({ status: status as TarefaStatus })
+    .update({ tarefa_coluna_id: colunaId })
     .eq("id", id)
     .eq("agencia_id", aid);
   if (error) return { error: "Erro ao mover tarefa." };
