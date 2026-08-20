@@ -340,7 +340,8 @@ async function ContratosRecentes({ agenciaId }: { agenciaId: string }) {
 type MinhaTarefa = {
   id: string;
   titulo: string;
-  status: string;
+  coluna_slug: string;
+  coluna_nome: string;
   prioridade: string;
   prazo: string | null;
   arquivado: boolean;
@@ -358,7 +359,7 @@ async function MemberDashboard({
 }) {
   const supabase = createAdminClient();
 
-  // Tarefas onde sou responsável
+  // Tarefas onde sou responsável (em qualquer quadro da agência)
   const { data: resp } = await supabase
     .from("tarefa_responsaveis")
     .select("tarefa_id")
@@ -367,38 +368,40 @@ async function MemberDashboard({
 
   let minhas: MinhaTarefa[] = [];
   if (ids.length > 0) {
+    // Migration 0040: tarefas aponta pra tarefa_coluna_id (FK) e join em
+    // tarefa_colunas(slug, nome) traz o rótulo exibido.
     const { data: tarefas } = await supabase
       .from("tarefas")
-      .select("id, titulo, status, prioridade, prazo, arquivado, cliente:clientes(nome_empresa)")
+      .select(
+        "id, titulo, prioridade, prazo, arquivado, quadro_id, tarefa_coluna:tarefa_colunas(slug, nome), cliente:clientes(nome_empresa)"
+      )
       .eq("agencia_id", aid)
       .in("id", ids);
-    minhas = (tarefas ?? []).map((t: any) => ({
-      id: t.id,
-      titulo: t.titulo,
-      status: t.status,
-      prioridade: t.prioridade,
-      prazo: t.prazo,
-      arquivado: t.arquivado,
-      cliente_nome: t.cliente?.nome_empresa ?? null,
-    }));
+    minhas = (tarefas ?? []).map((t: any) => {
+      const col = Array.isArray(t.tarefa_coluna) ? t.tarefa_coluna[0] : t.tarefa_coluna;
+      return {
+        id: t.id,
+        titulo: t.titulo,
+        coluna_slug: col?.slug ?? "destinada",
+        coluna_nome: col?.nome ?? "A Fazer",
+        prioridade: t.prioridade,
+        prazo: t.prazo,
+        arquivado: t.arquivado,
+        cliente_nome: t.cliente?.nome_empresa ?? null,
+      };
+    });
   }
 
   const naoArquivadas = minhas.filter((t) => !t.arquivado);
   const counts = {
-    destinada: naoArquivadas.filter((t) => t.status === "destinada").length,
-    em_andamento: naoArquivadas.filter((t) => t.status === "em_andamento").length,
-    pronta: naoArquivadas.filter((t) => t.status === "pronta").length,
-    entregue: naoArquivadas.filter((t) => t.status === "entregue").length,
+    destinada: naoArquivadas.filter((t) => t.coluna_slug === "destinada").length,
+    em_andamento: naoArquivadas.filter((t) => t.coluna_slug === "em_andamento").length,
+    pronta: naoArquivadas.filter((t) => t.coluna_slug === "pronta").length,
+    entregue: naoArquivadas.filter((t) => t.coluna_slug === "entregue").length,
   };
-  const abertas = naoArquivadas.filter((t) => t.status !== "entregue");
+  const abertas = naoArquivadas.filter((t) => t.coluna_slug !== "entregue");
   const primeiroNome = (nome ?? "você").split(" ")[0];
 
-  const STATUS_LABEL: Record<string, string> = {
-    destinada: "Tarefa destinada",
-    em_andamento: "Em andamento",
-    pronta: "Pronta",
-    entregue: "Entregue",
-  };
   const PRIORIDADE_VARIANTE: Record<string, "default" | "info" | "warning" | "danger"> = {
     baixa: "default",
     media: "info",
@@ -449,7 +452,7 @@ async function MemberDashboard({
                       {t.titulo}
                     </Link>
                     <p className="text-xs text-slate-500 flex items-center gap-2">
-                      <span>{STATUS_LABEL[t.status] ?? t.status}</span>
+                      <span>{t.coluna_nome}</span>
                       {t.cliente_nome && <span>· {t.cliente_nome}</span>}
                       {t.prazo && (
                         <span className={vencido ? "text-danger-400 inline-flex items-center gap-1" : "inline-flex items-center gap-1"}>
