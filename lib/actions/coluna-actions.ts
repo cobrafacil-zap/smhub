@@ -291,12 +291,13 @@ async function swapOrdensFallback(
 }
 
 // ============================================================================
-// CRIAR QUADRO COM COLUNAS DEFAULT
+// CRIAR QUADRO
 //
-// Action composta usada pelo atalho "Criar desta semana" / "Criar da
-// próxima semana". Cria o quadro e popula as 4 colunas default
-// (A Fazer, Em andamento, Em revisão, Concluído) numa única chamada pra
-// UI não ter que encadear duas requests.
+// Action usada pelo atalho "Criar desta semana" / "Criar da próxima
+// semana" e pelo "+ Novo quadro". Cria APENAS o quadro — as colunas
+// ficam por conta do admin, que adiciona via "+ Adicionar outra lista"
+// no kanban. Isso mantém o fluxo realmente Trello-style (sem conjuntos
+// pré-definidos que não combinam com a realidade do cliente).
 // ============================================================================
 export async function criarQuadroComColunasAction(formData: FormData): Promise<{
   error?: string;
@@ -325,7 +326,6 @@ export async function criarQuadroComColunasAction(formData: FormData): Promise<{
     .maybeSingle();
   const proximaOrdemQuadro = (maxRow?.ordem ?? -1) + 1;
 
-  // 1) Cria o quadro
   const { data: quadro, error: qErr } = await supabase
     .from("tarefa_quadros")
     .insert({
@@ -338,29 +338,6 @@ export async function criarQuadroComColunasAction(formData: FormData): Promise<{
     .single();
   if (qErr || !quadro) {
     return { error: `Erro ao criar quadro: ${qErr?.message ?? "desconhecido"}` };
-  }
-
-  // 2) Popula as 4 colunas default
-  const defaults = [
-    { slug: "destinada", nome: "A Fazer", ordem: 0 },
-    { slug: "em_andamento", nome: "Em andamento", ordem: 1 },
-    { slug: "pronta", nome: "Em revisão", ordem: 2 },
-    { slug: "entregue", nome: "Concluído", ordem: 3 },
-  ];
-  const { error: cErr } = await supabase.from("tarefa_colunas").insert(
-    defaults.map((d) => ({
-      agencia_id: aid,
-      quadro_id: quadro.id,
-      slug: d.slug,
-      nome: d.nome,
-      ordem: d.ordem,
-      arquivada: false,
-    }))
-  );
-  if (cErr) {
-    console.error("[criarQuadroComColunasAction] erro ao criar colunas default:", cErr);
-    // Quadro já existe; falhou só a seed das colunas. UI ainda permite
-    // entrar no quadro (estará vazio) e o usuário pode criar colunas manualmente.
   }
 
   revalidatePath("/admin/tarefas");

@@ -6,21 +6,23 @@
 -- 'destinada','em_andamento','pronta','entregue'). Agora cada tarefa aponta
 -- para uma `tarefa_coluna` (FK NOT NULL), que tem um `slug` canônico (mesmo
 -- conjunto de 4 valores, mais suporte a slugs custom) e um `nome` exibido
--- (editável pelo admin — "A Fazer", "Em andamento", "Em revisão", "Concluído"
--- são os defaults mas podem ser renomeados por quadro).
+-- (editável pelo admin).
 --
 -- Estratégia:
 --   1) Criar tarefa_colunas.
---   2) Backfill: pra cada quadro existente, inserir 4 colunas default (com
---      nome amigável).
---   3) Adicionar tarefas.tarefa_coluna_id (nullable), backfill a partir do
+--   2) Adicionar tarefas.tarefa_coluna_id (nullable), backfill a partir do
 --      status antigo, setar NOT NULL.
---   4) RLS + trigger de updated_at.
---   5) Dropar CHECK de status e a coluna `status` (já não usada).
+--   3) RLS + trigger de updated_at.
+--   4) Dropar CHECK de status e a coluna `status` (já não usada).
+--
+-- Quadros existentes e novos NASCEM SEM COLUNAS — o usuário cria as
+-- colunas manualmente via "+ Adicionar outra lista" no kanban. Isso
+-- garante que o fluxo seja realmente Trello-style (sem conjuntos
+-- pré-definidos que não combinam com a realidade do cliente).
 --
 -- Toda a migration é idempotente: pode ser rodada várias vezes sem efeito
--- colateral (criação usa IF NOT EXISTS, backfill usa ON CONFLICT, drop é
--- condicional).
+-- colateral (criação usa IF NOT EXISTS, backfill é seguro via fallback,
+-- drop é condicional).
 -- ===========================================================================
 
 -- ---------------------------------------------------------------------------
@@ -62,38 +64,75 @@ create index if not exists idx_tarefa_colunas_agencia
   on public.tarefa_colunas (agencia_id);
 
 -- ---------------------------------------------------------------------------
--- 2) Backfill: pra cada quadro, insere as 4 colunas default se ainda não
---    existirem. Idempotente via ON CONFLICT.
+-- 3) Backfill inteligente de colunas a partir das tarefas existentes
+--
+-- Pra cada quadro, varre as tarefas e descobre quais slugs de status
+-- realmente existem lá. Cria UMA coluna por slug distinto (se ainda
+-- não existir) com o nome = slug legível (ex: "destinada" → "A Fazer"
+-- se for um dos 4 canônicos, ou mantém o slug pra custom). NÃO cria
+-- as 4 colunas default — só as que o quadro já usava de fato.
 -- ---------------------------------------------------------------------------
 do $$
 declare
-  r record;
+  q record;
+  s text;
   aid uuid;
+  slug_count int;
+  has_dest boolean;
+  has_ea    boolean;
+  has_pronta boolean;
+  has_ent  boolean;
 begin
-  for r in select id from public.tarefa_quadros loop
-    aid := public._tarefa_quadro_agencia(r.id);
+  for q in select id from public.tarefa_quadros loop
+    aid := public._tarefa_quadro_agencia(q.id);
     if aid is null then continue; end if;
 
-    insert into public.tarefa_colunas (agencia_id, quadro_id, slug, nome, ordem)
-    values
-      (aid, r.id, 'destinada',     'A Fazer',       0),
-      (aid, r.id, 'em_andamento',  'Em andamento',  1),
-      (aid, r.id, 'pronta',        'Em revisão',    2),
-      (aid, r.id, 'entregue',      'Concluído',     3)
-    on conflict (quadro_id, slug) do nothing;
+    -- Descobre quais slugs canônicos existem nesse quadro.
+    select
+      exists(select 1 from public.tarefas where quadro_id = q.id and status = 'destinada'),
+      exists(select 1 from public.tarefas where quadro_id = q.id and status = 'em_andamento'),
+      exists(select 1 from public.tarefas where quadro_id = q.id and status = 'pronta'),
+      exists(select 1 from public.tarefas where quadro_id = q.id and status = 'entregue')
+    into has_dest, has_ea, has_pronta, has_ent;
+
+    -- Cria coluna só pra slugs realmente usados. O nome inicial usa o
+    -- rótulo "amigável" — o admin pode renomear depois (ou logo de cara).
+    if has_dest then
+      insert into public.tarefa_colunas (agencia_id, quadro_id, slug, nome, ordem)
+      values (aid, q.id, 'destinada', 'A Fazer', 0)
+      on conflict (quadro_id, slug) do nothing;
+    end if;
+    if has_ea then
+      insert into public.tarefa_colunas (agencia_id, quadro_id, slug, nome, ordem)
+      values (aid, q.id, 'em_andamento', 'Em andamento',
+        (select coalesce(max(ordem),-1)+1 from public.tarefa_colunas where quadro_id = q.id))
+      on conflict (quadro_id, slug) do nothing;
+    end if;
+    if has_pronta then
+      insert into public.tarefa_colunas (agencia_id, quadro_id, slug, nome, ordem)
+      values (aid, q.id, 'pronta', 'Em revisão',
+        (select coalesce(max(ordem),-1)+1 from public.tarefa_colunas where quadro_id = q.id))
+      on conflict (quadro_id, slug) do nothing;
+    end if;
+    if has_ent then
+      insert into public.tarefa_colunas (agencia_id, quadro_id, slug, nome, ordem)
+      values (aid, q.id, 'entregue', 'Concluído',
+        (select coalesce(max(ordem),-1)+1 from public.tarefa_colunas where quadro_id = q.id))
+      on conflict (quadro_id, slug) do nothing;
+    end if;
   end loop;
 end$$;
 
 -- ---------------------------------------------------------------------------
--- 3) tarefa_coluna_id em tarefas (nullable -> backfill -> NOT NULL)
+-- 4) tarefa_coluna_id em tarefas (nullable -> backfill -> NOT NULL)
 -- ---------------------------------------------------------------------------
 alter table public.tarefas
   add column if not exists tarefa_coluna_id uuid
     references public.tarefa_colunas(id) on delete restrict;
 
--- Backfill: mapeia status antigo -> coluna default do mesmo quadro.
--- Tarefas sem status válido (não deveria acontecer) ficam sem coluna; o
--- NOT NULL abaixo vai forçar a tratar isso manualmente se ocorrer.
+-- Backfill: mapeia status antigo -> coluna do mesmo quadro.
+-- Como o passo anterior criou exatamente 1 coluna por slug usado, a
+-- junção aqui é 1-para-1.
 update public.tarefas t
    set tarefa_coluna_id = c.id
   from public.tarefa_colunas c
@@ -101,26 +140,16 @@ update public.tarefas t
    and c.slug = t.status
    and t.tarefa_coluna_id is null;
 
--- Se sobrou tarefa sem coluna (status desconhecido / corrompido), aponta
--- pra coluna default 'destinada' do mesmo quadro como fallback. Esse
--- fallback NUNCA deveria disparar em dados legados porque o CHECK antigo
--- restringia status aos 4 valores — mas protege contra mudanças futuras.
+-- Se sobrou tarefa sem coluna (caso degenerado: status fora do conjunto
+-- canônico), aborta a migration com mensagem clara em vez de falhar
+-- silenciosamente no NOT NULL.
 do $$
-declare r record;
+declare restantes int;
 begin
-  for r in
-    select t.id as tarefa_id, t.quadro_id
-      from public.tarefas t
-     where t.tarefa_coluna_id is null
-  loop
-    update public.tarefas
-       set tarefa_coluna_id = (
-         select id from public.tarefa_colunas
-          where quadro_id = r.quadro_id and slug = 'destinada'
-          limit 1
-       )
-     where id = r.tarefa_id;
-  end loop;
+  select count(*) into restantes from public.tarefas where tarefa_coluna_id is null;
+  if restantes > 0 then
+    raise exception 'Backfill falhou: % tarefa(s) sem tarefa_coluna_id (status fora do conjunto canônico?)', restantes;
+  end if;
 end$$;
 
 -- Hard-fail se AINDA assim sobrou algo sem coluna (não deveria acontecer).
