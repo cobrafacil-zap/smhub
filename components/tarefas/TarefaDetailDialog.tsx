@@ -8,13 +8,8 @@ import { cn, initials } from "@/lib/utils";
 import { ENTRY_TIPO_LABEL, ENTRY_STATUS, ENTRY_TIPO_COR } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import type { TarefaItem } from "@/app/admin/tarefas/page";
+import type { TarefaColuna } from "@/types/database";
 
-const STATUS_LABEL: Record<string, string> = {
-  destinada: "Tarefa destinada",
-  em_andamento: "Em andamento",
-  pronta: "Pronta",
-  entregue: "Entregue",
-};
 const PRIORIDADE_VARIANTE: Record<string, "default" | "info" | "warning" | "danger"> = {
   baixa: "default",
   media: "info",
@@ -49,12 +44,14 @@ function isVideoUrl(url: string): boolean {
 export function TarefaDetailDialog({
   open,
   tarefa,
+  colunas,
   podeEditar,
   onEdit,
   onClose,
 }: {
   open: boolean;
   tarefa: TarefaItem | null;
+  colunas: TarefaColuna[];
   podeEditar: boolean;
   onEdit: (t: TarefaItem) => void;
   onClose: () => void;
@@ -68,6 +65,9 @@ export function TarefaDetailDialog({
 
   if (!tarefa) return null;
 
+  const coluna = colunas.find((c) => c.id === tarefa.tarefa_coluna_id);
+  const colunaNome = coluna?.nome ?? tarefa.coluna_nome ?? "—";
+
   const e = tarefa.entrada;
   const tipoLabel = e ? ENTRY_TIPO_LABEL[e.tipo] ?? e.tipo : null;
   const stEntrada = e ? ENTRY_STATUS[e.status as keyof typeof ENTRY_STATUS] : null;
@@ -76,7 +76,7 @@ export function TarefaDetailDialog({
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
   const prazoDate = tarefa.prazo ? new Date(tarefa.prazo + "T00:00:00") : null;
-  const vencido = prazoDate && prazoDate < hoje && tarefa.status !== "entregue";
+  const vencido = prazoDate && prazoDate < hoje && tarefa.coluna_slug !== "entregue";
 
   return (
     <dialog
@@ -92,7 +92,7 @@ export function TarefaDetailDialog({
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-slate-100 break-words">{tarefa.titulo}</h2>
             <div className="flex flex-wrap items-center gap-1.5 mt-2">
-              <Badge variant="brand">{STATUS_LABEL[tarefa.status] ?? tarefa.status}</Badge>
+              <Badge variant="brand">{colunaNome}</Badge>
               <Badge variant={PRIORIDADE_VARIANTE[tarefa.prioridade] ?? "default"}>
                 {PRIORIDADE_LABEL[tarefa.prioridade] ?? tarefa.prioridade}
               </Badge>

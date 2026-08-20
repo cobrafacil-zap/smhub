@@ -1,21 +1,13 @@
 "use client";
 
-import { useState, useTransition, useRef, useLayoutEffect } from "react";
+import { useState, useTransition, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, Check, Package } from "lucide-react";
+import { Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, MoreHorizontal, Package, Check } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn, initials } from "@/lib/utils";
-import { moverTarefaAction, deletarTarefaAction, arquivarTarefaAction, alterarPrazoTarefaAction } from "@/lib/actions/tarefa-actions";
+import { deletarTarefaAction, arquivarTarefaAction, alterarPrazoTarefaAction } from "@/lib/actions/tarefa-actions";
 import type { TarefaItem } from "@/app/admin/tarefas/page";
-
-const STATUS_LABEL: Record<string, string> = {
-  destinada: "Tarefa destinada",
-  em_andamento: "Em andamento",
-  pronta: "Pronta",
-  entregue: "Entregue",
-};
-const STATUS_ORDEM = ["destinada", "em_andamento", "pronta", "entregue"] as const;
 
 const PRIORIDADE_VARIANTE: Record<string, "default" | "info" | "warning" | "danger"> = {
   baixa: "default",
@@ -63,7 +55,6 @@ export function TarefaCard({
   tarefa,
   meuId,
   meuRole,
-  nivel = "normal",
   arrastando = false,
   onEdit,
   onView,
@@ -73,8 +64,6 @@ export function TarefaCard({
   tarefa: TarefaItem;
   meuId: string;
   meuRole: string;
-  /** Densidade do card conforme a quantidade na coluna. */
-  nivel?: "normal" | "compacto" | "minimo";
   arrastando?: boolean;
   onEdit: (t: TarefaItem) => void;
   onView: (t: TarefaItem) => void;
@@ -85,24 +74,7 @@ export function TarefaCard({
   const podeExcluir = tarefa.criado_por === meuId || meuRole === "admin_agencia";
   const podeEditar = meuRole === "admin_agencia";
 
-  const idx = STATUS_ORDEM.indexOf(tarefa.status as (typeof STATUS_ORDEM)[number]);
-  const podeEsquerda = idx > 0;
-  const podeDireita = idx < STATUS_ORDEM.length - 1;
-
-  // Classes por densidade (muitos cards numa coluna -> encolhe).
-  const pad = nivel === "minimo" ? "!p-2" : nivel === "compacto" ? "!p-2.5" : "!p-3";
-  const tituloClasse =
-    nivel === "minimo" ? "text-xs" : nivel === "compacto" ? "text-[13px]" : "text-sm";
-  const mostrarDescricao = nivel !== "minimo";
-
-  // Cor sutil por card (determinística pelo id) pra diferenciar visual.
   const tint = cardTint(tarefa.id);
-
-  function mover(novaStatus: string) {
-    startTransition(async () => {
-      await moverTarefaAction(tarefa.id, novaStatus);
-    });
-  }
 
   function arquivar(arquivado: boolean) {
     startTransition(async () => {
@@ -129,7 +101,7 @@ export function TarefaCard({
   hoje.setHours(0, 0, 0, 0);
   const prazoDate = tarefa.prazo ? new Date(tarefa.prazo + "T00:00:00") : null;
   const vencido =
-    prazoDate && prazoDate < hoje && tarefa.status !== "entregue";
+    prazoDate && prazoDate < hoje && tarefa.coluna_slug !== "entregue";
 
   return (
     <div
@@ -142,31 +114,37 @@ export function TarefaCard({
       onDragEnd={onDragEnd}
       onClick={() => onView(tarefa)}
       className={cn(
-        "card spotlight lift space-y-2 transition cursor-pointer hover:border-royal-500/40 border-l-2",
-        pad,
+        "card spotlight lift !p-2.5 space-y-2 transition cursor-pointer border-l-2",
         tint.bar,
         tint.bg,
         tarefa.arquivado && "opacity-60",
         pending && "opacity-50",
-        arrastando && "opacity-40 ring-2 ring-royal-500/50"
+        arrastando && "opacity-40 ring-2 ring-royal-500/50",
+        // hover/focus-within revela o menu de ações
+        "group"
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p
-          className={cn(
-            "text-left font-medium text-slate-100 line-clamp-2 select-none",
-            tituloClasse
-          )}
-          title="Ver detalhes"
-        >
+        <p className="text-left font-medium text-slate-100 line-clamp-2 select-none text-sm">
           {tarefa.titulo}
         </p>
-        <Badge variant={PRIORIDADE_VARIANTE[tarefa.prioridade] ?? "default"} className="shrink-0">
-          {PRIORIDADE_LABEL[tarefa.prioridade] ?? tarefa.prioridade}
-        </Badge>
+        <div className="flex items-center gap-1 shrink-0">
+          <Badge variant={PRIORIDADE_VARIANTE[tarefa.prioridade] ?? "default"}>
+            {PRIORIDADE_LABEL[tarefa.prioridade] ?? tarefa.prioridade}
+          </Badge>
+          <CartaoMenu
+            tarefa={tarefa}
+            podeEditar={podeEditar}
+            podeExcluir={podeExcluir}
+            arquivado={tarefa.arquivado}
+            onEdit={onEdit}
+            onArquivar={arquivar}
+            onExcluir={excluir}
+          />
+        </div>
       </div>
 
-      {mostrarDescricao && tarefa.descricao && (
+      {tarefa.descricao && (
         <p className="text-xs text-slate-400 line-clamp-2">{tarefa.descricao}</p>
       )}
 
@@ -194,7 +172,7 @@ export function TarefaCard({
           <span
             className={cn(
               "text-[10px] rounded px-1.5 py-0.5 inline-flex items-center gap-1 border",
-              tarefa.status === "entregue"
+              tarefa.coluna_slug === "entregue"
                 ? "text-success-400 bg-success-500/10 border-success-500/30"
                 : "text-slate-400 bg-bg-elevated border-border"
             )}
@@ -205,113 +183,169 @@ export function TarefaCard({
         )}
       </div>
 
-      {/* Responsáveis (avatars) */}
-      {tarefa.responsaveis.length > 0 && (
-        <div className="flex -space-x-1.5">
-          {tarefa.responsaveis.map((r) => (
-            <div
-              key={r.id}
-              title={r.nome}
-              className={cn(
-                "rounded-full bg-gradient-to-br flex items-center justify-center text-white text-[10px] font-semibold border-2 border-bg-surface",
-                nivel === "minimo" ? "h-5 w-5" : "h-6 w-6",
-                avatarColor(r.nome)
-              )}
-            >
-              {initials(r.nome)}
-            </div>
-          ))}
+      <div className="flex items-center justify-between gap-2 pt-1">
+        {/* Responsáveis (avatars) */}
+        {tarefa.responsaveis.length > 0 ? (
+          <div className="flex -space-x-1.5">
+            {tarefa.responsaveis.map((r) => (
+              <div
+                key={r.id}
+                title={r.nome}
+                className={cn(
+                  "h-6 w-6 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-[10px] font-semibold border-2 border-bg-surface",
+                  avatarColor(r.nome)
+                )}
+              >
+                {initials(r.nome)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span />
+        )}
+
+        {/* Mudar prazo rápido — ação discreta no rodapé do card */}
+        <div onClick={stop} onMouseDown={stop} className="ml-auto">
+          <PrazoDropdown prazo={tarefa.prazo} onChange={mudarPrazo} />
         </div>
-      )}
-
-      {/* Mover entre colunas */}
-      <div className="flex items-center gap-1 pt-1.5 border-t border-border">
-        <button
-          type="button"
-          draggable={false}
-          disabled={!podeEsquerda || pending}
-          onClick={(e) => {
-            stop(e);
-            mover(STATUS_ORDEM[idx - 1]);
-          }}
-          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300 disabled:opacity-30 disabled:hover:bg-transparent"
-          title="Mover para a coluna anterior"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <span className="text-[11px] text-slate-400 flex-1 text-center">
-          {STATUS_LABEL[tarefa.status]}
-        </span>
-        <button
-          type="button"
-          draggable={false}
-          disabled={!podeDireita || pending}
-          onClick={(e) => {
-            stop(e);
-            mover(STATUS_ORDEM[idx + 1]);
-          }}
-          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300 disabled:opacity-30 disabled:hover:bg-transparent"
-          title="Mover para a próxima coluna"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Mudar prazo rápido */}
-      <div onClick={stop} onMouseDown={stop}>
-        <PrazoDropdown prazo={tarefa.prazo} onChange={mudarPrazo} />
-      </div>
-
-      {/* Ações */}
-      <div className="flex items-center justify-end gap-1">
-        {podeEditar && (
-          <button
-            type="button"
-            draggable={false}
-            onClick={(e) => {
-              stop(e);
-              onEdit(tarefa);
-            }}
-            className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300"
-            title="Editar"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-        )}
-        <button
-          type="button"
-          draggable={false}
-          disabled={pending}
-          onClick={(e) => {
-            stop(e);
-            arquivar(!tarefa.arquivado);
-          }}
-          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-slate-400 hover:bg-bg-elevated hover:text-royal-300"
-          title={tarefa.arquivado ? "Desarquivar" : "Arquivar"}
-        >
-          {tarefa.arquivado ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
-        </button>
-        {podeExcluir && (
-          <span onClick={stop} className="inline-flex">
-            <ConfirmDialog
-              trigger={
-                <span
-                  className="h-7 w-7 inline-flex items-center justify-center rounded-md text-danger-400 hover:bg-danger-500/10 cursor-pointer"
-                  title="Excluir"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </span>
-              }
-              title="Excluir tarefa"
-              description={`Excluir "${tarefa.titulo}"? Esta ação não pode ser desfeita.`}
-              confirmText="Excluir"
-              variant="danger"
-              onConfirm={excluir}
-            />
-          </span>
-        )}
       </div>
     </div>
+  );
+}
+
+// ============================================================================
+// MENU DE AÇÕES DO CARD (⋯ no hover)
+//
+// Aparece sempre visível no canto do card (UX desktop) e também no mobile
+// via focus-within. Contém Editar / Arquivar / Excluir (este último só pra
+// criador ou admin).
+// ============================================================================
+function CartaoMenu({
+  tarefa,
+  podeEditar,
+  podeExcluir,
+  arquivado,
+  onEdit,
+  onArquivar,
+  onExcluir,
+}: {
+  tarefa: TarefaItem;
+  podeEditar: boolean;
+  podeExcluir: boolean;
+  arquivado: boolean;
+  onEdit: (t: TarefaItem) => void;
+  onArquivar: (a: boolean) => void;
+  onExcluir: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useLayoutEffect(() => {
+    if (!open || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    // posiciona à direita do botão, alinhado pela base
+    setPos({ top: rect.bottom + 4, left: rect.right - 192 });
+  }, [open]);
+
+  // Fecha ao clicar fora do menu
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        menuRef.current?.contains(target) ||
+        btnRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        draggable={false}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        className="h-6 w-6 inline-flex items-center justify-center rounded text-slate-400 hover:text-royal-200 hover:bg-bg-elevated opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
+        title="Ações do card"
+        aria-label="Ações do card"
+      >
+        <MoreHorizontal className="h-3.5 w-3.5" />
+      </button>
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-50 w-48 rounded-xl border border-border bg-bg-surface shadow-[0_16px_50px_-10px_rgba(0,0,0,0.5)] py-1 overflow-hidden"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            {podeEditar && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  onEdit(tarefa);
+                }}
+                className="w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-bg-muted inline-flex items-center gap-2"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                onArquivar(!arquivado);
+              }}
+              className="w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-bg-muted inline-flex items-center gap-2"
+            >
+              {arquivado ? (
+                <>
+                  <ArchiveRestore className="h-3.5 w-3.5" /> Desarquivar
+                </>
+              ) : (
+                <>
+                  <Archive className="h-3.5 w-3.5" /> Arquivar
+                </>
+              )}
+            </button>
+            {podeExcluir && (
+              <ConfirmDialog
+                trigger={
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs font-medium text-danger-400 hover:bg-bg-muted inline-flex items-center gap-2"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Excluir
+                  </button>
+                }
+                title="Excluir tarefa"
+                description={`Excluir "${tarefa.titulo}"? Esta ação não pode ser desfeita.`}
+                confirmText="Excluir"
+                variant="danger"
+                onConfirm={onExcluir}
+              />
+            )}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
@@ -323,7 +357,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
   useLayoutEffect(() => {
     if (!open || !btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    setPos({ top: rect.bottom + 6, left: rect.left });
+    setPos({ top: rect.bottom + 6, left: rect.right - 144 });
   }, [open]);
 
   const hoje = new Date();
@@ -348,10 +382,6 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
     { label: "+7 dias", value: add(7) },
   ];
 
-  // Tarefas antigas (criadas antes da remoção de "Sem data") ainda podem ter
-  // prazo = null. Prazos definidos por outro caminho (ex: TarefaDialog com
-  // data que não está nas opções rápidas) também caem aqui. Em ambos os
-  // casos, mostra "Prazo" como rótulo neutro.
   const ativo = opcoes.find((o) => o.value === prazo)?.label ?? "Prazo";
 
   return (
@@ -363,7 +393,7 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
           e.stopPropagation();
           setOpen(!open);
         }}
-        className="text-[11px] text-slate-200 hover:text-white inline-flex items-center gap-1 py-1 px-1.5 -ml-1.5 rounded-md hover:bg-bg-elevated transition"
+        className="text-[11px] text-slate-200 hover:text-white inline-flex items-center gap-1 py-0.5 px-1.5 -ml-1.5 rounded-md hover:bg-bg-elevated transition"
         title="Mudar prazo"
       >
         <CalendarDays className="h-3.5 w-3.5" /> {ativo}
@@ -381,8 +411,6 @@ function PrazoDropdown({ prazo, onChange }: { prazo: string | null; onChange: (p
               style={{ top: pos.top, left: pos.left }}
             >
               {opcoes.map((o) => {
-                // Clicar na opção já selecionada desativa o prazo (toggle).
-                // Não precisa de duplo-clique — basta um clique na ativa.
                 const ativo = o.value === prazo;
                 return (
                   <button

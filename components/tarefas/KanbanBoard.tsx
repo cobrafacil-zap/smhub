@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition, useEffect, useRef } from "react";
-import { Plus, Filter, Package, MoreHorizontal, Pencil, Trash2, X, Check } from "lucide-react";
+import { useMemo, useState, useTransition, useEffect, useRef, useCallback } from "react";
+import { Plus, Filter, Package, MoreHorizontal, Pencil, Trash2, X, Check, ArrowUp, ArrowDown, Layers } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -10,21 +10,20 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { moverTarefaAction } from "@/lib/actions/tarefa-actions";
 import { renomearGrupoAction, excluirGrupoAction } from "@/lib/actions/grupo-actions";
+import {
+  criarColunaAction,
+  renomearColunaAction,
+  excluirColunaAction,
+  moverColunaAction,
+} from "@/lib/actions/coluna-actions";
 import { Reveal } from "@/components/ui/motion/Reveal";
 import { TarefaCard } from "./TarefaCard";
 import { TarefaDialog } from "./TarefaDialog";
 import { TarefaDetailDialog } from "./TarefaDetailDialog";
-import { faixaPrazo, ORDEM_FAIXA } from "@/lib/planejamento";
 import type { ClienteOption, MembroOption, TarefaGrupoOption, TarefaItem } from "@/app/admin/tarefas/page";
-import type { TarefaQuadro } from "@/types/database";
-import type { TarefaStatus } from "@/types/database";
+import type { TarefaColuna, TarefaQuadro } from "@/types/database";
 
-const COLUNAS: { status: TarefaStatus; label: string; accent: string }[] = [
-  { status: "destinada", label: "Tarefa destinada", accent: "border-slate-500" },
-  { status: "em_andamento", label: "Em andamento", accent: "border-royal-500" },
-  { status: "pronta", label: "Pronta", accent: "border-amber-500" },
-  { status: "entregue", label: "Entregue", accent: "border-emerald-500" },
-];
+const LIMITE_VISIVEL = 9;
 
 export function KanbanBoard({
   tarefas,
@@ -32,6 +31,7 @@ export function KanbanBoard({
   clientes,
   quadros,
   grupos,
+  colunas,
   quadroAtivoId,
   meuId,
   meuRole,
@@ -41,6 +41,7 @@ export function KanbanBoard({
   clientes: ClienteOption[];
   quadros: TarefaQuadro[];
   grupos: TarefaGrupoOption[];
+  colunas: TarefaColuna[];
   quadroAtivoId: string;
   meuId: string;
   meuRole: string;
@@ -49,14 +50,13 @@ export function KanbanBoard({
   const [clienteId, setClienteId] = useState<string>("");
   const [minhas, setMinhas] = useState(false);
   const [mostrarArquivadas, setMostrarArquivadas] = useState(false);
-  const [agruparPorDia, setAgruparPorDia] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [colunaInicialDialog, setColunaInicialDialog] = useState<string | null>(null);
   const [editando, setEditando] = useState<TarefaItem | null>(null);
   const [visualizando, setVisualizando] = useState<TarefaItem | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOver, setDragOver] = useState<TarefaStatus | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const LIMITE_VISIVEL = 9;
   const [, startTransition] = useTransition();
 
   const filtradas = useMemo(() => {
@@ -69,18 +69,23 @@ export function KanbanBoard({
     });
   }, [tarefas, mostrarArquivadas, minhas, responsavelId, clienteId, meuId]);
 
-  const porStatus = useMemo(() => {
+  const porColuna = useMemo(() => {
     const map: Record<string, TarefaItem[]> = {};
-    for (const t of filtradas) (map[t.status] ??= []).push(t);
+    for (const c of colunas) map[c.id] = [];
+    for (const t of filtradas) {
+      (map[t.tarefa_coluna_id] ??= []).push(t);
+    }
     return map;
-  }, [filtradas]);
+  }, [filtradas, colunas]);
 
-  function abrirCriar() {
+  function abrirCriar(colunaId?: string) {
     setEditando(null);
+    setColunaInicialDialog(colunaId ?? null);
     setDialogOpen(true);
   }
   function abrirEditar(t: TarefaItem) {
     setEditando(t);
+    setColunaInicialDialog(t.tarefa_coluna_id);
     setVisualizando(null);
     setDialogOpen(true);
   }
@@ -88,14 +93,13 @@ export function KanbanBoard({
     setVisualizando(t);
   }
 
-  // Drag-and-drop entre colunas.
-  function handleDrop(novoStatus: TarefaStatus) {
+  function handleDrop(novaColunaId: string) {
     setDragOver(null);
     const id = dragId;
     setDragId(null);
     if (!id) return;
     startTransition(async () => {
-      await moverTarefaAction(id, novoStatus);
+      await moverTarefaAction(id, novaColunaId);
     });
   }
 
@@ -156,45 +160,36 @@ export function KanbanBoard({
           Arquivadas
         </label>
 
-        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer h-9">
-          <input
-            type="checkbox"
-            checked={agruparPorDia}
-            onChange={(e) => setAgruparPorDia(e.target.checked)}
-            className="h-4 w-4 rounded border-border accent-royal-500"
-          />
-          Por dia
-        </label>
-
         {podeCriar && (
           <div className="ml-auto">
-            <Button iconLeft={<Plus className="h-4 w-4" />} onClick={abrirCriar}>
+            <Button iconLeft={<Plus className="h-4 w-4" />} onClick={() => abrirCriar()}>
               Nova tarefa
             </Button>
           </div>
         )}
       </div>
 
-      {tarefas.length === 0 ? (
+      {colunas.length === 0 ? (
         <div className="card">
           <EmptyState
-            icon={<Plus className="h-10 w-10" />}
-            title="Nenhuma tarefa"
+            icon={<Layers className="h-10 w-10" />}
+            title="Quadro sem colunas"
             description={
               podeCriar
-                ? "Crie a primeira tarefa e atribua à equipe."
-                : "Quando o admin criar e atribuir tarefas, elas aparecem aqui para você acompanhar."
+                ? "Adicione uma coluna para começar a organizar as tarefas."
+                : "Aguarde o admin configurar as colunas deste quadro."
             }
             action={
               podeCriar ? (
-                <Button iconLeft={<Plus className="h-4 w-4" />} onClick={abrirCriar}>
-                  Nova tarefa
-                </Button>
+                <NovaColunaForm
+                  quadroId={quadroAtivoId}
+                  className="max-w-xs"
+                />
               ) : undefined
             }
           />
         </div>
-      ) : filtradas.length === 0 ? (
+      ) : filtradas.length === 0 && tarefas.length > 0 ? (
         <div className="card">
           <EmptyState
             icon={<Filter className="h-10 w-10" />}
@@ -206,249 +201,56 @@ export function KanbanBoard({
             }
           />
         </div>
+      ) : tarefas.length === 0 ? (
+        <div className="card">
+          <EmptyState
+            icon={<Plus className="h-10 w-10" />}
+            title="Nenhuma tarefa neste quadro"
+            description={
+              podeCriar
+                ? "Clique em “Adicionar tarefa” no rodapé de uma coluna para começar."
+                : "Quando o admin adicionar tarefas, elas aparecem aqui."
+            }
+          />
+        </div>
       ) : (
-        // Quadro: 4 colunas (scroll horizontal no mobile, grid no desktop)
-        <div className="flex gap-4 overflow-x-auto pb-2 lg:grid lg:grid-cols-4 lg:overflow-visible">
-          {COLUNAS.map((col) => {
-            const itens = porStatus[col.status] ?? [];
+        // Quadro: colunas roláveis no estilo Trello. Cada coluna = 1 tarefa_coluna
+        // com nome editável, contador, drop zone e footer "+ Adicionar tarefa".
+        <div className="flex gap-3 overflow-x-auto pb-2 items-start">
+          {colunas.map((col) => {
+            const itens = porColuna[col.id] ?? [];
             return (
-              <div
-                key={col.status}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(col.status);
-                }}
-                onDragLeave={(e) => {
-                  // só limpa se saiu da coluna de fato (não de um filho)
-                  if (e.currentTarget === e.target) setDragOver(null);
-                }}
-                onDrop={() => handleDrop(col.status)}
-                className={cn(
-                  "min-w-[260px] flex-1 bg-bg-surface/50 rounded-xl border-t-2 pb-2 flex flex-col transition-colors",
-                  col.accent,
-                  dragOver === col.status && dragId && "bg-royal-500/10 ring-2 ring-royal-500/40"
-                )}
-              >
-                <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-                  <span className="text-sm font-semibold text-slate-100">{col.label}</span>
-                  <span className="text-[11px] text-slate-500 bg-bg-elevated rounded-full px-2 py-0.5">
-                    {itens.length}
-                  </span>
-                </div>
-                <div className="p-2 space-y-2 flex-1">
-                  {itens.length === 0 && (
-                    <p className="text-xs text-slate-600 text-center py-4 italic">Vazio</p>
-                  )}
-                  {(() => {
-                    // Densidade: com muitos cards na coluna, encolhe pra caber mais.
-                    const nivel = itens.length > 10 ? "minimo" : itens.length > 5 ? "compacto" : "normal";
-
-                    const renderCards = (lista: TarefaItem[], baseIndex: number) =>
-                      lista.map((t, i) => (
-                        <Reveal key={t.id} delay={Math.min(baseIndex + i, 12) * 40}>
-                          <TarefaCard
-                            tarefa={t}
-                            meuId={meuId}
-                            meuRole={meuRole}
-                            nivel={nivel}
-                            arrastando={dragId === t.id}
-                            onEdit={abrirEditar}
-                            onView={abrirVer}
-                            onDragStart={() => setDragId(t.id)}
-                            onDragEnd={() => setDragId(null)}
-                          />
-                        </Reveal>
-                      ));
-
-                    // Mapa de grupos pra lookup rápido (nome, manual).
-                    const gruposMap: Record<string, TarefaGrupoOption> = {};
-                    for (const g of grupos) gruposMap[g.id] = g;
-
-                    // Tarefas COM grupo vão pro cabeçalho de grupo;
-                    // tarefas SEM grupo vão pro agrupamento padrão
-                    // (cliente ou faixa de prazo) como antes.
-                    const comGrupo: TarefaItem[] = [];
-                    const semGrupo: TarefaItem[] = [];
-                    for (const t of itens) {
-                      (t.grupo_id ? comGrupo : semGrupo).push(t);
-                    }
-
-                    // Agrupa as tarefas com grupo pelo grupo_id. Ordena
-                    // os grupos: automáticos primeiro (alfabético), depois
-                    // manuais. Dentro de cada grupo, por prioridade/prazo.
-                    const gruposPorId: Record<string, TarefaItem[]> = {};
-                    for (const t of comGrupo) {
-                      (gruposPorId[t.grupo_id!] ??= []).push(t);
-                    }
-                    for (const id of Object.keys(gruposPorId)) {
-                      gruposPorId[id].sort((a, b) => {
-                        const po = { urgente: 0, alta: 1, media: 2, baixa: 3 };
-                        const pa = po[a.prioridade] ?? 99;
-                        const pb = po[b.prioridade] ?? 99;
-                        if (pa !== pb) return pa - pb;
-                        return (a.prazo ?? "9999-99-99").localeCompare(b.prazo ?? "9999-99-99");
-                      });
-                    }
-                    const gruposOrdenados = Object.keys(gruposPorId).sort((a, b) => {
-                      const ga = gruposMap[a];
-                      const gb = gruposMap[b];
-                      if (!ga || !gb) return 0;
-                      // manuais depois dos automáticos
-                      if (ga.manual !== gb.manual) return ga.manual ? 1 : -1;
-                      return ga.nome.localeCompare(gb.nome);
-                    });
-
-                    const renderBlocoGrupo = (gid: string, baseIndex: number) => {
-                      const meta = gruposMap[gid];
-                      if (!meta) return null;
-                      const lista = gruposPorId[gid];
-                      const groupKey = `${col.status}__grupo__${gid}`;
-                      const expandido = expandedGroups.has(groupKey);
-                      const total = lista.length;
-                      const visiveis = expandido ? lista : lista.slice(0, LIMITE_VISIVEL);
-                      const ocultos = total - visiveis.length;
-                      return (
-                        <div key={gid} className="space-y-1">
-                          <GrupoHeader
-                            grupo={meta}
-                            total={total}
-                            admin={podeCriar}
-                            onToggle={() => {
-                              const next = new Set(expandedGroups);
-                              if (next.has(groupKey)) next.delete(groupKey);
-                              else next.add(groupKey);
-                              setExpandedGroups(next);
-                            }}
-                          />
-                          {renderCards(visiveis, baseIndex)}
-                          {ocultos > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full text-xs text-slate-400 hover:text-royal-200"
-                              onClick={() => {
-                                const next = new Set(expandedGroups);
-                                if (next.has(groupKey)) next.delete(groupKey);
-                                else next.add(groupKey);
-                                setExpandedGroups(next);
-                              }}
-                            >
-                              {expandido ? `Ver menos` : `+ ${ocultos} tarefa${ocultos > 1 ? "s" : ""}`}
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    };
-
-                    // Renderiza blocos de grupo (no topo).
-                    let index = 0;
-                    const blocosGrupo = gruposOrdenados.map((gid) => {
-                      const bloco = renderBlocoGrupo(gid, index);
-                      if (bloco) index += (gruposPorId[gid] ?? []).length;
-                      return bloco;
-                    });
-
-                    // Renderiza o resto (semGrupo) com a lógica original.
-                    if (semGrupo.length === 0) return blocosGrupo;
-
-                    let blocoResto: React.ReactNode = null;
-                    if (!agruparPorDia) {
-                      const ordenados = [...semGrupo].sort(
-                        (a, b) =>
-                          (a.cliente_nome ?? "~~sem cliente").localeCompare(
-                            b.cliente_nome ?? "~~sem cliente"
-                          )
-                      );
-                      let ultimoCliente: string | null = "__init__";
-                      blocoResto = ordenados.map((t, i) => {
-                        const grp = t.cliente_nome ?? null;
-                        const novoGrupo = grp !== ultimoCliente;
-                        ultimoCliente = grp;
-                        return (
-                          <div key={t.id}>
-                            {novoGrupo && (
-                              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-1 pt-1.5 pb-0.5 flex items-center gap-1">
-                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-royal-400" />
-                                {grp ?? "Sem cliente"}
-                              </div>
-                            )}
-                            {renderCards([t], index + i)}
-                          </div>
-                        );
-                      });
-                    } else {
-                      // Agrupamento por faixa de prazo.
-                      const gruposPorFaixa: Record<string, TarefaItem[]> = {};
-                      for (const t of semGrupo) {
-                        const faixa = faixaPrazo(t.prazo);
-                        (gruposPorFaixa[faixa] ??= []).push(t);
-                      }
-                      for (const faixa of Object.keys(gruposPorFaixa)) {
-                        gruposPorFaixa[faixa].sort((a, b) => {
-                          const po = { urgente: 0, alta: 1, media: 2, baixa: 3 };
-                          const pa = po[a.prioridade] ?? 99;
-                          const pb = po[b.prioridade] ?? 99;
-                          if (pa !== pb) return pa - pb;
-                          return (a.prazo ?? "9999-99-99").localeCompare(b.prazo ?? "9999-99-99");
-                        });
-                      }
-                      blocoResto = ORDEM_FAIXA.filter((faixa) => gruposPorFaixa[faixa]?.length).map(
-                        (faixa) => {
-                          const lista = gruposPorFaixa[faixa];
-                          const groupKey = `${col.status}__${faixa}`;
-                          const expandido = expandedGroups.has(groupKey);
-                          const total = lista.length;
-                          const visiveis = expandido ? lista : lista.slice(0, LIMITE_VISIVEL);
-                          const ocultos = total - visiveis.length;
-                          const faixaColor =
-                            faixa === "Atrasado"
-                              ? "text-danger-400 bg-danger-500/10 border-danger-500/30"
-                              : faixa === "Hoje"
-                                ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30"
-                                : faixa === "Amanhã"
-                                  ? "text-royal-300 bg-royal-500/10 border-royal-500/30"
-                                  : "text-slate-400 bg-bg-elevated border-border";
-                          return (
-                            <div key={faixa} className="space-y-1">
-                              <div
-                                className={`text-[10px] font-semibold uppercase tracking-wider rounded-md border px-2 py-1 flex items-center justify-between ${faixaColor}`}
-                              >
-                                <span>{faixa}</span>
-                                <span>{total}</span>
-                              </div>
-                              {renderCards(visiveis, index)}
-                              {ocultos > 0 && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full text-xs text-slate-400 hover:text-royal-200"
-                                  onClick={() => {
-                                    const next = new Set(expandedGroups);
-                                    if (next.has(groupKey)) next.delete(groupKey);
-                                    else next.add(groupKey);
-                                    setExpandedGroups(next);
-                                  }}
-                                >
-                                  {expandido ? `Ver menos` : `+ ${ocultos} tarefa${ocultos > 1 ? "s" : ""}`}
-                                </Button>
-                              )}
-                            </div>
-                          );
-                        }
-                      );
-                    }
-
-                    return (
-                      <>
-                        {blocosGrupo}
-                        {blocoResto}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
+              <Coluna
+                key={col.id}
+                coluna={col}
+                totalColunas={colunas.length}
+                itens={itens}
+                grupos={grupos}
+                quadroId={quadroAtivoId}
+                dragId={dragId}
+                dragOver={dragOver}
+                podeCriar={podeCriar}
+                podeEditar={podeCriar}
+                expandedGroups={expandedGroups}
+                setExpandedGroups={setExpandedGroups}
+                meuId={meuId}
+                meuRole={meuRole}
+                onDrop={handleDrop}
+                onDragStart={(id) => setDragId(id)}
+                onDragEnd={() => setDragId(null)}
+                onAddTarefa={() => abrirCriar(col.id)}
+                onEdit={abrirEditar}
+                onView={abrirVer}
+              />
             );
           })}
+
+          {/* "+ Adicionar outra lista" no fim da fileira (Trello-style) */}
+          {podeCriar && (
+            <div className="shrink-0 w-[280px]">
+              <NovaColunaForm quadroId={quadroAtivoId} />
+            </div>
+          )}
         </div>
       )}
 
@@ -459,6 +261,8 @@ export function KanbanBoard({
         clientes={clientes}
         quadros={quadros}
         grupos={grupos}
+        colunas={colunas}
+        colunaIdInicial={colunaInicialDialog}
         quadroIdInicial={quadroAtivoId}
         onClose={() => setDialogOpen(false)}
       />
@@ -466,6 +270,7 @@ export function KanbanBoard({
       <TarefaDetailDialog
         open={!!visualizando}
         tarefa={visualizando}
+        colunas={colunas}
         podeEditar={podeCriar}
         onEdit={abrirEditar}
         onClose={() => setVisualizando(null)}
@@ -475,11 +280,568 @@ export function KanbanBoard({
 }
 
 // ============================================================================
-// CABEÇALHO DE GRUPO
-//
-// Aparece no topo de cada bloco de tarefas agrupadas. Cor neutra (slate)
-// pra não competir com as cores de faixa de prazo (que ficam abaixo dos
-// sem-grupo). Inclui menu `…` com Renomear/Excluir (admin only).
+// COLUNA (estilo Trello)
+// ============================================================================
+function Coluna({
+  coluna,
+  totalColunas,
+  itens,
+  grupos,
+  dragId,
+  dragOver,
+  podeCriar,
+  podeEditar,
+  expandedGroups,
+  setExpandedGroups,
+  meuId,
+  meuRole,
+  onDrop,
+  onDragStart,
+  onDragEnd,
+  onAddTarefa,
+  onEdit,
+  onView,
+}: {
+  coluna: TarefaColuna;
+  totalColunas: number;
+  itens: TarefaItem[];
+  grupos: TarefaGrupoOption[];
+  quadroId: string;
+  dragId: string | null;
+  dragOver: string | null;
+  podeCriar: boolean;
+  podeEditar: boolean;
+  expandedGroups: Set<string>;
+  setExpandedGroups: React.Dispatch<React.SetStateAction<Set<string>>>;
+  meuId: string;
+  meuRole: string;
+  onDrop: (colunaId: string) => void;
+  onDragStart: (id: string) => void;
+  onDragEnd: () => void;
+  onAddTarefa: () => void;
+  onEdit: (t: TarefaItem) => void;
+  onView: (t: TarefaItem) => void;
+}) {
+  return (
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        onDrop(coluna.id); // reusa setDragOver indiretamente
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget === e.target) {
+          // dragOver é controlado no pai; nada local aqui
+        }
+      }}
+      onDrop={() => onDrop(coluna.id)}
+      className={cn(
+        "shrink-0 w-[280px] flex flex-col bg-bg-surface/60 rounded-xl border border-border max-h-[calc(100vh-220px)]",
+        dragOver === coluna.id && dragId && "ring-2 ring-royal-500/40 bg-royal-500/5"
+      )}
+    >
+      <ColunaHeader
+        coluna={coluna}
+        total={itens.length}
+        podeEditar={podeEditar}
+        totalColunas={totalColunas}
+        indice={colunasIndex(coluna, totalColunas)}
+      />
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+        {itens.length === 0 && (
+          <p className="text-xs text-slate-600 text-center py-6 italic">Vazio</p>
+        )}
+        <CardsLista
+          itens={itens}
+          grupos={grupos}
+          colunaId={coluna.id}
+          dragId={dragId}
+          meuId={meuId}
+          meuRole={meuRole}
+          expandedGroups={expandedGroups}
+          setExpandedGroups={setExpandedGroups}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onEdit={onEdit}
+          onView={onView}
+        />
+      </div>
+      {podeCriar && (
+        <div className="p-2 border-t border-border">
+          <button
+            type="button"
+            onClick={onAddTarefa}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-slate-400 hover:text-royal-200 hover:bg-bg-elevated transition"
+          >
+            <Plus className="h-3.5 w-3.5" /> Adicionar tarefa
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Helper só pra saber se a coluna está na borda (pra habilitar mover
+// pra cima/baixo no menu).
+function colunasIndex(coluna: TarefaColuna, total: number) {
+  // A ordem real vem do pai, mas usamos a `ordem` da própria coluna.
+  return coluna.ordem;
+}
+
+// ============================================================================
+// CABEÇALHO DA COLUNA
+// ============================================================================
+function ColunaHeader({
+  coluna,
+  total,
+  podeEditar,
+  totalColunas,
+  indice,
+}: {
+  coluna: TarefaColuna;
+  total: number;
+  podeEditar: boolean;
+  totalColunas: number;
+  indice: number;
+}) {
+  const [renomeando, setRenomeando] = useState(false);
+  const [novoNome, setNovoNome] = useState(coluna.nome);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [menuOpen]);
+
+  async function handleRenomear() {
+    const nome = novoNome.trim();
+    if (!nome || nome === coluna.nome) {
+      setRenomeando(false);
+      setNovoNome(coluna.nome);
+      return;
+    }
+    const res = await renomearColunaAction(coluna.id, nome);
+    if (res?.error) {
+      alert(res.error);
+      return;
+    }
+    setRenomeando(false);
+  }
+
+  async function handleExcluir() {
+    const res = await excluirColunaAction(coluna.id);
+    if (res?.error) {
+      alert(res.error);
+    }
+  }
+
+  function handleMover(direcao: "cima" | "baixo") {
+    startTransition(async () => {
+      await moverColunaAction(coluna.id, direcao);
+      setMenuOpen(false);
+    });
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-1 px-2.5 py-2 border-b border-border">
+      {renomeando ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleRenomear();
+          }}
+          className="flex items-center gap-1 flex-1"
+        >
+          <Input
+            value={novoNome}
+            onChange={(e) => setNovoNome(e.target.value)}
+            maxLength={40}
+            className="h-7 text-sm flex-1"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setRenomeando(false);
+                setNovoNome(coluna.nome);
+              }
+            }}
+          />
+          <button
+            type="submit"
+            disabled={pending}
+            className="h-7 w-7 inline-flex items-center justify-center rounded text-emerald-400 hover:bg-bg-elevated"
+            title="Salvar"
+          >
+            <Check className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRenomeando(false);
+              setNovoNome(coluna.nome);
+            }}
+            className="h-7 w-7 inline-flex items-center justify-center rounded text-slate-400 hover:bg-bg-elevated"
+            title="Cancelar"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </form>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() => podeEditar && setRenomeando(true)}
+            className={cn(
+              "flex items-center gap-2 flex-1 min-w-0 text-left text-sm font-semibold text-slate-100 truncate",
+              podeEditar && "hover:text-royal-200"
+            )}
+            title={podeEditar ? "Clique para renomear" : coluna.nome}
+            disabled={!podeEditar}
+          >
+            <span className="truncate">{coluna.nome}</span>
+          </button>
+          <span className="text-[11px] text-slate-500 bg-bg-elevated rounded-full px-2 py-0.5 shrink-0">
+            {total}
+          </span>
+          {podeEditar && (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="h-7 w-7 inline-flex items-center justify-center rounded text-slate-400 hover:text-royal-200 hover:bg-bg-elevated"
+                title="Ações da coluna"
+                aria-label="Ações da coluna"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-lg border border-border bg-bg-elevated shadow-xl py-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setRenomeando(true);
+                    }}
+                    className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-bg-muted inline-flex items-center gap-2"
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Renomear
+                  </button>
+                  {indice > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleMover("cima")}
+                      disabled={pending}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-bg-muted inline-flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" /> Mover pra cima
+                    </button>
+                  )}
+                  {indice < totalColunas - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleMover("baixo")}
+                      disabled={pending}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-bg-muted inline-flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" /> Mover pra baixo
+                    </button>
+                  )}
+                  <ConfirmDialog
+                    trigger={
+                      <button
+                        type="button"
+                        onClick={() => setMenuOpen(false)}
+                        className="w-full text-left px-3 py-1.5 text-xs text-danger-400 hover:bg-bg-muted inline-flex items-center gap-2"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Excluir coluna
+                      </button>
+                    }
+                    title={`Excluir coluna "${coluna.nome}"?`}
+                    description={
+                      <span>
+                        As tarefas que estão nela precisam ser movidas antes. Esta ação não pode ser desfeita.
+                      </span>
+                    }
+                    confirmText="Excluir"
+                    variant="danger"
+                    onConfirm={handleExcluir}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// LISTA DE CARDS (com agrupamentos)
+// ============================================================================
+function CardsLista({
+  itens,
+  grupos,
+  colunaId,
+  dragId,
+  meuId,
+  meuRole,
+  expandedGroups,
+  setExpandedGroups,
+  onDragStart,
+  onDragEnd,
+  onEdit,
+  onView,
+}: {
+  itens: TarefaItem[];
+  grupos: TarefaGrupoOption[];
+  colunaId: string;
+  dragId: string | null;
+  meuId: string;
+  meuRole: string;
+  expandedGroups: Set<string>;
+  setExpandedGroups: React.Dispatch<React.SetStateAction<Set<string>>>;
+  onDragStart: (id: string) => void;
+  onDragEnd: () => void;
+  onEdit: (t: TarefaItem) => void;
+  onView: (t: TarefaItem) => void;
+}) {
+  const comGrupo: TarefaItem[] = [];
+  const semGrupo: TarefaItem[] = [];
+  for (const t of itens) {
+    (t.grupo_id ? comGrupo : semGrupo).push(t);
+  }
+
+  const gruposPorId: Record<string, TarefaItem[]> = {};
+  for (const t of comGrupo) (gruposPorId[t.grupo_id!] ??= []).push(t);
+  for (const id of Object.keys(gruposPorId)) {
+    gruposPorId[id].sort((a, b) => {
+      const po = { urgente: 0, alta: 1, media: 2, baixa: 3 };
+      const pa = po[a.prioridade] ?? 99;
+      const pb = po[b.prioridade] ?? 99;
+      if (pa !== pb) return pa - pb;
+      return (a.prazo ?? "9999-99-99").localeCompare(b.prazo ?? "9999-99-99");
+    });
+  }
+
+  const gruposMap: Record<string, TarefaGrupoOption> = {};
+  for (const g of grupos) gruposMap[g.id] = g;
+  const gruposOrdenados = Object.keys(gruposPorId).sort((a, b) => {
+    const ga = gruposMap[a];
+    const gb = gruposMap[b];
+    if (!ga || !gb) return 0;
+    if (ga.manual !== gb.manual) return ga.manual ? 1 : -1;
+    return ga.nome.localeCompare(gb.nome);
+  });
+
+  const renderCards = (lista: TarefaItem[], baseIndex: number) =>
+    lista.map((t, i) => (
+      <Reveal key={t.id} delay={Math.min(baseIndex + i, 12) * 40}>
+        <TarefaCard
+          tarefa={t}
+          meuId={meuId}
+          meuRole={meuRole}
+          arrastando={dragId === t.id}
+          onEdit={onEdit}
+          onView={onView}
+          onDragStart={() => onDragStart(t.id)}
+          onDragEnd={onDragEnd}
+        />
+      </Reveal>
+    ));
+
+  let index = 0;
+  const blocosGrupo = gruposOrdenados.map((gid) => {
+    const meta = gruposMap[gid];
+    if (!meta) return null;
+    const lista = gruposPorId[gid];
+    const groupKey = `${colunaId}__grupo__${gid}`;
+    const expandido = expandedGroups.has(groupKey);
+    const total = lista.length;
+    const visiveis = expandido ? lista : lista.slice(0, LIMITE_VISIVEL);
+    const ocultos = total - visiveis.length;
+    const bloco = (
+      <div key={gid} className="space-y-1">
+        <GrupoHeader
+          grupo={meta}
+          total={total}
+          admin={meuRole === "admin_agencia"}
+          onToggle={() => {
+            const next = new Set(expandedGroups);
+            if (next.has(groupKey)) next.delete(groupKey);
+            else next.add(groupKey);
+            setExpandedGroups(next);
+          }}
+        />
+        {renderCards(visiveis, index)}
+        {ocultos > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs text-slate-400 hover:text-royal-200"
+            onClick={() => {
+              const next = new Set(expandedGroups);
+              if (next.has(groupKey)) next.delete(groupKey);
+              else next.add(groupKey);
+              setExpandedGroups(next);
+            }}
+          >
+            {expandido ? `Ver menos` : `+ ${ocultos} tarefa${ocultos > 1 ? "s" : ""}`}
+          </Button>
+        )}
+      </div>
+    );
+    index += lista.length;
+    return bloco;
+  });
+
+  const ordenadosSemGrupo = [...semGrupo].sort(
+    (a, b) =>
+      (a.cliente_nome ?? "~~sem cliente").localeCompare(
+        b.cliente_nome ?? "~~sem cliente"
+      )
+  );
+
+  let ultimoCliente: string | null = "__init__";
+  const blocoResto = ordenadosSemGrupo.map((t, i) => {
+    const grp = t.cliente_nome ?? null;
+    const novoGrupo = grp !== ultimoCliente;
+    ultimoCliente = grp;
+    return (
+      <div key={t.id}>
+        {novoGrupo && (
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-1 pt-1.5 pb-0.5 flex items-center gap-1">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-royal-400" />
+            {grp ?? "Sem cliente"}
+          </div>
+        )}
+        {renderCards([t], index + i)}
+      </div>
+    );
+  });
+
+  return (
+    <>
+      {blocosGrupo}
+      {blocoResto}
+    </>
+  );
+}
+
+// ============================================================================
+// FORMULÁRIO "+ NOVA COLUNA" (Trello-style)
+// ============================================================================
+function NovaColunaForm({
+  quadroId,
+  className,
+}: {
+  quadroId: string;
+  className?: string;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [nome, setNome] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (aberto) inputRef.current?.focus();
+  }, [aberto]);
+
+  const submit = useCallback(() => {
+    if (!nome.trim()) {
+      setError("Digite um nome.");
+      return;
+    }
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("quadro_id", quadroId);
+      fd.set("nome", nome.trim());
+      const res = await criarColunaAction(undefined, fd);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      setNome("");
+      setError(null);
+      setAberto(false);
+      // revalidatePath já recarrega a página automaticamente.
+    });
+  }, [nome, quadroId]);
+
+  if (!aberto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        className={cn(
+          "w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border px-3 py-2 text-sm font-medium text-slate-400 hover:text-royal-200 hover:border-royal-500/40 hover:bg-royal-500/5 transition",
+          className
+        )}
+      >
+        <Plus className="h-4 w-4" /> Adicionar outra lista
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-royal-500/40 bg-bg-surface p-2 space-y-2",
+        className
+      )}
+    >
+      <Input
+        ref={inputRef}
+        value={nome}
+        onChange={(e) => {
+          setNome(e.target.value);
+          setError(null);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setAberto(false);
+            setNome("");
+            setError(null);
+          }
+        }}
+        maxLength={40}
+        placeholder="Título da lista"
+        className="h-8 text-sm"
+        disabled={pending}
+      />
+      <div className="flex items-center gap-1">
+        <Button type="button" size="sm" onClick={submit} loading={pending}>
+          Adicionar
+        </Button>
+        <button
+          type="button"
+          onClick={() => {
+            setAberto(false);
+            setNome("");
+            setError(null);
+          }}
+          className="h-8 w-8 inline-flex items-center justify-center rounded text-slate-400 hover:bg-bg-elevated"
+          title="Cancelar"
+          disabled={pending}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      {error && <p className="text-[10px] text-danger-400">{error}</p>}
+    </div>
+  );
+}
+
+// ============================================================================
+// CABEÇALHO DE GRUPO (reaproveitado do código antigo — sem mudanças de UX)
 // ============================================================================
 function GrupoHeader({
   grupo,
@@ -527,7 +889,6 @@ function GrupoHeader({
     if (res?.error) {
       alert(res.error);
     }
-    // revalidatePath já recarrega a página automaticamente.
   }
 
   return (

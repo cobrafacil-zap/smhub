@@ -1,12 +1,15 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { requireAgenciaMember } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Button } from "@/components/ui/Button";
 import { KanbanBoard } from "@/components/tarefas/KanbanBoard";
-import { TarefasPeriodoNav } from "@/components/tarefas/TarefasPeriodoNav";
 import { QuadroTabs } from "@/components/tarefas/QuadroTabs";
-import { prazoDentroPeriodo, periodoRef, type Periodo } from "@/lib/planejamento";
-import type { TarefaStatus, TarefaPrioridade, TarefaQuadro } from "@/types/database";
+import { QuadroEmptyStateClient } from "@/components/tarefas/QuadroEmptyStateClient";
+import { periodoRef } from "@/lib/planejamento";
+import type { TarefaPrioridade, TarefaColuna } from "@/types/database";
 
 export const metadata = { title: "Tarefas" };
 
@@ -14,7 +17,10 @@ export type TarefaItem = {
   id: string;
   titulo: string;
   descricao: string | null;
-  status: TarefaStatus;
+  /** Coluna atual da tarefa (FK; substituiu o antigo `status` texto). */
+  tarefa_coluna_id: string;
+  coluna_slug: string;
+  coluna_nome: string;
   prioridade: TarefaPrioridade;
   prazo: string | null;
   arquivado: boolean;
@@ -58,46 +64,49 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export default async function TarefasPage({
   searchParams,
 }: {
-  searchParams: { periodo?: string; ref?: string; quadro?: string };
+  searchParams: { quadro?: string };
 }) {
   const session = await requireAgenciaMember();
   const supabase = createClient();
   const aid = session.profile.agencia_id!;
 
-  // Período selecionado (semana/mês) navegável. Default = semana atual.
-  const periodo: Periodo = searchParams.periodo === "mes" ? "mes" : "semana";
-  const hoje = new Date();
-  const refIso =
-    searchParams.ref && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.ref)
-      ? searchParams.ref
-      : `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
-  const { inicio, fim, label, contemHoje } = periodoRef(refIso, periodo, hoje);
-
   // -------------------------------------------------------------------------
-  // Quadros da agência. Se não existir nenhum, cria o "Quadro geral" agora
-  // (defesa — a migration 0036 já faz isso no banco, mas o app precisa
-  // continuar funcionando se alguém rodar o código antes de aplicar a
-  // migration).
+  // Quadros da agência. Se não existir nenhum, NÃO cria automaticamente
+  // (UX confirmada com o usuário: empty state com botão "Criar").
   // -------------------------------------------------------------------------
-  let { data: quadros } = await supabase
+  const { data: quadros } = await supabase
     .from("tarefa_quadros")
     .select("id, agencia_id, nome, descricao, ordem, created_by, created_at, updated_at")
     .eq("agencia_id", aid)
     .order("ordem", { ascending: true })
     .order("created_at", { ascending: true });
-  if (!quadros || quadros.length === 0) {
-    await supabase
-      .from("tarefa_quadros")
-      .insert({ agencia_id: aid, nome: "Quadro geral", ordem: 0 });
-    const recarregado = await supabase
-      .from("tarefa_quadros")
-      .select("id, agencia_id, nome, descricao, ordem, created_by, created_at, updated_at")
-      .eq("agencia_id", aid)
-      .order("ordem", { ascending: true })
-      .order("created_at", { ascending: true });
-    quadros = recarregado.data ?? [];
+  const quadrosList = (quadros ?? []) as unknown as import("@/types/database").TarefaQuadro[];
+
+  // Sem quadros → empty state com botões "desta semana" / "próxima semana".
+  if (quadrosList.length === 0) {
+    const hoje = new Date();
+    const refIso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+    const semanaAtual = periodoRef(refIso, "semana", hoje);
+    const proximaRef = (() => {
+      const d = new Date(hoje);
+      d.setDate(d.getDate() + 7);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    })();
+    const proximaSemana = periodoRef(proximaRef, "semana", hoje);
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Tarefas"
+          description="Quadros no estilo Trello: cada quadro é uma janela (semana, projeto). Crie o primeiro para começar."
+          breadcrumbs={[{ href: "/admin", label: "Início" }, { label: "Tarefas" }]}
+        />
+        <QuadroEmptyStateClient
+          labelSemanaAtual={semanaAtual.label}
+          labelProximaSemana={proximaSemana.label}
+        />
+      </div>
+    );
   }
-  const quadrosList: TarefaQuadro[] = (quadros ?? []) as TarefaQuadro[];
 
   // Quadro ativo: o que veio no searchParam (válido), senão o primeiro.
   const quadroParam = searchParams.quadro && UUID_RE.test(searchParams.quadro)
@@ -105,13 +114,27 @@ export default async function TarefasPage({
     : null;
   const quadroAtivo =
     quadrosList.find((q) => q.id === quadroParam) ?? quadrosList[0];
+  if (!quadroAtivo) redirect("/admin/tarefas");
 
-  // Tarefas da agência (com cliente vinculado). Join FK pode vir como array
-  // na tipagem do supabase-js, então tratamos como any e acessamos com segurança.
+  // -------------------------------------------------------------------------
+  // Colunas do quadro ativo (sem arquivadas). Cada coluna tem slug + nome
+  // editável (migration 0040).
+  // -------------------------------------------------------------------------
+  const { data: colunasRaw } = await supabase
+    .from("tarefa_colunas")
+    .select("id, agencia_id, quadro_id, slug, nome, ordem, arquivada, created_at, updated_at")
+    .eq("quadro_id", quadroAtivo.id)
+    .eq("arquivada", false)
+    .order("ordem", { ascending: true });
+  const colunas: TarefaColuna[] = (colunasRaw ?? []) as TarefaColuna[];
+
+  // -------------------------------------------------------------------------
+  // Tarefas da agência (com cliente vinculado e join em tarefa_colunas).
+  // -------------------------------------------------------------------------
   const { data: tarefasRaw } = await supabase
     .from("tarefas")
     .select(
-      "id, titulo, descricao, status, prioridade, prazo, arquivado, cliente_id, criado_por, created_at, quadro_id, grupo_id, cliente:clientes(nome_empresa), grupo:tarefa_grupos(id, nome), entrada:planejamento_entradas(id, data, titulo, tipo, copy, hashtags, descricao, midia_url, estilo, status)"
+      "id, titulo, descricao, tarefa_coluna_id, prioridade, prazo, arquivado, cliente_id, criado_por, created_at, quadro_id, grupo_id, tarefa_coluna:tarefa_colunas(slug, nome), cliente:clientes(nome_empresa), grupo:tarefa_grupos(id, nome), entrada:planejamento_entradas(id, data, titulo, tipo, copy, hashtags, descricao, midia_url, estilo, status)"
     )
     .eq("agencia_id", aid)
     .eq("quadro_id", quadroAtivo.id)
@@ -133,15 +156,22 @@ export default async function TarefasPage({
     }
   }
 
+  const colMap: Record<string, TarefaColuna> = {};
+  for (const c of colunas) colMap[c.id] = c;
+
   const itens: TarefaItem[] = tarefas.map((t: any) => {
     const cli = Array.isArray(t.cliente) ? t.cliente[0] : t.cliente;
     const ent = Array.isArray(t.entrada) ? t.entrada[0] : t.entrada;
     const grp = Array.isArray(t.grupo) ? t.grupo[0] : t.grupo;
+    const col = Array.isArray(t.tarefa_coluna) ? t.tarefa_coluna[0] : t.tarefa_coluna;
+    const colMeta = colMap[t.tarefa_coluna_id];
     return {
       id: t.id,
       titulo: t.titulo,
       descricao: t.descricao,
-      status: t.status as TarefaStatus,
+      tarefa_coluna_id: t.tarefa_coluna_id,
+      coluna_slug: col?.slug ?? colMeta?.slug ?? "destinada",
+      coluna_nome: col?.nome ?? colMeta?.nome ?? "A Fazer",
       prioridade: t.prioridade as TarefaPrioridade,
       prazo: t.prazo,
       arquivado: t.arquivado,
@@ -155,11 +185,6 @@ export default async function TarefasPage({
       entrada: ent ?? null,
     };
   });
-
-  // Filtra pelo período selecionado (semana/mês) a partir de `ref`.
-  const visiveis = itens.filter((t) =>
-    prazoDentroPeriodo(t.prazo, inicio, fim, contemHoje)
-  );
 
   // Membros ativos para atribuição (exclui clientes — eles não recebem tarefas)
   const { data: membrosRaw } = await supabase
@@ -186,14 +211,13 @@ export default async function TarefasPage({
     nome_empresa: c.nome_empresa,
   }));
 
-  // Agrupamentos do quadro ativo (pra alimentar o Select no TarefaDialog
-  // e os cabeçalhos de grupo no KanbanBoard).
+  // Agrupamentos do quadro ativo
   const { data: gruposRaw } = await supabase
     .from("tarefa_grupos")
     .select("id, nome, cliente_id, data_entrega, manual")
     .eq("agencia_id", aid)
     .eq("quadro_id", quadroAtivo.id)
-    .order("manual", { ascending: false }) // automáticos primeiro
+    .order("manual", { ascending: false })
     .order("nome", { ascending: true });
   const grupos: TarefaGrupoOption[] = (gruposRaw ?? []).map((g: any) => ({
     id: g.id,
@@ -209,7 +233,7 @@ export default async function TarefasPage({
     <div className="space-y-6">
       <PageHeader
         title="Tarefas"
-        description="Quadro de micro-gestão da equipe. Atribua tarefas e acompanhe o fluxo."
+        description="Quadro no estilo Trello. Crie quadros por semana ou projeto, arraste tarefas entre colunas."
         breadcrumbs={[{ href: "/admin", label: "Início" }, { label: "Tarefas" }]}
       />
       <Suspense fallback={null}>
@@ -219,15 +243,13 @@ export default async function TarefasPage({
           podeEditar={podeEditarQuadros}
         />
       </Suspense>
-      <Suspense fallback={null}>
-        <TarefasPeriodoNav periodo={periodo} refIso={refIso} label={label} />
-      </Suspense>
       <KanbanBoard
-        tarefas={visiveis}
+        tarefas={itens}
         membros={membros}
         clientes={clientes}
         quadros={quadrosList}
         grupos={grupos}
+        colunas={colunas}
         quadroAtivoId={quadroAtivo.id}
         meuId={session.profile.id}
         meuRole={session.profile.role}

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect, useCallback } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Plus, MoreHorizontal, Pencil, Trash2, X, Check, Layers } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, X, Check, Layers, CalendarDays, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -12,15 +12,15 @@ import {
   renomearQuadroAction,
   excluirQuadroAction,
 } from "@/lib/actions/quadro-actions";
+import { criarQuadroComColunasAction } from "@/lib/actions/coluna-actions";
+import { periodoRef } from "@/lib/planejamento";
 import type { TarefaQuadro } from "@/types/database";
 
 /**
- * Tabs horizontais no estilo Trello: um quadro por tab, mais o "+ Novo
- * quadro" inline. Cada tab tem menu `…` pra renomear/excluir. O "Quadro
- * geral" (mais antigo) tem badge "padrão" e não pode ser excluído.
- *
- * A navegação preserva `periodo` e `ref` da URL — clicar em outra tab só
- * troca o `quadro` na query string.
+ * Tabs horizontais no estilo Trello: um quadro por tab, mais atalhos pra
+ * criar o quadro "desta semana" / "próxima semana" (admin only). Cada tab
+ * tem menu `…` pra renomear/excluir. O "Quadro geral" (mais antigo) tem
+ * badge "padrão" e não pode ser excluído.
  */
 export function QuadroTabs({
   quadros,
@@ -43,18 +43,74 @@ export function QuadroTabs({
   };
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1">
-      {quadros.map((q) => (
-        <QuadroTab
-          key={q.id}
-          quadro={q}
-          ativo={q.id === quadroAtivoId}
-          isGeral={q.id === geralId}
-          podeEditar={podeEditar}
-          onSelecionar={() => irPara(q.id)}
-        />
-      ))}
-      {podeEditar && <NovoQuadroBotao />}
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+        {quadros.map((q) => (
+          <QuadroTab
+            key={q.id}
+            quadro={q}
+            ativo={q.id === quadroAtivoId}
+            isGeral={q.id === geralId}
+            podeEditar={podeEditar}
+            onSelecionar={() => irPara(q.id)}
+          />
+        ))}
+        {podeEditar && <NovoQuadroBotao />}
+      </div>
+      {podeEditar && <QuadroAtalhosSemana irPara={irPara} />}
+    </div>
+  );
+}
+
+// ============================================================================
+// ATALHOS "DESTA SEMANA" / "PRÓXIMA SEMANA"
+// ============================================================================
+function QuadroAtalhosSemana({ irPara }: { irPara: (id: string) => void }) {
+  const [pending, startTransition] = useTransition();
+
+  function criar(nome: string) {
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set("nome", nome);
+      const res = await criarQuadroComColunasAction(fd);
+      if (res?.error) {
+        alert(res.error);
+        return;
+      }
+      if (res?.id) irPara(res.id);
+    });
+  }
+
+  const hoje = new Date();
+  const refIso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(hoje.getDate()).padStart(2, "0")}`;
+  const labelAtual = periodoRef(refIso, "semana", hoje).label;
+  const prox = new Date(hoje);
+  prox.setDate(prox.getDate() + 7);
+  const proxIso = `${prox.getFullYear()}-${String(prox.getMonth() + 1).padStart(2, "0")}-${String(prox.getDate()).padStart(2, "0")}`;
+  const labelProx = periodoRef(proxIso, "semana", hoje).label;
+
+  return (
+    <div className="flex items-center gap-1 ml-auto">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => criar(`Semana ${labelAtual}`)}
+        className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border px-2.5 py-1 text-xs text-slate-400 hover:text-royal-200 hover:border-royal-500/40 hover:bg-royal-500/5 transition disabled:opacity-50"
+        title={`Criar quadro desta semana (${labelAtual})`}
+      >
+        <CalendarDays className="h-3.5 w-3.5" />
+        Desta semana
+      </button>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => criar(`Semana ${labelProx}`)}
+        className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-border px-2.5 py-1 text-xs text-slate-400 hover:text-royal-200 hover:border-royal-500/40 hover:bg-royal-500/5 transition disabled:opacity-50"
+        title={`Criar quadro da próxima semana (${labelProx})`}
+      >
+        <ChevronRight className="h-3.5 w-3.5" />
+        Próxima
+      </button>
     </div>
   );
 }

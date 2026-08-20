@@ -11,14 +11,7 @@ import { toast } from "@/components/ui/Toast";
 import { criarTarefaAction, atualizarTarefaAction } from "@/lib/actions/tarefa-actions";
 import { criarGrupoAction } from "@/lib/actions/grupo-actions";
 import type { ClienteOption, MembroOption, TarefaGrupoOption, TarefaItem } from "@/app/admin/tarefas/page";
-import type { TarefaQuadro } from "@/types/database";
-
-const STATUS_OPCOES = [
-  { value: "destinada", label: "Tarefa destinada" },
-  { value: "em_andamento", label: "Em andamento" },
-  { value: "pronta", label: "Pronta" },
-  { value: "entregue", label: "Entregue" },
-];
+import type { TarefaColuna, TarefaQuadro } from "@/types/database";
 
 const PRIORIDADE_OPCOES = [
   { value: "baixa", label: "Baixa" },
@@ -34,6 +27,8 @@ export function TarefaDialog({
   clientes,
   quadros,
   grupos,
+  colunas,
+  colunaIdInicial,
   quadroIdInicial,
   onClose,
 }: {
@@ -43,6 +38,8 @@ export function TarefaDialog({
   clientes: ClienteOption[];
   quadros: TarefaQuadro[];
   grupos: TarefaGrupoOption[];
+  colunas: TarefaColuna[];
+  colunaIdInicial: string | null;
   quadroIdInicial: string;
   onClose: () => void;
 }) {
@@ -50,6 +47,12 @@ export function TarefaDialog({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const editing = !!tarefa;
+
+  // Coluna inicial: a do `tarefa` (edição) ou a `colunaIdInicial` (criação
+  // vinda do "+ Adicionar tarefa" do rodapé da coluna). Se nada vier,
+  // usa a primeira coluna do quadro.
+  const colunaInicialId =
+    tarefa?.tarefa_coluna_id ?? colunaIdInicial ?? colunas[0]?.id ?? "";
 
   // Estado do agrupamento. O form serializa via name="grupo_id" — o
   // input hidden recebe o valor atual. Quando o usuário clica "Criar
@@ -177,11 +180,11 @@ export function TarefaDialog({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="label">Status</label>
-            <Select name="status" defaultValue={tarefa?.status ?? "destinada"}>
-              {STATUS_OPCOES.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
+            <label className="label">Coluna</label>
+            <Select name="tarefa_coluna_id" defaultValue={colunaInicialId}>
+              {colunas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
                 </option>
               ))}
             </Select>
