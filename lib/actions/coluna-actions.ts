@@ -291,6 +291,133 @@ async function swapOrdensFallback(
 }
 
 // ============================================================================
+// DEFINIR COR (cor de capa por coluna)
+//
+// cor pode ser null (limpa a cor) ou um hex (#RRGGBB).
+// ============================================================================
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+export async function definirCorColunaAction(
+  id: string,
+  cor: string | null
+): Promise<ColunaState> {
+  const session = await requireAgenciaAdmin();
+  const aid = session.profile.agencia_id!;
+  const supabase = createClient();
+
+  if (cor !== null && !HEX_COLOR.test(cor)) {
+    return { error: "Cor deve ser hex (#RRGGBB)." };
+  }
+  const c = await buscarColunaDaAgencia(supabase, aid, id);
+  if (!c) return { error: "Coluna não encontrada." };
+
+  const { error } = await supabase
+    .from("tarefa_colunas")
+    .update({ cor })
+    .eq("id", id);
+  if (error) return { error: "Erro ao atualizar cor da coluna." };
+  revalidatePath("/admin/tarefas");
+  return { ok: true, id };
+}
+
+// ============================================================================
+// MOVER COLUNA ENTRE (drag livre — recebe os 2 vizinhos no ponto de drop)
+//
+// Estratégia: em vez de fazer swap, colocamos `idA` ANTES de `idB`
+// recalculando ordens em batch. Usa-se uma "fenda" numérica temporária
+// pra não violar nenhuma constraint, e depois normaliza com passo 1024
+// só no intervalo afetado.
+// ============================================================================
+async function reordenarColunasNoQuadro(
+  supabase: ReturnType<typeof createClient>,
+  quadroId: string
+): Promise<void> {
+  const { data: cols } = await supabase
+    .from("tarefa_colunas")
+    .select("id, ordem")
+    .eq("quadro_id", quadroId)
+    .eq("arquivada", false)
+    .order("ordem", { ascending: true });
+  if (!cols) return;
+  let i = 1;
+  for (const c of cols) {
+    await supabase
+      .from("tarefa_colunas")
+      .update({ ordem: i * 1024 })
+      .eq("id", c.id);
+    i += 1;
+  }
+}
+
+export async function moverColunaEntreAction(
+  idArrastada: string,
+  idColunaVizinha: string
+): Promise<ColunaState> {
+  const session = await requireAgenciaAdmin();
+  const aid = session.profile.agencia_id!;
+  const supabase = createClient();
+
+  const a = await buscarColunaDaAgencia(supabase, aid, idArrastada);
+  if (!a) return { error: "Coluna arrastada não encontrada." };
+  const b = await buscarColunaDaAgencia(supabase, aid, idColunaVizinha);
+  if (!b) return { error: "Coluna vizinha não encontrada." };
+  if (a.quadro_id !== b.quadro_id) {
+    return { error: "Colunas devem estar no mesmo quadro." };
+  }
+
+  // Se a coluna arrastada é a mesma que a vizinha, não faz nada.
+  if (idArrastada === idColunaVizinha) return { ok: true, id: idArrastada };
+
+  // Renumera o quadro inteiro com passos 1024, depois troca a posição da
+  // arrastada pra imediatamente antes da vizinha. Mais simples que tentar
+  // calcular uma "fenda" — quadro raramente tem mais que ~10 colunas.
+  await reordenarColunasNoQuadro(supabase, a.quadro_id);
+
+  // Re-lê as colunas com a ordem nova
+  const { data: cols } = await supabase
+    .from("tarefa_colunas")
+    .select("id, ordem")
+    .eq("quadro_id", a.quadro_id)
+    .eq("arquivada", false)
+    .order("ordem", { ascending: true });
+  if (!cols) return { ok: true, id: idArrastada };
+
+  const idxVizinha = cols.findIndex((c) => c.id === idColunaVizinha);
+  if (idxVizinha === -1) return { ok: true, id: idArrastada };
+
+  // Remove a arrastada e reinsere antes da vizinha.
+  const semArrastada = cols.filter((c) => c.id !== idArrastada);
+  const insertIdx = idxVizinha; // já considerando que removemos a arrastada
+  const ordemAnterior = insertIdx === 0 ? 0 : Number(semArrastada[insertIdx - 1].ordem);
+  const ordemPosterior =
+    insertIdx >= semArrastada.length
+      ? Number(semArrastada[semArrastada.length - 1].ordem) + 1024
+      : Number(semArrastada[insertIdx].ordem);
+  const novaOrdem =
+    ordemAnterior === 0
+      ? ordemPosterior - 512
+      : (ordemAnterior + ordemPosterior) / 2;
+
+  // Se a fenda é menor que 1e-9, normaliza de novo (defesa em profundidade).
+  if (
+    ordemPosterior - ordemAnterior < 1e-9 &&
+    insertIdx > 0 &&
+    insertIdx < semArrastada.length
+  ) {
+    await reordenarColunasNoQuadro(supabase, a.quadro_id);
+    return { ok: true, id: idArrastada };
+  }
+
+  const { error } = await supabase
+    .from("tarefa_colunas")
+    .update({ ordem: novaOrdem })
+    .eq("id", idArrastada);
+  if (error) return { error: "Erro ao mover coluna." };
+  revalidatePath("/admin/tarefas");
+  return { ok: true, id: idArrastada };
+}
+
+// ============================================================================
 // CRIAR QUADRO
 //
 // Action usada pelo atalho "Criar desta semana" / "Criar da próxima

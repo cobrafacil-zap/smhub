@@ -2,11 +2,16 @@
 
 import { useState, useTransition, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Pencil, Trash2, Archive, ArchiveRestore, CalendarClock, CalendarDays, MoreHorizontal, Package, Check } from "lucide-react";
+import {
+  Pencil, Trash2, Archive, ArchiveRestore, CalendarClock,
+  CalendarDays, MoreHorizontal, Package, Check,
+  Paperclip, CheckSquare, Repeat,
+} from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { cn, initials } from "@/lib/utils";
 import { deletarTarefaAction, arquivarTarefaAction, alterarPrazoTarefaAction } from "@/lib/actions/tarefa-actions";
+import { LabelChips } from "./LabelChips";
 import type { TarefaItem } from "@/app/admin/tarefas/page";
 
 const PRIORIDADE_VARIANTE: Record<string, "default" | "info" | "warning" | "danger"> = {
@@ -58,6 +63,7 @@ export function TarefaCard({
   arrastando = false,
   onEdit,
   onView,
+  onMoverQuadro,
   onDragStart,
   onDragEnd,
 }: {
@@ -67,6 +73,7 @@ export function TarefaCard({
   arrastando?: boolean;
   onEdit: (t: TarefaItem) => void;
   onView: (t: TarefaItem) => void;
+  onMoverQuadro?: (id: string) => void;
   onDragStart?: () => void;
   onDragEnd?: () => void;
 }) {
@@ -140,12 +147,18 @@ export function TarefaCard({
             onEdit={onEdit}
             onArquivar={arquivar}
             onExcluir={excluir}
+            onMoverQuadro={onMoverQuadro}
           />
         </div>
       </div>
 
       {tarefa.descricao && (
         <p className="text-xs text-slate-400 line-clamp-2">{tarefa.descricao}</p>
+      )}
+
+      {/* Etiquetas (Trello-style) */}
+      {tarefa.labels.length > 0 && (
+        <LabelChips labels={tarefa.labels} max={4} />
       )}
 
       <div className="flex flex-wrap items-center gap-1.5">
@@ -204,8 +217,36 @@ export function TarefaCard({
           <span />
         )}
 
+        {/* Indicadores discretos no rodapé (Trello-style) */}
+        <div
+          onClick={stop}
+          onMouseDown={stop}
+          className="ml-auto flex items-center gap-2 text-[11px] text-slate-400"
+        >
+          {tarefa.checklists_resumo.total > 0 && (
+            <span
+              title={`${tarefa.checklists_resumo.concluidos} de ${tarefa.checklists_resumo.total} itens concluídos`}
+              className={cn(
+                "inline-flex items-center gap-0.5",
+                tarefa.checklists_resumo.total === tarefa.checklists_resumo.concluidos
+                  ? "text-success-400"
+                  : ""
+              )}
+            >
+              <CheckSquare className="h-3 w-3" />
+              {tarefa.checklists_resumo.concluidos}/{tarefa.checklists_resumo.total}
+            </span>
+          )}
+          {tarefa.anexos_count > 0 && (
+            <span title={`${tarefa.anexos_count} anexo(s)`} className="inline-flex items-center gap-0.5">
+              <Paperclip className="h-3 w-3" />
+              {tarefa.anexos_count}
+            </span>
+          )}
+        </div>
+
         {/* Mudar prazo rápido — ação discreta no rodapé do card */}
-        <div onClick={stop} onMouseDown={stop} className="ml-auto">
+        <div onClick={stop} onMouseDown={stop}>
           <PrazoDropdown prazo={tarefa.prazo} onChange={mudarPrazo} />
         </div>
       </div>
@@ -228,6 +269,7 @@ function CartaoMenu({
   onEdit,
   onArquivar,
   onExcluir,
+  onMoverQuadro,
 }: {
   tarefa: TarefaItem;
   podeEditar: boolean;
@@ -236,6 +278,7 @@ function CartaoMenu({
   onEdit: (t: TarefaItem) => void;
   onArquivar: (a: boolean) => void;
   onExcluir: () => void;
+  onMoverQuadro?: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -321,6 +364,19 @@ function CartaoMenu({
                 </>
               )}
             </button>
+            {onMoverQuadro && podeEditar && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  onMoverQuadro(tarefa.id);
+                }}
+                className="w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-bg-muted inline-flex items-center gap-2"
+              >
+                <Repeat className="h-3.5 w-3.5" /> Mover pra outro quadro
+              </button>
+            )}
             {podeExcluir && (
               <ConfirmDialog
                 trigger={

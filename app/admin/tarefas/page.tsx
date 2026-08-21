@@ -9,6 +9,7 @@ import { KanbanBoard } from "@/components/tarefas/KanbanBoard";
 import { QuadroTabs } from "@/components/tarefas/QuadroTabs";
 import { QuadroEmptyStateClient } from "@/components/tarefas/QuadroEmptyStateClient";
 import { periodoRef } from "@/lib/planejamento";
+import { getAnexoSignedUrlAction } from "@/lib/actions/tarefa-anexo-actions";
 import type { TarefaPrioridade, TarefaColuna } from "@/types/database";
 
 export const metadata = { title: "Tarefas" };
@@ -23,6 +24,8 @@ export type TarefaItem = {
   coluna_nome: string;
   prioridade: TarefaPrioridade;
   prazo: string | null;
+  /** Posição dentro da coluna (numeric no DB; arrastar atualiza). */
+  ordem: number;
   arquivado: boolean;
   cliente_id: string | null;
   cliente_nome: string | null;
@@ -31,9 +34,35 @@ export type TarefaItem = {
   grupo_id: string | null;
   grupo_nome: string | null;
   responsaveis: { id: string; nome: string }[];
+  /** Labels aplicados à tarefa (N-N). */
+  labels: { id: string; nome: string; cor: string }[];
+  /** Resumo agregado das checklists da tarefa (soma de todas). */
+  checklists_resumo: { total: number; concluidos: number };
+  /** Quantidade de anexos. */
+  anexos_count: number;
+  /** Lista de anexos (com signed URL) — usada nos dialogs. */
+  anexos: AnexoResumo[];
+  /** Checklists completas com itens — usada nos dialogs. */
+  checklists: ChecklistResumo[];
   /** Entrada do planejamento vinculada (quando a tarefa veio de um post). */
   entrada: EntradaResumo | null;
 };
+
+export type AnexoResumo = {
+  id: string;
+  nome_original: string;
+  mime: string;
+  tamanho: number;
+  url: string;
+};
+
+export type ChecklistResumo = {
+  id: string;
+  nome: string;
+  itens: { id: string; texto: string; concluido: boolean }[];
+};
+
+export type LabelOption = { id: string; nome: string; cor: string };
 
 export type TarefaGrupoOption = {
   id: string;
@@ -118,31 +147,52 @@ export default async function TarefasPage({
 
   // -------------------------------------------------------------------------
   // Colunas do quadro ativo (sem arquivadas). Cada coluna tem slug + nome
-  // editável (migration 0040).
+  // editável (migration 0040). Também buscamos as colunas de TODOS os quadros
+  // da agência pra alimentar o MoverQuadroDialog.
   // -------------------------------------------------------------------------
   const { data: colunasRaw } = await supabase
     .from("tarefa_colunas")
-    .select("id, agencia_id, quadro_id, slug, nome, ordem, arquivada, created_at, updated_at")
+    .select("id, agencia_id, quadro_id, slug, nome, ordem, arquivada, cor, created_at, updated_at")
     .eq("quadro_id", quadroAtivo.id)
     .eq("arquivada", false)
     .order("ordem", { ascending: true });
   const colunas: TarefaColuna[] = (colunasRaw ?? []) as TarefaColuna[];
 
+  // Mapa de colunas por quadro (para MoverQuadroDialog) — só nome + id
+  const { data: todasColunas } = await supabase
+    .from("tarefa_colunas")
+    .select("id, quadro_id, nome, ordem, arquivada")
+    .eq("agencia_id", aid)
+    .eq("arquivada", false)
+    .order("ordem", { ascending: true });
+  const colunasPorQuadro: Record<string, { id: string; nome: string }[]> = {};
+  for (const c of (todasColunas ?? []) as any[]) {
+    (colunasPorQuadro[c.quadro_id] ??= []).push({
+      id: c.id,
+      nome: c.nome,
+    });
+  }
+
   // -------------------------------------------------------------------------
   // Tarefas da agência (com cliente vinculado e join em tarefa_colunas).
+  // Ordena por `ordem` (crescente) pra preservar posições de drag; usa
+  // created_at como desempate.
   // -------------------------------------------------------------------------
   const { data: tarefasRaw } = await supabase
     .from("tarefas")
     .select(
-      "id, titulo, descricao, tarefa_coluna_id, prioridade, prazo, arquivado, cliente_id, criado_por, created_at, quadro_id, grupo_id, tarefa_coluna:tarefa_colunas(slug, nome), cliente:clientes(nome_empresa), grupo:tarefa_grupos(id, nome), entrada:planejamento_entradas(id, data, titulo, tipo, copy, hashtags, descricao, midia_url, estilo, status)"
+      "id, titulo, descricao, tarefa_coluna_id, prioridade, prazo, ordem, arquivado, cliente_id, criado_por, created_at, quadro_id, grupo_id, tarefa_coluna:tarefa_colunas(slug, nome), cliente:clientes(nome_empresa), grupo:tarefa_grupos(id, nome), entrada:planejamento_entradas(id, data, titulo, tipo, copy, hashtags, descricao, midia_url, estilo, status)"
     )
     .eq("agencia_id", aid)
     .eq("quadro_id", quadroAtivo.id)
+    .order("ordem", { ascending: true })
     .order("created_at", { ascending: false });
   const tarefas = (tarefasRaw ?? []) as any[];
 
-  // Responsáveis (multi-atribuição) — uma query com join para usuarios
+  // IDs pra batch queries auxiliares
   const ids = tarefas.map((t: any) => t.id);
+
+  // Responsáveis (multi-atribuição)
   let respMap: Record<string, { id: string; nome: string }[]> = {};
   if (ids.length > 0) {
     const { data: respRaw } = await supabase
@@ -153,6 +203,99 @@ export default async function TarefasPage({
       const u = Array.isArray(r.usuario) ? r.usuario[0] : r.usuario;
       if (!u) continue;
       (respMap[r.tarefa_id] ??= []).push({ id: u.id, nome: u.nome });
+    }
+  }
+
+  // Labels da agência (catálogo — pro picker)
+  const { data: labelsRaw } = await supabase
+    .from("tarefa_labels")
+    .select("id, nome, cor, ordem")
+    .eq("agencia_id", aid)
+    .order("ordem", { ascending: true })
+    .order("nome", { ascending: true });
+  const labelsOptions: LabelOption[] = (labelsRaw ?? []).map((l: any) => ({
+    id: l.id,
+    nome: l.nome,
+    cor: l.cor,
+  }));
+
+  // Labels aplicadas em cada tarefa (N-N, batch)
+  let labelsPorTarefa: Record<string, { id: string; nome: string; cor: string }[]> = {};
+  if (ids.length > 0) {
+    const { data: vinculos } = await supabase
+      .from("tarefa_label_vinculos")
+      .select("tarefa_id, label:tarefa_labels(id, nome, cor)")
+      .in("tarefa_id", ids);
+    for (const v of (vinculos ?? []) as any[]) {
+      const lb = Array.isArray(v.label) ? v.label[0] : v.label;
+      if (!lb) continue;
+      (labelsPorTarefa[v.tarefa_id] ??= []).push(lb);
+    }
+  }
+
+  // Resumo de checklists por tarefa (soma de concluídos / total) + checklists
+  // completas pra exibir nos dialogs (read + edit).
+  let checklistsResumo: Record<string, { total: number; concluidos: number }> = {};
+  const checklistsPorTarefa: Record<string, ChecklistResumo[]> = {};
+  if (ids.length > 0) {
+    const { data: checklistsRaw } = await supabase
+      .from("tarefa_checklists")
+      .select(
+        "id, nome, tarefa_id, ordem, itens:tarefa_checklist_itens(id, texto, concluido, ordem)"
+      )
+      .in("tarefa_id", ids)
+      .order("ordem", { ascending: true });
+    for (const c of (checklistsRaw ?? []) as any[]) {
+      const itensOrdenados = (c.itens ?? [])
+        .map((i: any) => ({
+          id: i.id,
+          texto: i.texto,
+          concluido: i.concluido,
+        }))
+        .sort(
+          (a: any, b: any) =>
+            (a.ordem ?? 0) - (b.ordem ?? 0)
+        );
+      checklistsPorTarefa[c.tarefa_id] ??= [];
+      checklistsPorTarefa[c.tarefa_id].push({
+        id: c.id,
+        nome: c.nome,
+        itens: itensOrdenados,
+      });
+      const r = (checklistsResumo[c.tarefa_id] ??= {
+        total: 0,
+        concluidos: 0,
+      });
+      for (const i of itensOrdenados) {
+        r.total += 1;
+        if (i.concluido) r.concluidos += 1;
+      }
+    }
+  }
+
+  // Anexos por tarefa (lista completa + signed URL pra exibir nos dialogs)
+  let anexosCount: Record<string, number> = {};
+  const anexosPorTarefa: Record<string, AnexoResumo[]> = {};
+  if (ids.length > 0) {
+    const { data: anexos } = await supabase
+      .from("tarefa_anexos")
+      .select("id, tarefa_id, nome_original, mime, tamanho")
+      .in("tarefa_id", ids)
+      .order("created_at", { ascending: true });
+    // signed URLs geradas em paralelo (mas cada chamada é uma action, então
+      // pra não estourarem quota, vamos serializar — ainda assim, é barato)
+    for (const a of (anexos ?? []) as any[]) {
+      anexosCount[a.tarefa_id] = (anexosCount[a.tarefa_id] ?? 0) + 1;
+      const urlRes = await getAnexoSignedUrlAction(a.id);
+      if (urlRes?.signedUrl) {
+        (anexosPorTarefa[a.tarefa_id] ??= []).push({
+          id: a.id,
+          nome_original: a.nome_original,
+          mime: a.mime,
+          tamanho: a.tamanho,
+          url: urlRes.signedUrl,
+        });
+      }
     }
   }
 
@@ -174,6 +317,7 @@ export default async function TarefasPage({
       coluna_nome: col?.nome ?? colMeta?.nome ?? "A Fazer",
       prioridade: t.prioridade as TarefaPrioridade,
       prazo: t.prazo,
+      ordem: Number(t.ordem ?? 0),
       arquivado: t.arquivado,
       cliente_id: t.cliente_id,
       cliente_nome: cli?.nome_empresa ?? null,
@@ -182,6 +326,11 @@ export default async function TarefasPage({
       grupo_id: t.grupo_id,
       grupo_nome: grp?.nome ?? null,
       responsaveis: respMap[t.id] ?? [],
+      labels: labelsPorTarefa[t.id] ?? [],
+      checklists_resumo: checklistsResumo[t.id] ?? { total: 0, concluidos: 0 },
+      checklists: checklistsPorTarefa[t.id] ?? [],
+      anexos_count: anexosCount[t.id] ?? 0,
+      anexos: anexosPorTarefa[t.id] ?? [],
       entrada: ent ?? null,
     };
   });
@@ -250,6 +399,8 @@ export default async function TarefasPage({
         quadros={quadrosList}
         grupos={grupos}
         colunas={colunas}
+        colunasPorQuadro={colunasPorQuadro}
+        labels={labelsOptions}
         quadroAtivoId={quadroAtivo.id}
         meuId={session.profile.id}
         meuRole={session.profile.role}

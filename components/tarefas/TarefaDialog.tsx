@@ -10,7 +10,10 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/Toast";
 import { criarTarefaAction, atualizarTarefaAction } from "@/lib/actions/tarefa-actions";
 import { criarGrupoAction } from "@/lib/actions/grupo-actions";
-import type { ClienteOption, MembroOption, TarefaGrupoOption, TarefaItem } from "@/app/admin/tarefas/page";
+import { LabelPicker } from "./LabelPicker";
+import { ChecklistEditor, type Checklist } from "./ChecklistEditor";
+import { AnexosEditor, type AnexoItem } from "./AnexosEditor";
+import type { ClienteOption, MembroOption, TarefaGrupoOption, TarefaItem, LabelOption } from "@/app/admin/tarefas/page";
 import type { TarefaColuna, TarefaQuadro } from "@/types/database";
 
 const PRIORIDADE_OPCOES = [
@@ -30,6 +33,7 @@ export function TarefaDialog({
   colunas,
   colunaIdInicial,
   quadroIdInicial,
+  labels,
   onClose,
 }: {
   open: boolean;
@@ -41,6 +45,7 @@ export function TarefaDialog({
   colunas: TarefaColuna[];
   colunaIdInicial: string | null;
   quadroIdInicial: string;
+  labels: LabelOption[];
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -67,6 +72,19 @@ export function TarefaDialog({
   // Mantém a lista em sync se o pai atualizar após criar grupo.
   useEffect(() => setGruposLista(grupos), [grupos]);
 
+  // Estados das seções Trello (só em edição)
+  const [labelsSelecionados, setLabelsSelecionados] = useState<string[]>(
+    tarefa?.labels.map((l) => l.id) ?? []
+  );
+  const [checklists, setChecklists] = useState<Checklist[]>(
+    (tarefa?.checklists ?? []).map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      itens: c.itens,
+    }))
+  );
+  const [anexos, setAnexos] = useState<AnexoItem[]>(tarefa?.anexos ?? []);
+
   useEffect(() => {
     if (open) {
       setError(null);
@@ -75,11 +93,20 @@ export function TarefaDialog({
       setNovoGrupoNome("");
       setNovoGrupoClienteId("");
       setNovoGrupoData("");
+      setLabelsSelecionados(tarefa?.labels.map((l) => l.id) ?? []);
+      setChecklists(
+        (tarefa?.checklists ?? []).map((c) => ({
+          id: c.id,
+          nome: c.nome,
+          itens: c.itens,
+        }))
+      );
+      setAnexos(tarefa?.anexos ?? []);
       ref.current?.showModal();
     } else {
       ref.current?.close();
     }
-  }, [open, tarefa?.grupo_id]);
+  }, [open, tarefa?.grupo_id, tarefa]);
 
   function handleClose() {
     if (!pending) onClose();
@@ -127,6 +154,9 @@ export function TarefaDialog({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    // Anexa os IDs dos labels selecionados (a action usa getAll("label_ids"))
+    formData.delete("label_ids");
+    for (const id of labelsSelecionados) formData.append("label_ids", id);
     startTransition(async () => {
       const res = editing
         ? await atualizarTarefaAction(tarefa!.id, formData)
@@ -353,6 +383,46 @@ export function TarefaDialog({
             })}
           </div>
         </div>
+
+        {/* Etiquetas (Trello-style) */}
+        <div className="space-y-1.5">
+          <label className="label flex items-center gap-1.5">
+            <Package className="h-3 w-3" /> Etiquetas
+          </label>
+          <LabelPicker
+            opcoes={labels}
+            selecionados={labelsSelecionados}
+            onChange={setLabelsSelecionados}
+            admin={true}
+          />
+          {/* Inputs hidden pra serializar no FormData */}
+          {labelsSelecionados.map((id) => (
+            <input key={id} type="hidden" name="label_ids" value={id} />
+          ))}
+        </div>
+
+        {/* Checklists — só em edição (não dá pra criar sem ID) */}
+        {editing && (
+          <div className="space-y-1.5">
+            <label className="label">Checklists</label>
+            <ChecklistEditor
+              tarefaId={tarefa!.id}
+              checklists={checklists}
+              onChange={setChecklists}
+            />
+          </div>
+        )}
+
+        {/* Anexos — só em edição */}
+        {editing && (
+          <div className="space-y-1.5">
+            <AnexosEditor
+              tarefaId={tarefa!.id}
+              anexos={anexos}
+              onChange={setAnexos}
+            />
+          </div>
+        )}
 
         {error && (
           <p className="text-sm text-danger-400 bg-danger-500/10 border border-danger-500/30 rounded-md px-3 py-2">

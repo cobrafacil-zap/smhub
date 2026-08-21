@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { X, Pencil, CalendarClock, Users2, ImageIcon } from "lucide-react";
+import { X, Pencil, CalendarClock, Users2, ImageIcon, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn, initials } from "@/lib/utils";
 import { ENTRY_TIPO_LABEL, ENTRY_STATUS, ENTRY_TIPO_COR } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
+import { LabelChips } from "./LabelChips";
+import { ChecklistViewer } from "./ChecklistViewer";
+import { AnexosViewer } from "./AnexosViewer";
 import type { TarefaItem } from "@/app/admin/tarefas/page";
 import type { TarefaColuna } from "@/types/database";
 
@@ -48,6 +51,7 @@ export function TarefaDetailDialog({
   podeEditar,
   onEdit,
   onClose,
+  onMoverQuadro,
 }: {
   open: boolean;
   tarefa: TarefaItem | null;
@@ -55,6 +59,7 @@ export function TarefaDetailDialog({
   podeEditar: boolean;
   onEdit: (t: TarefaItem) => void;
   onClose: () => void;
+  onMoverQuadro?: (id: string) => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
 
@@ -154,6 +159,32 @@ export function TarefaDetailDialog({
           </div>
         )}
 
+        {/* Etiquetas */}
+        {tarefa.labels.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Etiquetas</p>
+            <LabelChips labels={tarefa.labels} size="sm" />
+          </div>
+        )}
+
+        {/* Checklists */}
+        {tarefa.checklists.length > 0 && (
+          <div className="space-y-1.5">
+            <ChecklistViewer
+              checklists={tarefa.checklists.map((c) => ({
+                id: c.id,
+                nome: c.nome,
+                itens: c.itens,
+              }))}
+            />
+          </div>
+        )}
+
+        {/* Anexos */}
+        {tarefa.anexos.length > 0 && (
+          <AnexosViewer anexos={tarefa.anexos} />
+        )}
+
         {/* Peça do planejamento vinculada */}
         {e && (
           <div className="rounded-lg border border-border bg-bg-elevated/40 p-3 space-y-3">
@@ -231,6 +262,16 @@ export function TarefaDetailDialog({
 
         {/* Rodapé */}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+          {podeEditar && onMoverQuadro && (
+            <Button
+              type="button"
+              variant="ghost"
+              iconLeft={<Repeat className="h-4 w-4" />}
+              onClick={() => onMoverQuadro(tarefa.id)}
+            >
+              Mover pra outro quadro
+            </Button>
+          )}
           <Button type="button" variant="ghost" onClick={onClose}>
             Fechar
           </Button>

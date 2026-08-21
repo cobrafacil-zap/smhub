@@ -414,6 +414,8 @@ export interface Database {
           nome: string;
           ordem: number;
           arquivada: boolean;
+          /** Cor de capa hex (#RRGGBB). NULL = sem cor. Adicionado na migration 0041. */
+          cor: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -425,10 +427,111 @@ export interface Database {
           nome: string;
           ordem?: number;
           arquivada?: boolean;
+          cor?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["tarefa_colunas"]["Insert"]>;
+      };
+      tarefa_labels: {
+        Row: {
+          id: string;
+          agencia_id: string;
+          nome: string;
+          /** Cor hex (#RRGGBB). Sem CHECK no schema — app valida. */
+          cor: string;
+          ordem: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agencia_id: string;
+          nome: string;
+          cor: string;
+          ordem?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefa_labels"]["Insert"]>;
+      };
+      tarefa_label_vinculos: {
+        Row: {
+          tarefa_id: string;
+          label_id: string;
+          created_at: string;
+        };
+        Insert: {
+          tarefa_id: string;
+          label_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefa_label_vinculos"]["Insert"]>;
+      };
+      tarefa_checklists: {
+        Row: {
+          id: string;
+          tarefa_id: string;
+          nome: string;
+          ordem: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tarefa_id: string;
+          nome: string;
+          ordem?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefa_checklists"]["Insert"]>;
+      };
+      tarefa_checklist_itens: {
+        Row: {
+          id: string;
+          checklist_id: string;
+          texto: string;
+          concluido: boolean;
+          /** numeric(20,10) no DB — `number` no TS. Permite drag fracionário. */
+          ordem: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          checklist_id: string;
+          texto: string;
+          concluido?: boolean;
+          ordem?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefa_checklist_itens"]["Insert"]>;
+      };
+      tarefa_anexos: {
+        Row: {
+          id: string;
+          tarefa_id: string;
+          agencia_id: string;
+          nome_original: string;
+          /** Path dentro do bucket `tarefa-anexos`. */
+          path: string;
+          mime: string | null;
+          tamanho: number | null;
+          uploaded_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tarefa_id: string;
+          agencia_id: string;
+          nome_original: string;
+          path: string;
+          mime?: string | null;
+          tamanho?: number | null;
+          uploaded_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["tarefa_anexos"]["Insert"]>;
       };
       gravacoes: {
         Row: {
@@ -878,6 +981,13 @@ export type TarefaResponsavel =
 export type TarefaQuadro = Database["public"]["Tables"]["tarefa_quadros"]["Row"];
 export type TarefaGrupo = Database["public"]["Tables"]["tarefa_grupos"]["Row"];
 export type TarefaColuna = Database["public"]["Tables"]["tarefa_colunas"]["Row"];
+export type TarefaLabel = Database["public"]["Tables"]["tarefa_labels"]["Row"];
+export type TarefaLabelVinculo =
+  Database["public"]["Tables"]["tarefa_label_vinculos"]["Row"];
+export type TarefaChecklist = Database["public"]["Tables"]["tarefa_checklists"]["Row"];
+export type TarefaChecklistItem =
+  Database["public"]["Tables"]["tarefa_checklist_itens"]["Row"];
+export type TarefaAnexo = Database["public"]["Tables"]["tarefa_anexos"]["Row"];
 export type Gravacao = Database["public"]["Tables"]["gravacoes"]["Row"];
 export type PlanejamentoEntrada =
   Database["public"]["Tables"]["planejamento_entradas"]["Row"];

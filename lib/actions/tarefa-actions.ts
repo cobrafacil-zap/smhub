@@ -26,6 +26,7 @@ const tarefaSchema = z.object({
   quadro_id: z.string().uuid().optional().nullable(),
   grupo_id: z.string().uuid().optional().nullable(),
   responsaveis: z.array(z.string().uuid()).optional().default([]),
+  label_ids: z.array(z.string().uuid()).optional().default([]),
 });
 
 export type TarefaState = { error?: string; ok?: boolean } | undefined;
@@ -33,6 +34,27 @@ export type TarefaState = { error?: string; ok?: boolean } | undefined;
 // ============================================================================
 // HELPERS
 // ============================================================================
+
+/**
+ * Sincroniza os vínculos tarefa <-> label: remove os antigos, insere os novos.
+ * Idempotente. Não loga warnings pra erros triviais (FK duplicada, etc).
+ */
+async function sincronizarLabelsAction(
+  supabase: ReturnType<typeof createClient>,
+  tarefaId: string,
+  labelIds: string[]
+): Promise<void> {
+  // Remove todos os vínculos atuais
+  await supabase.from("tarefa_label_vinculos").delete().eq("tarefa_id", tarefaId);
+  // Insere os novos (se houver)
+  if (labelIds.length === 0) return;
+  const { error } = await supabase
+    .from("tarefa_label_vinculos")
+    .insert(labelIds.map((label_id) => ({ tarefa_id: tarefaId, label_id })));
+  if (error) {
+    console.error("[sincronizarLabelsAction] erro ao inserir vinculos:", error);
+  }
+}
 //
 // Valida que o `quadro_id` enviado pertence à agência. Se não vier, usa o
 // "Quadro geral" (mais antigo). Garante que toda tarefa tenha um quadro
@@ -190,6 +212,12 @@ export async function criarTarefaAction(
     }
   }
 
+  // Labels (vincula todos de uma vez)
+  const labelIds = parsed.data.label_ids ?? [];
+  if (labelIds.length > 0) {
+    await sincronizarLabelsAction(supabase, tarefa.id, labelIds);
+  }
+
   revalidatePath("/admin/tarefas");
   revalidatePath("/admin");
   return { ok: true };
@@ -278,22 +306,40 @@ export async function atualizarTarefaAction(
     }
   }
 
+  // Sincroniza labels
+  await sincronizarLabelsAction(supabase, id, parsed.data.label_ids ?? []);
+
   revalidatePath("/admin/tarefas");
   revalidatePath("/admin");
   return { ok: true };
 }
 
 // ============================================================================
-// MOVER (mudar coluna do kanban)
+// MOVER (mudar coluna E/OU posição dentro do kanban)
 //
-// Recebe o `tarefa_coluna_id` (UUID) da coluna de destino. Valida que a
-// coluna pertence à agência e ao quadro atual da tarefa — assim a action
-// recusa mover entre quadros diferentes (o KanbanBoard passa a coluna do
-// mesmo quadro selecionado).
+// Recebe:
+//   - id: UUID da tarefa.
+//   - colunaId: UUID da coluna de destino.
+//   - antesDeTarefaId: se informado, a tarefa vai ANTES dessa tarefa
+//     (dentro da mesma coluna). Se null/undefined, vai pro fim.
+//
+// Valida coluna do mesmo quadro. NÃO move entre quadros — pra isso use
+// `moverTarefaQuadroAction`.
+//
+// Algoritmo de ordem fracionário (estilo Trello):
+//   - Sem `antesDeTarefaId`: nova_ordem = max(coluna) + 1024.
+//   - Com `antesDeTarefaId`: nova_ordem = (ordem_anterior + ordem_vizinho) / 2,
+//     onde "anterior" é a tarefa imediatamente antes do vizinho (na ordem
+//     atual). Se for o primeiro, nova_ordem = ordem_vizinho - 512.
+//   - Se colidir (< 1e-9 de distância), chama o RPC `renumerar_ordem_tarefas_coluna`
+//     pra dar espaço e refaz o cálculo.
 // ============================================================================
+const COLISAO_EPS = 1e-9;
+
 export async function moverTarefaAction(
   id: string,
-  colunaId: string
+  colunaId: string,
+  antesDeTarefaId: string | null = null
 ): Promise<TarefaState> {
   const session = await requireAgenciaMember();
   const supabase = createClient();
@@ -306,7 +352,7 @@ export async function moverTarefaAction(
   // Busca a tarefa pra saber o quadro.
   const { data: tarefa } = await supabase
     .from("tarefas")
-    .select("id, quadro_id")
+    .select("id, quadro_id, tarefa_coluna_id, ordem")
     .eq("id", id)
     .eq("agencia_id", aid)
     .maybeSingle();
@@ -318,9 +364,128 @@ export async function moverTarefaAction(
     return { error: "Coluna inválida (não pertence ao quadro da tarefa)." };
   }
 
+  // Calcula a nova posição dentro da coluna alvo.
+  // 1) Sem `antesDeTarefaId` → fim.
+  // 2) Com `antesDeTarefaId`:
+  //    - Vai pro fim se for null/undefined.
+  //    - Vai antes do vizinho (ou pro fim se vizinho não existir).
+  let novaOrdem: number;
+  let precisaAtualizarColuna = tarefa.tarefa_coluna_id !== colunaId;
+
+  if (!antesDeTarefaId || antesDeTarefaId === id) {
+    // Sem vizinho: vai pro fim
+    const { data: maxRow } = await supabase
+      .from("tarefas")
+      .select("ordem")
+      .eq("tarefa_coluna_id", colunaId)
+      .order("ordem", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    novaOrdem = (Number(maxRow?.ordem ?? 0) || 0) + 1024;
+  } else {
+    if (!/^[0-9a-f-]{36}$/i.test(antesDeTarefaId)) {
+      return { error: "Tarefa de referência inválida." };
+    }
+    const { data: viz } = await supabase
+      .from("tarefas")
+      .select("id, ordem")
+      .eq("id", antesDeTarefaId)
+      .eq("tarefa_coluna_id", colunaId)
+      .maybeSingle();
+    if (!viz) {
+      // Vizinho não está na coluna destino (talvez em outra coluna):
+      // vai pro fim.
+      const { data: maxRow } = await supabase
+        .from("tarefas")
+        .select("ordem")
+        .eq("tarefa_coluna_id", colunaId)
+        .order("ordem", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      novaOrdem = (Number(maxRow?.ordem ?? 0) || 0) + 1024;
+    } else {
+      // Pega a tarefa imediatamente antes do vizinho (excluindo a própria)
+      const { data: anterior } = await supabase
+        .from("tarefas")
+        .select("id, ordem")
+        .eq("tarefa_coluna_id", colunaId)
+        .lt("ordem", viz.ordem)
+        .neq("id", id)
+        .order("ordem", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!anterior) {
+        novaOrdem = Number(viz.ordem) - 512;
+      } else {
+        novaOrdem = (Number(anterior.ordem) + Number(viz.ordem)) / 2;
+      }
+    }
+  }
+
+  // Detecta colisão de precisão: se novaOrdem coincide com algum vizinho,
+  // chama o RPC de renumeração e refaz o cálculo.
+  if (novaOrdem !== undefined) {
+    const { data: vizinhos } = await supabase
+      .from("tarefas")
+      .select("id, ordem")
+      .eq("tarefa_coluna_id", colunaId)
+      .neq("id", id);
+    const colide = (vizinhos ?? []).some(
+      (v) => Math.abs(Number(v.ordem) - novaOrdem) < COLISAO_EPS
+    );
+    if (colide) {
+      // Renumera via RPC
+      const { error: rpcErr } = await supabase.rpc("renumerar_ordem_tarefas_coluna", {
+        coluna_id: colunaId,
+      });
+      if (rpcErr) {
+        console.error("[moverTarefaAction] rpc renumerar error:", rpcErr);
+      }
+      // Recalcula novaOrdem na nova escala
+      if (!antesDeTarefaId || antesDeTarefaId === id) {
+        const { data: maxRow } = await supabase
+          .from("tarefas")
+          .select("ordem")
+          .eq("tarefa_coluna_id", colunaId)
+          .order("ordem", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        novaOrdem = (Number(maxRow?.ordem ?? 0) || 0) + 1024;
+      } else {
+        const { data: viz } = await supabase
+          .from("tarefas")
+          .select("id, ordem")
+          .eq("id", antesDeTarefaId)
+          .eq("tarefa_coluna_id", colunaId)
+          .maybeSingle();
+        if (viz) {
+          const { data: anterior } = await supabase
+            .from("tarefas")
+            .select("id, ordem")
+            .eq("tarefa_coluna_id", colunaId)
+            .lt("ordem", viz.ordem)
+            .neq("id", id)
+            .order("ordem", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (!anterior) novaOrdem = Number(viz.ordem) - 512;
+          else novaOrdem = (Number(anterior.ordem) + Number(viz.ordem)) / 2;
+        } else {
+          // fallback
+          novaOrdem = (Number(tarefa.ordem) || 0) + 1024;
+        }
+      }
+    }
+  }
+
+  const patch: Record<string, unknown> = { ordem: novaOrdem };
+  if (precisaAtualizarColuna) {
+    patch.tarefa_coluna_id = colunaId;
+  }
+
   const { error } = await supabase
     .from("tarefas")
-    .update({ tarefa_coluna_id: colunaId })
+    .update(patch)
     .eq("id", id)
     .eq("agencia_id", aid);
   if (error) return { error: "Erro ao mover tarefa." };
@@ -410,4 +575,71 @@ export async function deletarTarefaAction(id: string): Promise<TarefaState> {
   revalidatePath("/admin/tarefas");
   revalidatePath("/admin");
   return { ok: true };
+}
+
+// ============================================================================
+// CRIAR RÁPIDO (inline no footer da coluna — sem modal)
+//
+// Versão enxuta do criar: só titulo + coluna. Resto fica em defaults
+// (prioridade media, sem prazo, sem cliente, sem responsável, sem label).
+// Mesmo role check do criarTarefaAction (só admin).
+// ============================================================================
+const rapidoSchema = z.object({
+  titulo: z.string().trim().min(2, "Título é obrigatório."),
+  colunaId: z.string().uuid("Coluna inválida."),
+});
+
+export async function criarTarefaRapidoAction(input: {
+  titulo: string;
+  colunaId: string;
+}): Promise<TarefaState & { id?: string }> {
+  const session = await requireAgenciaMember();
+  if (session.profile.role !== "admin_agencia") {
+    return { error: "Apenas administradores podem criar tarefas." };
+  }
+  const aid = session.profile.agencia_id!;
+  const supabase = createClient();
+
+  const parsed = rapidoSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  // Pega o quadro da coluna
+  const { data: col } = await supabase
+    .from("tarefa_colunas")
+    .select("id, quadro_id")
+    .eq("id", parsed.data.colunaId)
+    .maybeSingle();
+  if (!col) return { error: "Coluna não encontrada." };
+
+  // Próxima ordem no fim da coluna
+  const { data: maxRow } = await supabase
+    .from("tarefas")
+    .select("ordem")
+    .eq("tarefa_coluna_id", parsed.data.colunaId)
+    .order("ordem", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const ordem = (Number(maxRow?.ordem ?? 0) || 0) + 1024;
+
+  const { data: tarefa, error } = await supabase
+    .from("tarefas")
+    .insert({
+      agencia_id: aid,
+      criado_por: session.profile.id,
+      titulo: parsed.data.titulo,
+      tarefa_coluna_id: parsed.data.colunaId,
+      quadro_id: col.quadro_id,
+      prioridade: "media",
+      ordem,
+    })
+    .select("id")
+    .single();
+  if (error || !tarefa) {
+    return { error: `Erro ao criar tarefa: ${error?.message ?? "desconhecido"}` };
+  }
+  revalidatePath("/admin/tarefas");
+  revalidatePath("/admin");
+  return { ok: true, id: tarefa.id };
 }

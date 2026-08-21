@@ -200,7 +200,23 @@ export const STORAGE_BUCKETS = {
   reports: "reports",
   invoices: "invoices",
   platform: "platform-assets",
+  tarefaAnexos: "tarefa-anexos",
 } as const;
+
+/** MIME types permitidos em anexos de tarefa (validação no server action). */
+export const TAREFA_ANEXO_MIME_PERMITIDOS = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+] as const;
+
+/** Tamanho máximo de um anexo (50 MB). */
+export const TAREFA_ANEXO_MAX_BYTES = 50 * 1024 * 1024;
 
 // Durão da sessão: 30 dias. Aplicado ao cookie de auth do Supabase para a
 // sessão persistir quando o usuário fecha o site/aplicativo (sem checkbox).

@@ -114,3 +114,20 @@ export function initials(name: string): string {
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
   return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }
+
+/**
+ * Sanitiza um nome de arquivo pra usar em path de storage:
+ * remove caracteres de controle, normaliza acentos, troca espaços por "_"
+ * e limita o tamanho. Nunca devolve string vazia.
+ */
+export function sanitizeFilename(name: string, maxLen = 80): string {
+  const base = (name || "arquivo")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+  const cleaned = base
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, maxLen);
+  return cleaned || "arquivo";
+}
