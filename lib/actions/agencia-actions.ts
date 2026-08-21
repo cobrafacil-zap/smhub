@@ -815,6 +815,24 @@ async function sincronizarTarefaDaEntrada(
     quadroId = novo?.id ?? null;
   }
 
+  // Resolve a coluna destino: a primeira coluna NÃO arquivada do quadro
+  // (em qualquer ordem). Sem modelo pré-definido: o usuário é quem cria
+  // as colunas via "+ Adicionar outra lista". Se o quadro não tem coluna,
+  // aborta silenciosamente — não vale a pena criar tarefa sem destino.
+  const { data: colunaRow } = await supabase
+    .from("tarefa_colunas")
+    .select("id")
+    .eq("quadro_id", quadroId)
+    .eq("arquivada", false)
+    .order("ordem", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!colunaRow?.id) {
+    // Quadro sem colunas — não cria tarefa (ela não teria destino). O
+    // toast da entrada já foi mostrado; aqui só saímos silenciosos.
+    return null;
+  }
+
   const { data: tarefa, error: insErr } = await supabase
     .from("tarefas")
     .insert({
@@ -823,11 +841,11 @@ async function sincronizarTarefaDaEntrada(
       criado_por: session.profile.id,
       titulo,
       descricao,
-      status: "destinada",
       prioridade,
       prazo,
       entrada_id: entrada.id,
       quadro_id: quadroId,
+      tarefa_coluna_id: colunaRow.id,
     })
     .select("id")
     .single();

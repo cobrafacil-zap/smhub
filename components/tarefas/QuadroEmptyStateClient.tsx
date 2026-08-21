@@ -43,7 +43,7 @@ export function QuadroEmptyStateClient({
     <EmptyState
       icon={<Plus className="h-10 w-10" />}
       title="Nenhum quadro ainda"
-      description="Crie um quadro para esta semana ou para a próxima. Cada quadro já nasce com 4 colunas (A Fazer, Em andamento, Em revisão, Concluído) que você pode renomear."
+      description="Crie um quadro para esta semana ou para a próxima. Depois é só adicionar as colunas que fizerem sentido — sem modelo pronto."
       action={
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button

@@ -382,7 +382,7 @@ export default async function TarefasPage({
     <div className="space-y-6">
       <PageHeader
         title="Tarefas"
-        description="Quadro no estilo Trello. Crie quadros por semana ou projeto, arraste tarefas entre colunas."
+        description="Quadro no estilo Trello. Crie quadros por semana ou projeto e adicione as colunas que precisar."
         breadcrumbs={[{ href: "/admin", label: "Início" }, { label: "Tarefas" }]}
       />
       <Suspense fallback={null}>
