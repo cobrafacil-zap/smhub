@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { setFocusedClienteAction } from "@/lib/actions/focus-actions";
 import { ChevronDown, Eye } from "lucide-react";
+import { Select } from "@/components/ui/Select";
 
 export interface ClienteResumo {
   id: string;
@@ -20,12 +21,10 @@ export interface ClientFocusSwitcherProps {
 
 /**
  * Dropdown que troca o "cliente em foco" sem sair da página atual.
- * Reusa o visual de Select.tsx (mesma classe `pr-9 appearance-none bg-[url(...)]`).
- * - "" (vazio) = "Visão geral da agência" → submit com `cliente_id` vazio
- *   deseleciona. Hoje a action aceita qualquer string; se for vazia,
- *   simplesmente redireciona sem cookie (re-define via clearFocusedClienteAction).
- * - Para evitar duas actions, mantemos uma única: se cliente_id vier vazio,
- *   interpretamos como "voltar para /admin".
+ * Reusa o componente `Select` (mesma aparência do `Select.tsx`).
+ *
+ * Valor "" (vazio) = "Visão geral da agência" → submete sem cliente_id;
+ * a action interpreta vazio como "limpar cookie e voltar para /admin".
  */
 export function ClientFocusSwitcher({
   clientes,
@@ -56,27 +55,26 @@ export function ClientFocusSwitcher({
       <label className="sr-only" htmlFor="client-focus-switcher">
         Cliente em foco
       </label>
-      <select
-        id="client-focus-switcher"
-        name="cliente_id"
-        defaultValue={currentId ?? ""}
-        // Auto-submit quando muda — sem precisar botão extra. Em paralelo
-        // existe um botão "Visão geral" no Topbar para o caso de o usuário
-        // querer explicitamente sair (UX previsível).
-        onChange={(e) => {
-          // Pequeno delay para garantir que o value mais recente chegou.
-          e.currentTarget.form?.requestSubmit();
-        }}
-        className="input pr-9 appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 12 12%22 fill=%22none%22 stroke=%22%2394A3B8%22 stroke-width=%221.5%22><path d=%22M3 4.5 6 7.5 9 4.5%22/></svg>')] bg-[right_0.75rem_center] bg-no-repeat max-w-[180px] sm:max-w-[240px] py-1.5 text-sm"
-      >
-        <option value="">Visão geral da agência</option>
-        {sorted.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.nome_empresa}
-            {c.status && c.status !== "ativo" ? ` · ${c.status}` : ""}
-          </option>
-        ))}
-      </select>
+      <div className="max-w-[180px] sm:max-w-[240px]">
+        <Select
+          id="client-focus-switcher"
+          name="cliente_id"
+          defaultValue={currentId ?? ""}
+          // Auto-submit quando muda — sem precisar de botão extra.
+          onChange={(e) => {
+            e.currentTarget.form?.requestSubmit();
+          }}
+          className="py-1.5 text-sm"
+        >
+          <option value="">Visão geral da agência</option>
+          {sorted.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nome_empresa}
+              {c.status && c.status !== "ativo" ? ` · ${c.status}` : ""}
+            </option>
+          ))}
+        </Select>
+      </div>
       <noscript>
         <button type="submit" className="btn btn-secondary h-9 px-3">
           <ChevronDown className="h-4 w-4" />
