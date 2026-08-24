@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import { requireAgenciaMember } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SidebarAdmin } from "@/components/layout/SidebarAdmin";
@@ -41,7 +42,7 @@ export default async function AdminLayout({
   // Lista de clientes para o switcher no Topbar do admin — permite trocar
   // de cliente em foco de qualquer página /admin/* (ex.: ao navegar entre
   // abas do detalhe do cliente) sem voltar para /admin/clientes.
-  const { data: clientesData } = await createAdminClient()
+  const { data: clientesData } = await admin
     .from("clientes")
     .select("id, nome_empresa, status")
     .eq("agencia_id", aid)
@@ -49,6 +50,13 @@ export default async function AdminLayout({
     .limit(500);
   const clientesList =
     (clientesData as { id: string; nome_empresa: string; status: string }[] | null) ?? [];
+
+  // Pathname atual (server-side, injetado pelo middleware em x-pathname).
+  // Preserva a página ao trocar de cliente — se o admin está em
+  // /admin/planejamentos e troca o cliente, continua em /admin/planejamentos
+  // (a ficha do cliente é refletida via cookie; páginas que filtram por
+  // cliente_id reagem automaticamente).
+  const pathname = headers().get("x-pathname") ?? "/admin";
 
   return (
     <div className="min-h-screen bg-bg text-slate-100 flex relative">
@@ -66,9 +74,7 @@ export default async function AdminLayout({
           homeHref="/admin"
           clientesList={clientesList}
           currentClienteId={focused?.id ?? null}
-          // Ao trocar o foco a partir do /admin/*, a action leva para a
-          // ficha do novo cliente (/admin/clientes/[id]).
-          currentPathname="/admin/clientes"
+          currentPathname={pathname}
           customBeforeUser={focused ? <FocusedClientChip nomeEmpresa={focused.nome_empresa} /> : null}
         />
         <Suspense fallback={null}>

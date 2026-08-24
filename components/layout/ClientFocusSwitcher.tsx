@@ -23,8 +23,12 @@ export interface ClientFocusSwitcherProps {
  * Dropdown que troca o "cliente em foco" sem sair da página atual.
  * Reusa o componente `Select` (mesma aparência do `Select.tsx`).
  *
- * Valor "" (vazio) = "Visão geral da agência" → submete sem cliente_id;
- * a action interpreta vazio como "limpar cookie e voltar para /admin".
+ * Quando o cookie `focused_cliente_id` está setado, o `defaultValue` casa
+ * com a opção do cliente e o select exibe o **nome do cliente selecionado**.
+ * A opção "Visão geral da agência" (value="") só aparece quando não há
+ * cookie ativo (nenhum cliente em foco) — ou seja, é a label inicial quando
+ * o admin ainda não entrou em modo foco. Limpar a seleção faz a action
+ * remover o cookie.
  */
 export function ClientFocusSwitcher({
   clientes,
@@ -59,14 +63,23 @@ export function ClientFocusSwitcher({
         <Select
           id="client-focus-switcher"
           name="cliente_id"
+          // Quando há cookie → option do cliente (mostra nome).
+          // Quando não há → option placeholder "Selecione um cliente…".
           defaultValue={currentId ?? ""}
-          // Auto-submit quando muda — sem precisar de botão extra.
           onChange={(e) => {
             e.currentTarget.form?.requestSubmit();
           }}
           className="py-1.5 text-sm"
         >
-          <option value="">Visão geral da agência</option>
+          {/* Quando não há cookie ativo, o select mostra "Selecione um
+              cliente…" como label inicial (defaultValue="" casa com esta
+              opção). É uma opção normal — submeter sem seleção não deve
+              acontecer, mas se acontecer, a action trata como "sair do foco".
+              Quando há cookie, o defaultValue passa a ser o id do cliente
+              e esta opção deixa de ser o label visível. */}
+          <option value="">
+            {currentId ? "Visão geral da agência" : "Selecione um cliente…"}
+          </option>
           {sorted.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome_empresa}

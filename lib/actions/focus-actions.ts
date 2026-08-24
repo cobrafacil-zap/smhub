@@ -63,13 +63,11 @@ export async function setFocusedClienteAction(formData: FormData): Promise<void>
     secure: process.env.NODE_ENV === "production",
   });
 
-  // Se estamos no /admin/* (origem do switcher do Topbar admin), leva
-  // direto para a ficha do novo cliente. Caso contrário (origem do
-  // /cliente/*), preserva a página atual.
-  const target = safeNext.startsWith("/admin/")
-    ? `/admin/clientes/${parsed.data}`
-    : safeNext;
-  redirect(target);
+  // Preserva a página atual. Páginas em /admin/* que já filtram por
+  // cliente (ex.: /admin/clientes/[id]) refletem a troca automaticamente;
+  // páginas agregadas (ex.: /admin/planejamentos) atualizam via cookie
+  // nas próximas requisições.
+  redirect(safeNext);
 }
 
 /**
