@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAgenciaAdmin, requireAgenciaMember, requireCliente } from "@/lib/auth/session";
+import { requireAgenciaAdmin, requireAgenciaMember, requireCliente, requireClienteOuAgencia } from "@/lib/auth/session";
 import type { Cliente } from "@/types/database";
 
 // ============================================================================
@@ -398,7 +398,7 @@ export async function clienteAprovarEntradaAction(
   decisao: DecisaoCliente,
   comentario?: string
 ) {
-  const session = await requireCliente();
+  const session = await requireClienteOuAgencia();
   const supabase = createClient();
   const comentarioLimpo = comentario?.trim() ?? "";
   if (decisao === "alteracao_solicitada" && comentarioLimpo.length === 0) {

@@ -10,11 +10,14 @@ import {
   Building2,
   AlertCircle,
   Clock,
+  Eye,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { CLIENTE_STATUS } from "@/lib/constants";
 import { formatBRL, formatDate } from "@/lib/utils";
+import { setFocusedClienteAction } from "@/lib/actions/focus-actions";
 import { ExcluirClienteButton } from "./ExcluirClienteButton";
 import { ClienteStatusButtons } from "./[id]/ClienteStatusButtons";
 import type { Cliente, Fatura } from "@/types/database";
@@ -178,7 +181,22 @@ export function ClienteCard({ cliente, proximaFatura, faturasAtrasadasCount = 0,
             compact
           />
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-slate-500 hidden sm:inline">
+            {/* Botão de atalho: entra em "modo foco" no cliente e abre /cliente.
+                A action grava o cookie `focused_cliente_id` e redireciona. */}
+            <form action={setFocusedClienteAction}>
+              <input type="hidden" name="cliente_id" value={cliente.id} />
+              <input type="hidden" name="next" value="/cliente" />
+              <Button
+                type="submit"
+                variant="secondary"
+                size="sm"
+                iconLeft={<Eye className="h-3.5 w-3.5" />}
+                title={`Trabalhar diretamente em ${cliente.nome_empresa} sem voltar para cá`}
+              >
+                Ir para o cliente
+              </Button>
+            </form>
+            <span className="text-[10px] text-slate-500 hidden lg:inline">
               Desde {formatDate(cliente.created_at)}
             </span>
             <ExcluirClienteButton id={cliente.id} nome={cliente.nome_empresa} />

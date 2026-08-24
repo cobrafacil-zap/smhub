@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireCliente } from "@/lib/auth/session";
+import { requireClienteOuAgencia } from "@/lib/auth/session";
 import type { CredencialCliente } from "@/lib/actions/cliente-convite-actions";
 import type { EmpresaReferencia } from "@/types/database";
 
@@ -17,7 +17,7 @@ export async function atualizarMinhaFotoPerfilAction(
   _prev: ContaState,
   formData: FormData
 ): Promise<ContaState> {
-  const session = await requireCliente();
+  const session = await requireClienteOuAgencia();
   const foto = String(formData.get("foto_perfil") ?? "").trim() || null;
   const supabase = createClient();
   const { error } = await supabase
@@ -36,7 +36,7 @@ export async function atualizarMinhaFotoPerfilAction(
 export async function atualizarMinhasPreferenciasAction(
   recebe: boolean
 ): Promise<ContaState> {
-  const session = await requireCliente();
+  const session = await requireClienteOuAgencia();
   const supabase = createClient();
   const { error } = await supabase
     .from("clientes")
@@ -76,7 +76,7 @@ export async function atualizarMinhaEmpresaAction(
   _prev: ContaState,
   formData: FormData
 ): Promise<ContaState> {
-  const session = await requireCliente();
+  const session = await requireClienteOuAgencia();
   const credRaw = String(formData.get("credenciais") ?? "[]");
   const refRaw = String(formData.get("empresas_referencia") ?? "[]");
 
@@ -127,7 +127,7 @@ export async function clienteAceitarDataComemorativaAction(
   data: string,
   nome: string
 ): Promise<ContaState> {
-  const session = await requireCliente();
+  const session = await requireClienteOuAgencia();
   if (!session.profile.cliente_id) return { error: "Cliente não definido." };
   if (!planejamentoId || !data || !nome) return { error: "Dados inválidos." };
 

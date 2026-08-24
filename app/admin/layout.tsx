@@ -4,9 +4,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { SidebarAdmin } from "@/components/layout/SidebarAdmin";
 import { Topbar } from "@/components/layout/Topbar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { FocusedClientChip } from "@/components/layout/FocusedClientChip";
 import { AssinaturaBanner } from "@/components/billing/AssinaturaBanner";
 import { PageTransition } from "@/components/ui/motion/PageTransition";
 import { getAssinaturaStatus, countClientesAgencia, trialMaxClientes } from "@/lib/assinatura";
+import { getFocusedClienteResumo } from "@/lib/actions/focus-actions";
 import type { Agencia } from "@/types/database";
 
 export default async function AdminLayout({
@@ -32,6 +34,10 @@ export default async function AdminLayout({
     .maybeSingle();
   const agency = (ag as Agencia | null) ?? null;
 
+  // Chip "Foco: {cliente}" no Topbar do admin (conveniência).
+  // Roda em paralelo com a leitura da agência para não bloquear.
+  const focused = await getFocusedClienteResumo();
+
   return (
     <div className="min-h-screen bg-bg text-slate-100 flex relative">
       <div className="mesh-bg" aria-hidden />
@@ -46,6 +52,7 @@ export default async function AdminLayout({
           userName={session.profile.nome}
           contextLabel={agency?.nome_fantasia}
           homeHref="/admin"
+          customBeforeUser={focused ? <FocusedClientChip nomeEmpresa={focused.nome_empresa} /> : null}
         />
         <Suspense fallback={null}>
           <AssinaturaBannerAsync aid={aid} />

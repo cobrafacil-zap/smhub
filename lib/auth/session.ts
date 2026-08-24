@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 import { createClient } from "@/lib/supabase/server";
@@ -12,7 +13,31 @@ export type SessionUser = {
   profile: SessionProfile;
   /** Cliente vinculado (se role=cliente e houver clientes.user_id=auth.uid()). */
   cliente: Cliente | null;
+  /**
+   * Quando o usuário é admin_agencia/membro_equipe e há um cookie
+   * `focused_cliente_id` válido, este campo carrega o cliente em foco
+   * (compartilhado pelo Topbar, badge e ações). Para role=cliente real,
+   * permanece `null` — o cliente "oficial" é `session.cliente`.
+   */
+  impersonating: { id: string; nome_empresa: string } | null;
 };
+
+/** UUID v1-5 (qualquer versão). Não validamos o checksum — só o formato. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Lê o cookie `focused_cliente_id` e devolve o id do cliente focado pela
+ * admin/membro, ou `null` se ausente / inválido. Nunca lança.
+ */
+export function getFocusedClienteIdFromCookies(): string | null {
+  const raw = cookies().get("focused_cliente_id")?.value;
+  if (!raw) return null;
+  if (!UUID_RE.test(raw)) return null;
+  return raw.toLowerCase();
+}
+
+/** Constante com o nome do cookie (usada pelas actions). */
+export const FOCUSED_CLIENTE_COOKIE = "focused_cliente_id";
 
 /**
  * Carrega o usuário autenticado + profile + cliente (se aplicável).
@@ -196,6 +221,7 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
       email: user.email ?? null,
       profile,
       cliente,
+      impersonating: null,
     };
   } catch (err) {
     console.error("[getSessionUser] exception:", err);
@@ -263,5 +289,54 @@ export async function requireClienteOuAgencia(): Promise<SessionUser> {
     return session;
   }
   if (r === "super_admin") return session;
+  redirect("/");
+}
+
+/**
+ * Usado pelo layout `/cliente/*` para que admin/membro_equipe possam
+ * navegar nas páginas "do cliente" sem perder a própria identidade.
+ *
+ * - role=cliente real: comportamento idêntico a `requireCliente()`.
+ * - role=admin_agencia / membro_equipe: exige cookie `focused_cliente_id`
+ *   válido (UUID) apontando para um cliente da MESMA agência. Carrega o
+ *   cliente e popula `session.cliente` + `session.profile.cliente_id`,
+ *   permitindo que as páginas `/cliente/*` (que filtram por
+ *   `session.profile.cliente_id`) sigam funcionando sem duplicação de rotas.
+ * - role=super_admin: redireciona para `/super-admin` (não há "foco"
+ *   de cliente nesse contexto).
+ */
+export async function requireClienteOrAgenciaScoped(): Promise<SessionUser> {
+  const session = await requireUser();
+  const r = session.profile.role;
+
+  if (r === "cliente") {
+    if (!session.profile.cliente_id) redirect("/login");
+    return session;
+  }
+
+  if (r === "admin_agencia" || r === "membro_equipe") {
+    if (!session.profile.agencia_id) redirect("/login");
+    const cid = getFocusedClienteIdFromCookies();
+    if (!cid) redirect("/admin/clientes?hint=escolha-cliente");
+
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("clientes")
+      .select("*")
+      .eq("id", cid)
+      .eq("agencia_id", session.profile.agencia_id)
+      .maybeSingle();
+    if (!data) redirect("/admin/clientes?hint=cliente-indisponivel");
+
+    const cliente = data as Cliente;
+    return {
+      ...session,
+      cliente,
+      profile: { ...session.profile, cliente_id: cliente.id },
+      impersonating: { id: cliente.id, nome_empresa: cliente.nome_empresa },
+    };
+  }
+
+  if (r === "super_admin") redirect("/super-admin");
   redirect("/");
 }

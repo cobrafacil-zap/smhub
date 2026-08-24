@@ -1,9 +1,11 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { FOCUSED_CLIENTE_COOKIE } from "@/lib/auth/session";
 import type { UserRole } from "@/types/database";
 
 export type ActionState = { error?: string; ok?: boolean } | undefined;
@@ -90,6 +92,13 @@ export async function loginAction(
 }
 
 export async function signOutAction() {
+  // Limpa o cookie de foco ANTES de derrubar a sessão. Se o signOut falhar
+  // por algum motivo, o cookie já foi removido (defesa em profundidade).
+  try {
+    cookies().delete(FOCUSED_CLIENTE_COOKIE);
+  } catch {
+    /* ignore — cookies() não está disponível fora de request scope */
+  }
   try {
     const supabase = createClient();
     await supabase.auth.signOut();

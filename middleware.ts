@@ -39,7 +39,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  let response = NextResponse.next({ request });
+  // Expõe o pathname para Server Components via `headers().get('x-pathname')`.
+  // Usado pelo ClientFocusSwitcher para preservar a página ao trocar de cliente.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
 
   try {
     const supabase = createServerClient(
@@ -57,7 +62,9 @@ export async function middleware(request: NextRequest) {
                 request.cookies.set({ name, value, ...options });
               }
             }
-            response = NextResponse.next({ request });
+            // Preserva o header `x-pathname` no response (token refresh
+            // recria o NextResponse e perderia nosso header customizado).
+            response = NextResponse.next({ request: { headers: requestHeaders } });
             for (const { name, value, options } of cookiesToSet) {
               // Sessão de 30 dias: sobrescreve maxAge nos cookies de auth-token
               // (senão o refresh rebaixaria para o default a cada ~1h).
@@ -193,10 +200,18 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (pathname.startsWith("/cliente") && role !== "cliente") {
+    // 4c) /cliente/* aceita role=cliente OU admin/membro (modo foco via cookie).
+    //     O helper `requireClienteOrAgenciaScoped` no layout faz a validação
+    //     fina (cookie + agencia_id). super_admin continua bloqueado aqui
+    //     (não há caso de uso de "ver como cliente" para super-admin).
+    if (
+      pathname.startsWith("/cliente") &&
+      role !== "cliente" &&
+      role !== "admin_agencia" &&
+      role !== "membro_equipe"
+    ) {
       const url = request.nextUrl.clone();
-      if (role === "super_admin") url.pathname = "/super-admin";
-      else url.pathname = "/admin";
+      url.pathname = role === "super_admin" ? "/super-admin" : "/admin";
       return NextResponse.redirect(url);
     }
 
