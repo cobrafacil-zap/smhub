@@ -63,11 +63,25 @@ export async function setFocusedClienteAction(formData: FormData): Promise<void>
     secure: process.env.NODE_ENV === "production",
   });
 
-  // Preserva a página atual. Páginas em /admin/* que já filtram por
-  // cliente (ex.: /admin/clientes/[id]) refletem a troca automaticamente;
-  // páginas agregadas (ex.: /admin/planejamentos) atualizam via cookie
-  // nas próximas requisições.
-  redirect(safeNext);
+  // Preserva a página atual. Páginas agregadas (ex.: /admin/planejamentos)
+  // só precisam do cookie para refletir o novo cliente. Páginas de ficha
+  // (/admin/clientes/[id]) carregam o cliente via params.id — então
+  // precisamos substituir o id no path mantendo a query string (tab, mes, etc.).
+  const target = replaceClienteIdInPath(safeNext, parsed.data);
+  redirect(target);
+}
+
+/**
+ * Substitui o [id] em /admin/clientes/[id]/... por `newId`, preservando
+ * query string. Se o `path` não bate com o padrão da ficha do cliente,
+ * retorna o `path` original.
+ */
+function replaceClienteIdInPath(path: string, newId: string): string {
+  const [pathname, query = ""] = path.split("?");
+  // /admin/clientes/[id] ou /admin/clientes/[id]/...
+  const match = pathname.match(/^(\/admin\/clientes\/)([^/]+)(\/.*)?$/);
+  if (!match) return path;
+  return `${match[1]}${newId}${match[3] ?? ""}${query ? `?${query}` : ""}`;
 }
 
 /**

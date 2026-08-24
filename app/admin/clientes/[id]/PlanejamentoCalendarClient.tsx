@@ -16,6 +16,7 @@ import {
   RotateCcw,
   MessageSquare,
   UserPlus,
+  Send,
 } from "lucide-react";
 import {
   criarEntradaAction,
@@ -149,6 +150,8 @@ export function PlanejamentoCalendarClient({
           ? "Entrada aprovada"
           : novo === "pendente"
           ? "Voltou para pendente"
+          : novo === "publicado"
+          ? "Marcada como publicada"
           : novo === "alteracao_solicitada"
           ? "Mudança solicitada ao cliente"
           : "Status atualizado"
@@ -499,6 +502,16 @@ export function PlanejamentoCalendarClient({
                               className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded bg-success-500/10 hover:bg-success-500/20 text-success-300 border border-success-500/30"
                             >
                               <Check className="h-3 w-3" /> Marcar como aprovado
+                            </button>
+                          )}
+                          {e.status === "aprovado" && (
+                            <button
+                              type="button"
+                              onClick={() => handleAdminStatus(e, "publicado")}
+                              disabled={pending}
+                              className="text-[11px] inline-flex items-center gap-1 px-2 py-1 rounded bg-success-500/10 hover:bg-success-500/20 text-success-300 border border-success-500/30"
+                            >
+                              <Send className="h-3 w-3" /> Marcar como publicado
                             </button>
                           )}
                         </div>
