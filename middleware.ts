@@ -28,7 +28,7 @@ function isPublic(pathname: string) {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
   // Recursos estáticos e APIs: deixa passar (a API faz sua própria validação)
   if (
@@ -39,10 +39,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Expõe o pathname para Server Components via `headers().get('x-pathname')`.
-  // Usado pelo ClientFocusSwitcher para preservar a página ao trocar de cliente.
+  // Expõe o pathname (com query string) para Server Components via
+  // `headers().get('x-pathname')`. Usado pelo ClientFocusSwitcher para
+  // preservar a página + tab ao trocar de cliente.
+  const fullPath = search ? `${pathname}${search}` : pathname;
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", pathname);
+  requestHeaders.set("x-pathname", fullPath);
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 
