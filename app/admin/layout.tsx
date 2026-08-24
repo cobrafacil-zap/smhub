@@ -38,6 +38,18 @@ export default async function AdminLayout({
   // Roda em paralelo com a leitura da agência para não bloquear.
   const focused = await getFocusedClienteResumo();
 
+  // Lista de clientes para o switcher no Topbar do admin — permite trocar
+  // de cliente em foco de qualquer página /admin/* (ex.: ao navegar entre
+  // abas do detalhe do cliente) sem voltar para /admin/clientes.
+  const { data: clientesData } = await createAdminClient()
+    .from("clientes")
+    .select("id, nome_empresa, status")
+    .eq("agencia_id", aid)
+    .order("nome_empresa")
+    .limit(500);
+  const clientesList =
+    (clientesData as { id: string; nome_empresa: string; status: string }[] | null) ?? [];
+
   return (
     <div className="min-h-screen bg-bg text-slate-100 flex relative">
       <div className="mesh-bg" aria-hidden />
@@ -52,6 +64,11 @@ export default async function AdminLayout({
           userName={session.profile.nome}
           contextLabel={agency?.nome_fantasia}
           homeHref="/admin"
+          clientesList={clientesList}
+          currentClienteId={focused?.id ?? null}
+          // Ao trocar o foco a partir do /admin/*, a action leva para a
+          // ficha do novo cliente (/admin/clientes/[id]).
+          currentPathname="/admin/clientes"
           customBeforeUser={focused ? <FocusedClientChip nomeEmpresa={focused.nome_empresa} /> : null}
         />
         <Suspense fallback={null}>

@@ -26,6 +26,10 @@ const COOKIE_BASE = {
  * Define o cliente em foco para admin/membro da agência.
  * Recebe via FormData: `cliente_id` (uuid) e `next` (pathname).
  * Valida que o cliente pertence à agência antes de gravar o cookie.
+ *
+ * Se o `next` começa com `/admin/`, redireciona para `/admin/clientes/[id]`
+ * (o admin sempre cai na ficha do novo cliente ao trocar). Caso contrário,
+ * mantém o `next` original (caso do /cliente/*, que já está no cliente certo).
  */
 export async function setFocusedClienteAction(formData: FormData): Promise<void> {
   const session = await requireAgenciaMember();
@@ -58,7 +62,14 @@ export async function setFocusedClienteAction(formData: FormData): Promise<void>
     ...COOKIE_BASE,
     secure: process.env.NODE_ENV === "production",
   });
-  redirect(safeNext);
+
+  // Se estamos no /admin/* (origem do switcher do Topbar admin), leva
+  // direto para a ficha do novo cliente. Caso contrário (origem do
+  // /cliente/*), preserva a página atual.
+  const target = safeNext.startsWith("/admin/")
+    ? `/admin/clientes/${parsed.data}`
+    : safeNext;
+  redirect(target);
 }
 
 /**
