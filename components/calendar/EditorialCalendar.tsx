@@ -6,7 +6,7 @@ import { MONTHS_PT, WEEKDAYS_PT } from "@/lib/constants";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { buildMonthCells, type CalendarCell } from "@/lib/calendar";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /** Entrada mínima aceita pelo calendário. PlanejamentoEntrada satisfaz. */
 export interface CalendarEntry {
@@ -58,6 +58,25 @@ export function EditorialCalendar<E extends CalendarEntry>({
     }
     return new Date();
   });
+
+  // Sincroniza refDate quando initialDate muda vindo do parent (ex.: troca
+  // de mês via URL ?mes=2026-09). Sem isso, o useState lazy só roda no mount
+  // e o calendário fica preso no mês antigo — aí filtra as entradas do mês
+  // novo contra as datas do mês antigo e a tela mostra "0 entradas" mesmo
+  // tendo dados salvos. Só segue o prop se o usuário não navegou manualmente
+  // dentro do calendário (aqui optamos pelo sync simples: URL manda).
+  useEffect(() => {
+    if (!initialDate) return;
+    const [y, m] = initialDate.split("-").map(Number);
+    const proposto = new Date(y, m - 1, 1);
+    if (
+      proposto.getFullYear() !== refDate.getFullYear() ||
+      proposto.getMonth() !== refDate.getMonth()
+    ) {
+      setRefDate(proposto);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDate]);
 
   const year = refDate.getFullYear();
   const month = refDate.getMonth() + 1;
