@@ -195,8 +195,11 @@ export default async function PlanejamentosPage() {
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-3">
                         <PlanejamentoPDFButton planejamentoId={p.id} />
+                        {/* Inclui ?mes=YYYY-MM pra abrir direto no mês do plano.
+                            Sem isso, a ficha cai no mês atual e o usuário "some"
+                            — fica olhando agosto quando clicou em setembro. */}
                         <Link
-                          href={`/admin/clientes/${p.cliente_id}?tab=planejamento`}
+                          href={`/admin/clientes/${p.cliente_id}?tab=planejamento&mes=${String(p.mes_referencia).slice(0, 7)}`}
                           className="text-royal-300 hover:text-royal-200 text-xs inline-flex items-center gap-1"
                         >
                           Abrir <ArrowRight className="h-3 w-3" />

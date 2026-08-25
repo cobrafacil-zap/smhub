@@ -2,7 +2,8 @@
 
 import { useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
+import { Select } from "@/components/ui/Select";
 import { MONTHS_PT } from "@/lib/constants";
 
 function adicionarMes(mes: string, delta: number): string {
@@ -36,35 +37,46 @@ export function PlanejamentoMesNav({
     });
   }
 
-  const [ano, m] = mesAtivo.split("-").map(Number);
-  const label = `${MONTHS_PT[m - 1]} ${ano}`;
-  const temPlanejamento = mesesDisponiveis.includes(mesAtivo);
+  // Lista de opções:
+  // 1) Mês atual + próximos 11 meses (janela de planejamento típico de 1 ano à frente).
+  // 2) Meses passados que JÁ têm planejamento (pra conseguir voltar e revisar).
+  // 3) Meses futuros fora da janela de 12 meses que JÁ têm planejamento (raro, mas pode).
+  // Ordena cronologicamente. Marca com pontinho verde os meses com planejamento.
+  const hoje = new Date();
+  const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+
+  const janelasFuturas = Array.from({ length: 12 }, (_, i) => adicionarMes(mesAtual, i));
+  const mesesPassadosComPlan = mesesDisponiveis
+    .filter((m) => m < mesAtual)
+    .filter((m) => !janelasFuturas.includes(m));
+  const opcoes = [...mesesPassadosComPlan, ...janelasFuturas].sort();
 
   return (
     <div className="flex items-center gap-1.5 bg-bg-elevated/60 rounded-lg border border-border px-1.5 py-1">
-      <button
-        type="button"
-        onClick={() => irPara(adicionarMes(mesAtivo, -1))}
-        className="p-1.5 rounded text-slate-400 hover:text-royal-300 hover:bg-bg-muted"
-        title="Mês anterior"
+      <Calendar className="h-3.5 w-3.5 text-slate-500 ml-1.5" />
+      <Select
+        className="!bg-transparent !border-0 !text-sm !font-medium !text-slate-200 !capitalize !py-1 !pl-1 !pr-9 cursor-pointer hover:!text-royal-200 transition focus:!ring-0"
+        value={mesAtivo}
+        onChange={(e) => irPara(e.target.value)}
       >
-        <ChevronLeft className="h-4 w-4" />
-      </button>
-      <div className="flex items-center gap-1.5 px-2 min-w-[120px] justify-center">
-        <Calendar className="h-3.5 w-3.5 text-slate-500" />
-        <span className="text-sm font-medium text-slate-200 capitalize">{label}</span>
-        {temPlanejamento && (
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" title="Tem planejamento" />
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={() => irPara(adicionarMes(mesAtivo, 1))}
-        className="p-1.5 rounded text-slate-400 hover:text-royal-300 hover:bg-bg-muted"
-        title="Próximo mês"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </button>
+        {opcoes.map((m) => {
+          const [ano, mm] = m.split("-").map(Number);
+          const label = `${MONTHS_PT[mm - 1]} ${ano}`;
+          const temPlan = mesesDisponiveis.includes(m);
+          return (
+            <option key={m} value={m}>
+              {label}
+              {temPlan ? "  •" : ""}
+            </option>
+          );
+        })}
+      </Select>
+      {mesesDisponiveis.includes(mesAtivo) && (
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1"
+          title="Tem planejamento"
+        />
+      )}
     </div>
   );
 }
