@@ -120,7 +120,7 @@ export async function convidarClienteAction(
   revalidatePath(`/admin/clientes/${c.id}`);
   revalidatePath("/admin/clientes");
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhub.com.br";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhubagencia.com";
   const link = `${baseUrl}/definir-senha?token=${token}`;
 
   return {

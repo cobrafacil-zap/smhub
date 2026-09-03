@@ -16,9 +16,9 @@ export const SITE = {
   ),
   locale: "pt_BR",
   twitter: "@smhub",
-  email: "contato@smhub.com.br",
+  email: "contato@smhubagencia.com",
   // Contato de suporte exibido no dashboard (Olá, ...). Configurável via env.
-  supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "contato@smhub.com.br",
+  supportEmail: process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "contato@smhubagencia.com",
   supportPhone: process.env.NEXT_PUBLIC_SUPPORT_PHONE ?? "",
 };
 

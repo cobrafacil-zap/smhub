@@ -318,7 +318,7 @@ export async function gerarLinkAssinaturaAction(
       return { error: `Erro ao gerar link: ${upErr.message} (${upErr.code ?? "sem code"})` };
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhub.com.br";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhubagencia.com";
     const link = `${baseUrl}/assinar-contrato?token=${token}`;
 
     revalidatePath(`/admin/contratos/${contratoId}`);

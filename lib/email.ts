@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 
 const apiKey = process.env.RESEND_API_KEY;
-const from = process.env.RESEND_FROM_EMAIL ?? "noreply@smhub.com.br";
+const from = process.env.RESEND_FROM_EMAIL ?? "noreply@smhubagencia.com";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 /**

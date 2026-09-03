@@ -208,7 +208,7 @@ export async function criarEquipeAction(
 
   revalidatePath("/admin/equipe");
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhub.com.br";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhubagencia.com";
   const link = `${baseUrl}/definir-senha?token=${token}`;
   return {
     ok: true,
@@ -276,7 +276,7 @@ export async function reenviarConviteEquipeAction(
 
   revalidatePath("/admin/equipe");
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhub.com.br";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhubagencia.com";
   const link = `${baseUrl}/definir-senha?token=${token}`;
   return {
     ok: true,
