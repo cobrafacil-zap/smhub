@@ -62,9 +62,9 @@ export default async function RelatoriosPage() {
                   <th className="px-4 py-3 font-medium">Cliente</th>
                   <th className="px-4 py-3 font-medium">Mês</th>
                   <th className="px-4 py-3 font-medium">Plataforma</th>
-                  <th className="px-4 py-3 font-medium text-right">Alcance</th>
-                  <th className="px-4 py-3 font-medium text-right">Leads</th>
-                  <th className="px-4 py-3 font-medium text-right">Receita</th>
+                  <th className="px-4 py-3 font-medium text-right">Posts</th>
+                  <th className="px-4 py-3 font-medium text-right">Curtidas</th>
+                  <th className="px-4 py-3 font-medium text-right">Comentários</th>
                   <th className="px-4 py-3 font-medium text-right">Ações</th>
                 </tr>
               </thead>
@@ -81,13 +81,13 @@ export default async function RelatoriosPage() {
                       <Badge variant="brand">{PLATAFORMA_LABELS[r.plataforma] ?? r.plataforma}</Badge>
                     </td>
                     <td className="px-4 py-3 text-slate-200 text-right">
-                      <CountUp value={Number(r.alcance_total) || 0} />
+                      <CountUp value={Number(r.total_posts) || 0} />
                     </td>
                     <td className="px-4 py-3 text-slate-200 text-right">
-                      <CountUp value={Number(r.leads_validados) || 0} />
+                      <CountUp value={Number(r.total_curtidas) || 0} />
                     </td>
-                    <td className="px-4 py-3 text-slate-100 text-right font-semibold">
-                      R$ {formatNumber(r.receita_gerada)}
+                    <td className="px-4 py-3 text-slate-200 text-right">
+                      <CountUp value={Number(r.comentarios) || 0} />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-3">

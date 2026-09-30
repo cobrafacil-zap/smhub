@@ -4,9 +4,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/Stat";
-import { BarChart, BarChart3, TrendingUp, Users, Eye } from "lucide-react";
+import { BarChart, BarChart3, Users } from "lucide-react";
 import { PLATAFORMA_LABELS } from "@/lib/constants";
-import { formatNumber, formatPercent } from "@/lib/utils";
+import { formatNumber } from "@/lib/utils";
 import type { Plataforma, Relatorio } from "@/types/database";
 import { Reveal } from "@/components/ui/motion/Reveal";
 import { CountUp } from "@/components/ui/motion/CountUp";
@@ -53,15 +53,12 @@ export default async function ClienteRelatoriosPage() {
           const rs = porMes.get(mes)!;
           const totais = rs.reduce(
             (acc, r) => ({
-              alcance: acc.alcance + r.alcance_total,
               curtidas: acc.curtidas + r.total_curtidas,
-              leads: acc.leads + r.leads_validados,
-              investimento: acc.investimento + r.investimento_ads,
-              receita: acc.receita + r.receita_gerada,
+              comentarios: acc.comentarios + (r.comentarios ?? 0),
+              posts: acc.posts + r.total_posts,
             }),
-            { alcance: 0, curtidas: 0, leads: 0, investimento: 0, receita: 0 }
+            { curtidas: 0, comentarios: 0, posts: 0 }
           );
-          const rendimentoPorLead = totais.leads > 0 ? totais.receita / totais.leads : 0;
           const [yy, mm] = mes.split("-");
           const nomeMes = new Date(Number(yy), Number(mm) - 1, 1).toLocaleDateString("pt-BR", {
             month: "long",
@@ -73,11 +70,11 @@ export default async function ClienteRelatoriosPage() {
               <Reveal>
                 <h2 className="text-lg font-semibold text-slate-100 capitalize">{nomeMes}</h2>
               </Reveal>
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 <StatCard
-                  label="Alcance total"
-                  value={formatNumber(totais.alcance)}
-                  icon={<Eye className="h-4 w-4" />}
+                  label="Posts"
+                  value={formatNumber(totais.posts)}
+                  icon={<BarChart className="h-4 w-4" />}
                   tone="brand"
                 />
                 <StatCard
@@ -86,25 +83,9 @@ export default async function ClienteRelatoriosPage() {
                   icon={<BarChart3 className="h-4 w-4" />}
                 />
                 <StatCard
-                  label="Leads validados"
-                  value={formatNumber(totais.leads)}
+                  label="Comentários"
+                  value={formatNumber(totais.comentarios)}
                   icon={<Users className="h-4 w-4" />}
-                  tone="success"
-                />
-                <StatCard
-                  label="Investimento"
-                  value={`R$ ${formatNumber(totais.investimento)}`}
-                  icon={<TrendingUp className="h-4 w-4" />}
-                  tone="warn"
-                />
-                <StatCard
-                  label="R$/lead"
-                  value={
-                    totais.leads > 0
-                      ? `R$ ${rendimentoPorLead.toFixed(2).replace(".", ",")}`
-                      : "—"
-                  }
-                  icon={<TrendingUp className="h-4 w-4" />}
                   tone="success"
                 />
               </div>
@@ -115,10 +96,9 @@ export default async function ClienteRelatoriosPage() {
                       <tr className="text-left text-slate-400 border-b border-border">
                         <th className="px-4 py-3 font-medium">Plataforma</th>
                         <th className="px-4 py-3 font-medium">Seguidores</th>
-                        <th className="px-4 py-3 font-medium">Alcance</th>
                         <th className="px-4 py-3 font-medium">Posts</th>
-                        <th className="px-4 py-3 font-medium">Reels</th>
-                        <th className="px-4 py-3 font-medium">Leads</th>
+                        <th className="px-4 py-3 font-medium">Curtidas</th>
+                        <th className="px-4 py-3 font-medium">Comentários</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -136,12 +116,9 @@ export default async function ClienteRelatoriosPage() {
                               {r.seguidores_fim - r.seguidores_inicio})
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-slate-200">
-                            <CountUp value={r.alcance_total} />
-                          </td>
                           <td className="px-4 py-3 text-slate-200"><CountUp value={r.total_posts} /></td>
-                          <td className="px-4 py-3 text-slate-200"><CountUp value={r.total_reels} /></td>
-                          <td className="px-4 py-3 text-slate-200"><CountUp value={r.leads_validados} /></td>
+                          <td className="px-4 py-3 text-slate-200"><CountUp value={r.total_curtidas} /></td>
+                          <td className="px-4 py-3 text-slate-200"><CountUp value={r.comentarios ?? 0} /></td>
                         </Reveal>
                       ))}
                     </tbody>

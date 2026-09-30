@@ -17,7 +17,7 @@ export function ClienteMiniStats({
 }: {
   faturas: Pick<Fatura, "status" | "valor" | "data_vencimento">[];
   contratos: Pick<Contrato, "status">[];
-  relatorios: Pick<Relatorio, "alcance_total" | "leads_validados" | "receita_gerada">[];
+  relatorios: Pick<Relatorio, "total_curtidas" | "comentarios" | "total_posts">[];
   briefings: number;
 }) {
   const hoje = new Date().toISOString().slice(0, 10);
@@ -27,8 +27,8 @@ export function ClienteMiniStats({
     .filter((f) => f.data_vencimento < hoje)
     .reduce((s, f) => s + Number(f.valor), 0);
   const contratosAtivos = contratos.filter((c) => c.status === "ativo" || c.status === "assinado").length;
-  const alcanceTotal = relatorios.reduce((s, r) => s + Number(r.alcance_total), 0);
-  const leadsTotal = relatorios.reduce((s, r) => s + Number(r.leads_validados), 0);
+  const curtidasTotal = relatorios.reduce((s, r) => s + Number(r.total_curtidas), 0);
+  const comentariosTotal = relatorios.reduce((s, r) => s + Number(r.comentarios ?? 0), 0);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
@@ -61,11 +61,11 @@ export function ClienteMiniStats({
         hint={briefings > 0 ? "Respondidos" : "Pendente"}
       />
       <MiniStat
-        label="Alcance total"
-        value={formatNumber(alcanceTotal)}
+        label="Curtidas totais"
+        value={formatNumber(curtidasTotal)}
         icon={<BarChart3 className="h-4 w-4" />}
         tone="default"
-        hint={`${leadsTotal} leads`}
+        hint={`${formatNumber(comentariosTotal)} comentários`}
       />
     </div>
   );

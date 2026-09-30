@@ -81,7 +81,7 @@ export default async function ClienteDetalhePage({
     supabase.from("briefings").select("id", { count: "exact", head: true }).eq("cliente_id", c.id),
     supabase.from("faturas").select("status, valor, data_vencimento").eq("cliente_id", c.id),
     supabase.from("contratos").select("status").eq("cliente_id", c.id),
-    supabase.from("relatorios").select("alcance_total, leads_validados, receita_gerada").eq("cliente_id", c.id),
+    supabase.from("relatorios").select("total_curtidas, comentarios, total_posts").eq("cliente_id", c.id),
     supabase
       .from("cliente_oauth_contas")
       .select("provider, account_handle, account_name, account_picture_url, connected_at")
@@ -251,7 +251,7 @@ export default async function ClienteDetalhePage({
       <ClienteMiniStats
         faturas={(faturasData ?? []) as Pick<Fatura, "status" | "valor" | "data_vencimento">[]}
         contratos={(contratosData ?? []) as Pick<Contrato, "status">[]}
-        relatorios={(relatoriosData ?? []) as Pick<Relatorio, "alcance_total" | "leads_validados" | "receita_gerada">[]}
+        relatorios={(relatoriosData ?? []) as Pick<Relatorio, "total_curtidas" | "comentarios" | "total_posts">[]}
         briefings={countBri ?? 0}
       />
 

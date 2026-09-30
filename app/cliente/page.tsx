@@ -21,8 +21,6 @@ import {
   Phone,
   LifeBuoy,
   Sparkles,
-  Eye,
-  TrendingUp,
   Users,
 } from "lucide-react";
 import type {
@@ -113,12 +111,11 @@ export default async function ClienteDashboardPage({
   // Totais de relatório do mês
   const totaisRel = relatorios.reduce(
     (acc, r) => ({
-      alcance: acc.alcance + r.alcance_total,
+      posts: acc.posts + r.total_posts,
       curtidas: acc.curtidas + r.total_curtidas,
-      leads: acc.leads + r.leads_validados,
-      investimento: acc.investimento + r.investimento_ads,
+      comentarios: acc.comentarios + (r.comentarios ?? 0),
     }),
-    { alcance: 0, curtidas: 0, leads: 0, investimento: 0 }
+    { posts: 0, curtidas: 0, comentarios: 0 }
   );
 
   const primeiroNome = session.profile.nome.split(" ")[0];
@@ -258,16 +255,10 @@ export default async function ClienteDashboardPage({
         {relatorios.length === 0 ? (
           <p className="text-sm text-slate-500">Nenhum relatório disponível para este mês.</p>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard label="Alcance" value={formatNumber(totaisRel.alcance)} icon={<Eye className="h-4 w-4" />} tone="brand" />
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <StatCard label="Posts" value={formatNumber(totaisRel.posts)} icon={<BarChart3 className="h-4 w-4" />} tone="brand" />
             <StatCard label="Curtidas" value={formatNumber(totaisRel.curtidas)} icon={<BarChart3 className="h-4 w-4" />} />
-            <StatCard label="Leads" value={formatNumber(totaisRel.leads)} icon={<Users className="h-4 w-4" />} tone="success" />
-            <StatCard
-              label="Investimento"
-              value={formatBRL(totaisRel.investimento)}
-              icon={<TrendingUp className="h-4 w-4" />}
-              tone="warn"
-            />
+            <StatCard label="Comentários" value={formatNumber(totaisRel.comentarios)} icon={<Users className="h-4 w-4" />} tone="success" />
           </div>
         )}
       </Card>

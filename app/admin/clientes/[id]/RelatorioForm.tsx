@@ -26,18 +26,9 @@ export function RelatorioForm({
   const [plataforma, setPlataforma] = useState<typeof PLATAFORMAS_REDES[number]>("instagram");
   const [importando, startImport] = useTransition();
   const [importHint, setImportHint] = useState<string | null>(null);
-  const [alcance, setAlcance] = useState("0");
-  const [impressoes, setImpressoes] = useState("0");
-  const [leads, setLeads] = useState("0");
-  const [receita, setReceita] = useState("0");
-  const [invest, setInvest] = useState("0");
   const [posts, setPosts] = useState("0");
-  const [reels, setReels] = useState("0");
-  const [stories, setStories] = useState("0");
   const [curtidas, setCurtidas] = useState("0");
   const [comentarios, setComentarios] = useState("0");
-  const [mensagens, setMensagens] = useState("0");
-  const [cliques, setCliques] = useState("0");
   const [seguindo, setSeguindo] = useState("0");
   const [seguidoresInicio, setSeguidoresInicio] = useState("0");
   const [seguidoresFim, setSeguidoresFim] = useState("0");
@@ -56,10 +47,6 @@ export function RelatorioForm({
   const CAMPOS_OCULTOS_FACEBOOK = new Set([
     "seguindo",
     "comentarios",
-    "cliques",
-    "mensagens",
-    "reels",
-    "stories",
   ]);
   const ocultar = (campo: string) =>
     plataforma === "facebook" && CAMPOS_OCULTOS_FACEBOOK.has(campo);
@@ -69,17 +56,11 @@ export function RelatorioForm({
   }
 
   function aplicarMetricas(m: MetricasImportadas) {
-    if (m.alcance_total != null) setAlcance(String(m.alcance_total));
-    if (m.impressoes != null) setImpressoes(String(m.impressoes));
     if (m.seguidores_inicio != null) setSeguidoresInicio(String(m.seguidores_inicio));
     if (m.seguidores_fim != null) setSeguidoresFim(String(m.seguidores_fim));
     if (m.seguindo != null) setSeguindo(String(m.seguindo));
     if (m.total_curtidas != null) setCurtidas(String(m.total_curtidas));
     if (m.comentarios != null) setComentarios(String(m.comentarios));
-    if (m.cliques_link != null) setCliques(String(m.cliques_link));
-    if (m.mensagens != null) setMensagens(String(m.mensagens));
-    if (m.total_reels != null) setReels(String(m.total_reels));
-    if (m.total_stories != null) setStories(String(m.total_stories));
     if (m.posts_feitos != null) setPosts(String(m.posts_feitos));
     else if (m.total_posts != null) setPosts(String(m.total_posts));
   }
@@ -114,19 +95,10 @@ export function RelatorioForm({
     fd.set("seguidores_inicio", seguidoresInicio || "0");
     fd.set("seguidores_fim", seguidoresFim || "0");
     fd.set("seguindo", seguindo || "0");
-    fd.set("alcance_total", alcance);
-    fd.set("impressoes", impressoes);
     fd.set("total_posts", posts);
-    fd.set("total_reels", reels);
-    fd.set("total_stories", stories);
     fd.set("total_curtidas", curtidas);
     fd.set("comentarios", comentarios);
-    fd.set("cliques_link", cliques);
-    fd.set("mensagens", mensagens);
     fd.set("posts_feitos", posts);
-    fd.set("leads_validados", leads);
-    fd.set("investimento_ads", invest);
-    fd.set("receita_gerada", receita);
     if (observacoes) fd.set("observacoes", observacoes);
     startTransition(async () => {
       const res = await criarRelatorioAction(fd);
@@ -135,18 +107,9 @@ export function RelatorioForm({
       } else {
         setSuccess(true);
         setOpen(false);
-        setAlcance("0");
-        setImpressoes("0");
-        setLeads("0");
-        setReceita("0");
-        setInvest("0");
         setPosts("0");
-        setReels("0");
-        setStories("0");
         setCurtidas("0");
         setComentarios("0");
-        setMensagens("0");
-        setCliques("0");
         setSeguindo("0");
         setSeguidoresInicio("0");
         setSeguidoresFim("0");
@@ -263,7 +226,7 @@ export function RelatorioForm({
           {/* Engajamento */}
           <div className="space-y-1">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Engajamento</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <div>
                 <label className="label text-xs">Posts feitos</label>
                 <input type="number" min="0" className="input text-sm" value={posts} onChange={(e) => setPosts(e.target.value)} />
@@ -278,73 +241,7 @@ export function RelatorioForm({
                   <input type="number" min="0" className="input text-sm" value={comentarios} onChange={(e) => setComentarios(e.target.value)} />
                 </div>
               )}
-              <div>
-                <label className="label text-xs">Alcance</label>
-                <input type="number" min="0" className="input text-sm" value={alcance} onChange={(e) => setAlcance(e.target.value)} />
-              </div>
             </div>
-          </div>
-
-          {/* Métricas extras */}
-          <div className="space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Conversão & tráfego</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div>
-                <label className="label text-xs">Impressões</label>
-                <input type="number" min="0" className="input text-sm" value={impressoes} onChange={(e) => setImpressoes(e.target.value)} />
-              </div>
-              {!ocultar("cliques") && (
-                <div>
-                  <label className="label text-xs">Cliques no link</label>
-                  <input type="number" min="0" className="input text-sm" value={cliques} onChange={(e) => setCliques(e.target.value)} />
-                </div>
-              )}
-              {!ocultar("mensagens") && (
-                <div>
-                  <label className="label text-xs">Mensagens</label>
-                  <input type="number" min="0" className="input text-sm" value={mensagens} onChange={(e) => setMensagens(e.target.value)} />
-                </div>
-              )}
-              <div>
-                <label className="label text-xs">Leads</label>
-                <input type="number" min="0" className="input text-sm" value={leads} onChange={(e) => setLeads(e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          {/* Formato & Ads */}
-          <div className="space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Formato & Ads</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {!ocultar("reels") && (
-                <div>
-                  <label className="label text-xs">Reels</label>
-                  <input type="number" min="0" className="input text-sm" value={reels} onChange={(e) => setReels(e.target.value)} />
-                </div>
-              )}
-              {!ocultar("stories") && (
-                <div>
-                  <label className="label text-xs">Stories</label>
-                  <input type="number" min="0" className="input text-sm" value={stories} onChange={(e) => setStories(e.target.value)} />
-                </div>
-              )}
-              <div>
-                <label className="label text-xs">Invest. Ads (R$)</label>
-                <input type="number" min="0" step="0.01" className="input text-sm" value={invest} onChange={(e) => setInvest(e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="label text-xs">Receita gerada (R$)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              className="input text-sm"
-              value={receita}
-              onChange={(e) => setReceita(e.target.value)}
-            />
           </div>
 
           <div>

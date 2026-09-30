@@ -84,9 +84,9 @@ export async function RelatoriosTab({
                       <p className="text-slate-200 font-medium">{formatNumber(r.seguindo ?? 0)}</p>
                     </div>
                     <div>
-                      <p className="text-slate-500">Posts / Reels / Stories</p>
+                      <p className="text-slate-500">Posts</p>
                       <p className="text-slate-200 font-medium">
-                        {r.total_posts} / {r.total_reels} / {r.total_stories}
+                        {r.total_posts}
                       </p>
                     </div>
                     <div>
@@ -96,34 +96,6 @@ export async function RelatoriosTab({
                     <div>
                       <p className="text-slate-500">Comentários</p>
                       <p className="text-slate-200 font-medium">{formatNumber(r.comentarios ?? 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Alcance</p>
-                      <p className="text-slate-200 font-medium">{formatNumber(r.alcance_total)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Impressões</p>
-                      <p className="text-slate-200 font-medium">{formatNumber(r.impressoes)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Cliques no link</p>
-                      <p className="text-slate-200 font-medium">{formatNumber(r.cliques_link ?? 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Mensagens</p>
-                      <p className="text-slate-200 font-medium">{formatNumber(r.mensagens ?? 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Leads</p>
-                      <p className="text-slate-200 font-medium">{formatNumber(r.leads_validados)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Invest. Ads</p>
-                      <p className="text-amber-300 font-medium">R$ {formatNumber(r.investimento_ads)}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Receita</p>
-                      <p className="text-emerald-400 font-medium">R$ {formatNumber(r.receita_gerada)}</p>
                     </div>
                   </div>
                   {r.observacoes && (

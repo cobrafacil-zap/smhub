@@ -79,40 +79,20 @@ export function RelatorioForm({
           <input name="seguidores_fim" type="number" min="0" className="input" defaultValue={num(initial?.seguidores_fim)} />
         </div>
         <div>
-          <label className="label">Alcance total</label>
-          <input name="alcance_total" type="number" min="0" className="input" defaultValue={num(initial?.alcance_total)} />
-        </div>
-        <div>
-          <label className="label">Impressões</label>
-          <input name="impressoes" type="number" min="0" className="input" defaultValue={num(initial?.impressoes)} />
+          <label className="label">Seguindo</label>
+          <input name="seguindo" type="number" min="0" className="input" defaultValue={num(initial?.seguindo)} />
         </div>
         <div>
           <label className="label">Total de posts</label>
           <input name="total_posts" type="number" min="0" className="input" defaultValue={num(initial?.total_posts)} />
         </div>
         <div>
-          <label className="label">Total de reels</label>
-          <input name="total_reels" type="number" min="0" className="input" defaultValue={num(initial?.total_reels)} />
-        </div>
-        <div>
-          <label className="label">Total de stories</label>
-          <input name="total_stories" type="number" min="0" className="input" defaultValue={num(initial?.total_stories)} />
-        </div>
-        <div>
           <label className="label">Total de curtidas</label>
           <input name="total_curtidas" type="number" min="0" className="input" defaultValue={num(initial?.total_curtidas)} />
         </div>
         <div>
-          <label className="label">Leads validados</label>
-          <input name="leads_validados" type="number" min="0" className="input" defaultValue={num(initial?.leads_validados)} />
-        </div>
-        <div>
-          <label className="label">Investimento em ads (R$)</label>
-          <input name="investimento_ads" type="number" min="0" step="0.01" className="input" defaultValue={num(initial?.investimento_ads)} />
-        </div>
-        <div>
-          <label className="label">Receita gerada (R$)</label>
-          <input name="receita_gerada" type="number" min="0" step="0.01" className="input" defaultValue={num(initial?.receita_gerada)} />
+          <label className="label">Comentários</label>
+          <input name="comentarios" type="number" min="0" className="input" defaultValue={num(initial?.comentarios)} />
         </div>
         <div className="sm:col-span-2">
           <label className="label">Observações</label>
