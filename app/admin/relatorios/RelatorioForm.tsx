@@ -71,12 +71,8 @@ export function RelatorioForm({
           </select>
         </div>
         <div>
-          <label className="label">Seguidores (início do mês)</label>
+          <label className="label">Seguidores</label>
           <input name="seguidores_inicio" type="number" min="0" className="input" defaultValue={num(initial?.seguidores_inicio)} />
-        </div>
-        <div>
-          <label className="label">Seguidores (fim do mês)</label>
-          <input name="seguidores_fim" type="number" min="0" className="input" defaultValue={num(initial?.seguidores_fim)} />
         </div>
         <div>
           <label className="label">Seguindo</label>

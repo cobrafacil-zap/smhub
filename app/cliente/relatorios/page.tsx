@@ -110,11 +110,7 @@ export default async function ClienteRelatoriosPage() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3 text-slate-200">
-                            <CountUp value={r.seguidores_fim} />
-                            <span className="text-xs text-slate-500 ml-1">
-                              ({r.seguidores_fim >= r.seguidores_inicio ? "+" : ""}
-                              {r.seguidores_fim - r.seguidores_inicio})
-                            </span>
+                            <CountUp value={r.seguidores_inicio} />
                           </td>
                           <td className="px-4 py-3 text-slate-200"><CountUp value={r.total_posts} /></td>
                           <td className="px-4 py-3 text-slate-200"><CountUp value={r.total_curtidas} /></td>

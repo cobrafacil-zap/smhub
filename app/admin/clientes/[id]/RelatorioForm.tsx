@@ -31,7 +31,6 @@ export function RelatorioForm({
   const [comentarios, setComentarios] = useState("0");
   const [seguindo, setSeguindo] = useState("0");
   const [seguidoresInicio, setSeguidoresInicio] = useState("0");
-  const [seguidoresFim, setSeguidoresFim] = useState("0");
   const [observacoes, setObservacoes] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +56,6 @@ export function RelatorioForm({
 
   function aplicarMetricas(m: MetricasImportadas) {
     if (m.seguidores_inicio != null) setSeguidoresInicio(String(m.seguidores_inicio));
-    if (m.seguidores_fim != null) setSeguidoresFim(String(m.seguidores_fim));
     if (m.seguindo != null) setSeguindo(String(m.seguindo));
     if (m.total_curtidas != null) setCurtidas(String(m.total_curtidas));
     if (m.comentarios != null) setComentarios(String(m.comentarios));
@@ -93,7 +91,6 @@ export function RelatorioForm({
     fd.set("mes_referencia", `${mes}-01`);
     fd.set("plataforma", plataforma);
     fd.set("seguidores_inicio", seguidoresInicio || "0");
-    fd.set("seguidores_fim", seguidoresFim || "0");
     fd.set("seguindo", seguindo || "0");
     fd.set("total_posts", posts);
     fd.set("total_curtidas", curtidas);
@@ -112,7 +109,6 @@ export function RelatorioForm({
         setComentarios("0");
         setSeguindo("0");
         setSeguidoresInicio("0");
-        setSeguidoresFim("0");
         setObservacoes("");
         setImportHint(null);
         setTimeout(() => setSuccess(false), 3000);
@@ -205,14 +201,10 @@ export function RelatorioForm({
           {/* Audiência */}
           <div className="space-y-1">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Audiência</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
               <div>
-                <label className="label text-xs">Seguidores (início)</label>
+                <label className="label text-xs">Seguidores</label>
                 <input type="number" min="0" className="input text-sm" value={seguidoresInicio} onChange={(e) => setSeguidoresInicio(e.target.value)} />
-              </div>
-              <div>
-                <label className="label text-xs">Seguidores (fim)</label>
-                <input type="number" min="0" className="input text-sm" value={seguidoresFim} onChange={(e) => setSeguidoresFim(e.target.value)} />
               </div>
               {!ocultar("seguindo") && (
                 <div>

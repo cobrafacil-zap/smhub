@@ -76,7 +76,7 @@ export async function RelatoriosTab({
                     <div>
                       <p className="text-slate-500">Seguidores</p>
                       <p className="text-slate-200 font-medium">
-                        {formatNumber(r.seguidores_inicio)} → {formatNumber(r.seguidores_fim)}
+                        {formatNumber(r.seguidores_inicio)}
                       </p>
                     </div>
                     <div>
