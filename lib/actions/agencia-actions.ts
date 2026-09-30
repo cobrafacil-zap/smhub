@@ -29,6 +29,16 @@ const clienteSchema = z.object({
   valor_mensal: z.coerce.number().min(0).optional().nullable(),
   dia_vencimento: z.coerce.number().int().min(1).max(31).optional().nullable(),
   observacoes: z.string().optional().nullable(),
+  whatsapp_group_jid: z
+    .string()
+    .trim()
+    .max(80)
+    .refine((v) => v === "" || v == null || (v as string).endsWith("@g.us"), {
+      message: "JID de grupo termina com @g.us.",
+    })
+    .optional()
+    .nullable()
+    .transform((v) => (v === "" ? null : v)),
 });
 
 export async function criarClienteAction(

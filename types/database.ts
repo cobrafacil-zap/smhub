@@ -207,6 +207,8 @@ export interface Database {
           foto_perfil: string | null;
           empresas_referencia: Json | null;
           recebe_datas_comemorativas: boolean | null;
+          /** JID do grupo de WhatsApp do cliente (Evolution API, ex.: 1203...@g.us). */
+          whatsapp_group_jid: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -230,10 +232,69 @@ export interface Database {
           foto_perfil?: string | null;
           empresas_referencia?: Json | null;
           recebe_datas_comemorativas?: boolean | null;
+          whatsapp_group_jid?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["clientes"]["Insert"]>;
+      };
+      agencia_whatsapp_conexoes: {
+        Row: {
+          id: string;
+          agencia_id: string;
+          api_url: string;
+          instance: string;
+          api_key_ciphertext: string;
+          api_key_iv: string;
+          api_key_tag: string;
+          status: string;
+          connected_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agencia_id: string;
+          api_url: string;
+          instance: string;
+          api_key_ciphertext: string;
+          api_key_iv: string;
+          api_key_tag: string;
+          status?: string;
+          connected_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["agencia_whatsapp_conexoes"]["Insert"]>;
+      };
+      relatorio_mensagens: {
+        Row: {
+          id: string;
+          relatorio_id: string;
+          agencia_id: string;
+          cliente_id: string;
+          texto: string;
+          modelo: string;
+          gerado_por: string | null;
+          enviado_em: string | null;
+          enviado_para: string | null;
+          mensagem_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          relatorio_id: string;
+          agencia_id: string;
+          cliente_id: string;
+          texto: string;
+          modelo?: string;
+          gerado_por?: string | null;
+          enviado_em?: string | null;
+          enviado_para?: string | null;
+          mensagem_id?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["relatorio_mensagens"]["Insert"]>;
       };
       planejamentos: {
         Row: {
@@ -1008,6 +1069,10 @@ export type AssinaturaAtiva = Database["public"]["Tables"]["assinatura_ativa"]["
 export type AssinaturaPagamento =
   Database["public"]["Tables"]["assinatura_pagamentos"]["Row"];
 export type AssinaturaStatus = "pendente" | "paga" | "vencida" | "cancelada" | "trial";
+export type AgenciaWhatsappConexao =
+  Database["public"]["Tables"]["agencia_whatsapp_conexoes"]["Row"];
+export type RelatorioMensagem =
+  Database["public"]["Tables"]["relatorio_mensagens"]["Row"];
 
 /** Tipo do "perfil" que o middleware/session retorna. */
 export interface SessionProfile {

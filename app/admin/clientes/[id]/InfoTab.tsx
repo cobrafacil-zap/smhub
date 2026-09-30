@@ -14,6 +14,7 @@ import { ConvidarClienteForm } from "@/components/clientes/ConvidarClienteForm";
 import { CredenciaisAcesso } from "./CredenciaisAcesso";
 import { EmpresasReferenciaCard } from "./EmpresasReferenciaCard";
 import { ConectarRedesSociais } from "./ConectarRedesSociais";
+import { GrupoWhatsappCard } from "./GrupoWhatsappCard";
 import { CLIENTE_SEGMENTOS } from "@/lib/constants";
 import type { ConexaoRede } from "@/types/database";
 import type { ContaMetaSelecao } from "./ConectarRedesSociais";
@@ -158,6 +159,8 @@ export function InfoTab({
       conexoes={conexoes}
       contasParaSelecionar={contasParaSelecionar}
     />
+
+    <GrupoWhatsappCard clienteId={cliente.id} initialJid={cliente.whatsapp_group_jid ?? null} />
 
     <Card>
       <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2 mb-1">
