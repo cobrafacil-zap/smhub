@@ -296,6 +296,38 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["relatorio_mensagens"]["Insert"]>;
       };
+      metas_mensais: {
+        Row: {
+          id: string;
+          agencia_id: string;
+          cliente_id: string;
+          /** Dia 01 do mês (YYYY-MM-01). */
+          mes: string;
+          investimento_previsto: number;
+          meta_comissoes: number;
+          investimento_realizado: number;
+          comissoes_realizadas: number;
+          leads_realizados: number;
+          observacoes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          agencia_id: string;
+          cliente_id: string;
+          mes: string;
+          investimento_previsto?: number;
+          meta_comissoes?: number;
+          investimento_realizado?: number;
+          comissoes_realizadas?: number;
+          leads_realizados?: number;
+          observacoes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["metas_mensais"]["Insert"]>;
+      };
       planejamentos: {
         Row: {
           id: string;
@@ -1073,6 +1105,7 @@ export type AgenciaWhatsappConexao =
   Database["public"]["Tables"]["agencia_whatsapp_conexoes"]["Row"];
 export type RelatorioMensagem =
   Database["public"]["Tables"]["relatorio_mensagens"]["Row"];
+export type MetaMensal = Database["public"]["Tables"]["metas_mensais"]["Row"];
 
 /** Tipo do "perfil" que o middleware/session retorna. */
 export interface SessionProfile {
