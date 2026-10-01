@@ -121,11 +121,15 @@ export async function whatsappStatus(cfg: WhatsappConexao): Promise<WhatsappInst
   return "unknown";
 }
 
-/** POST /instance/create {instanceName, qrcode:true} — cria a instância no servidor. */
+/** POST /instance/create — cria a instância no servidor (Baileys/QR). */
 export async function whatsappCriarInstancia(cfg: WhatsappConexao): Promise<unknown> {
   const res = await evoFetch(cfg, "/instance/create", {
     method: "POST",
-    body: JSON.stringify({ instanceName: cfg.instance, qrcode: true }),
+    body: JSON.stringify({
+      instanceName: cfg.instance,
+      qrcode: true,
+      integration: "WHATSAPP-BAILEYS",
+    }),
   });
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
