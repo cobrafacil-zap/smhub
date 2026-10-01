@@ -185,6 +185,10 @@ export function PlanejamentoMensalCard({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-lg border border-border bg-bg-elevated/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Inv./lead</p>
+                  <p className="text-sm font-bold text-warning-400">{leadsN > 0 && invReal > 0 ? formatBRL(invReal / leadsN) : "—"}</p>
+                </div>
+                <div className="rounded-lg border border-border bg-bg-elevated/40 px-3 py-2">
                   <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Rend./lead</p>
                   <p className="text-sm font-bold text-royal-300">{leadsN > 0 ? formatBRL(rendPorLead) : "—"}</p>
                 </div>
@@ -193,6 +197,10 @@ export function PlanejamentoMensalCard({
                   <p className={`text-sm font-bold ${roi >= 1 ? "text-success-400" : "text-warning-400"}`}>
                     {invReal > 0 ? `${roi.toFixed(1).replace(".", ",")}x` : "—"}
                   </p>
+                </div>
+                <div className="rounded-lg border border-border bg-bg-elevated/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Leads</p>
+                  <p className="text-sm font-bold text-slate-200">{leadsN > 0 ? leadsN : "—"}</p>
                 </div>
               </div>
             </div>
