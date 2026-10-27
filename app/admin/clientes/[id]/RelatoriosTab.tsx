@@ -8,12 +8,7 @@ import { formatNumber } from "@/lib/utils";
 import { RelatorioForm } from "./RelatorioForm";
 import { RelatorioActions } from "./RelatorioActions";
 import { RelatorioFiltro } from "./RelatorioFiltro";
-import { PlanejamentoMensalCard } from "./PlanejamentoMensalCard";
-import type { Cliente, ConexaoRede, MetaMensal, Relatorio } from "@/types/database";
-
-function mesAtualYYYYMM(): string {
-  return new Date().toISOString().slice(0, 7);
-}
+import type { Cliente, ConexaoRede, Relatorio } from "@/types/database";
 
 export async function RelatoriosTab({
   cliente,
@@ -36,32 +31,19 @@ export async function RelatoriosTab({
       .gte("mes_referencia", `${searchParams.mes}-01`)
       .lt("mes_referencia", `${searchParams.mes}-32`);
   }
-  // relatorios, conexões OAuth e planejamento do mês → paralelo.
-  const mesAtivo = searchParams.mes ?? mesAtualYYYYMM();
-  const [{ data: rels }, { data: oauthRows }, { data: metaMes }] = await Promise.all([
+  // relatorios e conexões OAuth são independentes → paralelo.
+  const [{ data: rels }, { data: oauthRows }] = await Promise.all([
     query,
     supabase
       .from("cliente_oauth_contas")
       .select("provider, account_handle, account_name, connected_at")
       .eq("cliente_id", cliente.id),
-    supabase
-      .from("metas_mensais")
-      .select("*")
-      .eq("cliente_id", cliente.id)
-      .eq("mes", `${mesAtivo}-01`)
-      .maybeSingle(),
   ]);
   const list = (rels as Relatorio[] | null) ?? [];
   const conexoes = (oauthRows as ConexaoRede[] | null) ?? [];
-  const metaMesRow = (metaMes as MetaMensal | null) ?? null;
 
   return (
     <div className="space-y-4">
-      <PlanejamentoMensalCard
-        clienteId={cliente.id}
-        mesInicial={mesAtivo}
-        initial={metaMesRow}
-      />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <RelatorioFiltro basePath={`/admin/clientes/${cliente.id}`} tabKey="relatorios" mesAtual={searchParams.mes ?? ""} />
         <RelatorioForm clienteId={cliente.id} conexoes={conexoes} />
