@@ -36,13 +36,42 @@ export function CriarAgenciaForm() {
                 Agência criada com sucesso!
               </p>
               <p className="text-xs text-slate-300">
-                Repasse as credenciais abaixo ao admin da agência. A senha é
-                temporária — ele já pode entrar direto.
+                Repasse as credenciais abaixo ao admin da agência. Ele já pode
+                entrar direto com a senha, ou definir a própria senha pelo link
+                de acesso.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                 <CredCampo label="E-mail" valor={state.email} />
-                <CredCampo label="Senha temporária" valor={state.senha} />
+                <CredCampo
+                  label={state.senhaTemporaria ? "Senha temporária" : "Senha"}
+                  valor={state.senha}
+                />
               </div>
+
+              {state.link && (
+                <div className="rounded-md bg-bg-elevated border border-border px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-0.5">
+                    Link de acesso (expira em {state.expiraEm})
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs text-slate-200 break-all flex-1">
+                      {state.link}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(state.link!);
+                        toast.success("Link copiado!");
+                      }}
+                      className="p-1 rounded text-slate-500 hover:text-royal-300 hover:bg-royal-500/10 transition shrink-0"
+                      title="Copiar link"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <p className="text-[11px] text-slate-500 pt-1">
                 Agência: {state.agencia} · Admin: {state.admin}
               </p>
@@ -93,8 +122,10 @@ export function CriarAgenciaForm() {
             Admin da agência
           </h3>
           <p className="text-xs text-slate-500 mb-3">
-            Será criado o usuário administrador desta agência com uma senha
-            temporária. Ele já fica com acesso ao painel (+ trial de 7 dias).
+            Será criado o usuário administrador desta agência já com acesso ao
+            painel (+ trial de 7 dias). A senha é definida aqui — se deixar em
+            branco, geramos uma temporária. Também geramos um link de acesso
+            para o admin definir a própria senha.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -104,6 +135,17 @@ export function CriarAgenciaForm() {
             <div>
               <label className="label">E-mail do admin *</label>
               <input name="admin_email" type="email" className="input" required />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">Senha do admin</label>
+              <input
+                name="admin_senha"
+                type="text"
+                className="input"
+                minLength={6}
+                autoComplete="off"
+                placeholder="Deixe em branco para gerar uma temporária"
+              />
             </div>
           </div>
         </Card>

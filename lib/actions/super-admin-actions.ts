@@ -246,6 +246,73 @@ function gerarSenhaTemp(): string {
   return s;
 }
 
+function gerarTokenConvite(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Gera (ou regenera) um link de acesso para o admin de uma agência.
+ *
+ * Invalida convites anteriores não-usados desse usuário e cria um novo token
+ * em `convites`, válido por 7 dias. O link leva à página pública
+ * `/definir-senha?token=...`, onde o admin define a própria senha — funciona
+ * tanto para o primeiro acesso quanto como redefinição de senha.
+ */
+async function gerarConviteAcessoAgencia(
+  admin: ReturnType<typeof createAdminClient>,
+  agenciaId: string
+): Promise<
+  | { ok: true; link: string; expiraEm: string; email: string }
+  | { ok: false; error: string }
+> {
+  const { data: adminUser } = await admin
+    .from("usuarios")
+    .select("user_id, email")
+    .eq("agencia_id", agenciaId)
+    .eq("role", "admin_agencia")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!adminUser?.user_id || !adminUser.email) {
+    return { ok: false, error: "Esta agência não possui um admin com acesso." };
+  }
+
+  const userId = adminUser.user_id;
+
+  // Invalida convites anteriores não-usados (não ficam links válidos soltos).
+  await admin
+    .from("convites")
+    .update({ usado_em: new Date().toISOString() })
+    .eq("user_id", userId)
+    .is("usado_em", null);
+
+  const token = gerarTokenConvite();
+  const expiraEmISO = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { error: convErr } = await admin.from("convites").insert({
+    token,
+    cliente_id: null,
+    agencia_id: agenciaId,
+    email: adminUser.email,
+    role: "admin_agencia",
+    user_id: userId,
+    expira_em: expiraEmISO,
+  });
+  if (convErr) {
+    console.error("[gerarConviteAcessoAgencia] erro ao gerar convite:", convErr.message);
+    return { ok: false, error: "Erro ao gerar o link de acesso." };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://smhubagencia.com";
+  return {
+    ok: true,
+    link: `${baseUrl}/definir-senha?token=${token}`,
+    expiraEm: new Date(expiraEmISO).toLocaleDateString("pt-BR"),
+    email: adminUser.email,
+  };
+}
+
 const criarAgenciaSchema = z.object({
   nome_fantasia: z.string().min(2),
   razao_social: z.string().optional().nullable(),
@@ -255,10 +322,24 @@ const criarAgenciaSchema = z.object({
   plano: z.enum(["basico", "pro", "enterprise"]).default("pro"),
   admin_nome: z.string().min(2),
   admin_email: z.string().email(),
+  admin_senha: z
+    .string()
+    .min(6, "A senha deve ter no mínimo 6 caracteres.")
+    .optional()
+    .nullable(),
 });
 
 export type CriarAgenciaState =
-  | { ok: true; email: string; senha: string; agencia: string; admin: string }
+  | {
+      ok: true;
+      email: string;
+      senha: string;
+      senhaTemporaria: boolean;
+      agencia: string;
+      admin: string;
+      link: string | null;
+      expiraEm: string | null;
+    }
   | { ok: false; error: string }
   | undefined;
 
@@ -267,7 +348,10 @@ export async function criarAgenciaAction(
   formData: FormData
 ): Promise<CriarAgenciaState> {
   await requireSuperAdmin();
-  const parsed = criarAgenciaSchema.safeParse(Object.fromEntries(formData));
+  const raw = Object.fromEntries(formData) as Record<string, unknown>;
+  // Campo vazio ("") => undefined (usa senha temporária gerada).
+  if (raw.admin_senha === "") raw.admin_senha = undefined;
+  const parsed = criarAgenciaSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
@@ -281,8 +365,10 @@ export async function criarAgenciaAction(
     .maybeSingle();
   if (existe) return { ok: false, error: "Já existe um usuário com esse e-mail." };
 
-  // 2) Cria auth user
-  const senha = gerarSenhaTemp();
+  // 2) Cria auth user. Se o super-admin informou uma senha, usa ela; senão
+  //    gera uma senha temporária (que também é exibida na tela p/ repasse).
+  const senhaTemporaria = !parsed.data.admin_senha;
+  const senha = parsed.data.admin_senha || gerarSenhaTemp();
   const { data: signData, error: signErr } = await admin.auth.admin.createUser({
     email: parsed.data.admin_email,
     password: senha,
@@ -352,13 +438,54 @@ export async function criarAgenciaAction(
     grace_period_dias: 5,
   });
 
+  // 6) Gera link de acesso (o admin define a própria senha por ele). Best-effort:
+  //    a agência já foi criada; se o link falhar, o super-admin pode gerar
+  //    de novo pela listagem de agências.
+  const convite = await gerarConviteAcessoAgencia(admin, ag.id);
+
   revalidatePath("/super-admin/agencias");
   return {
     ok: true,
     email: parsed.data.admin_email,
     senha,
+    senhaTemporaria,
     agencia: parsed.data.nome_fantasia,
     admin: parsed.data.admin_nome,
+    link: convite.ok ? convite.link : null,
+    expiraEm: convite.ok ? convite.expiraEm : null,
+  };
+}
+
+// ============================================================================
+// AGÊNCIA: gerar link de acesso para o admin (primeiro acesso ou redefinição)
+// ============================================================================
+
+export type GerarLinkAcessoAgenciaState =
+  | { ok: true; link: string; expiraEm: string; email: string; agencia: string }
+  | { ok: false; error: string };
+
+export async function gerarLinkAcessoAgenciaAction(
+  agenciaId: string
+): Promise<GerarLinkAcessoAgenciaState> {
+  await requireSuperAdmin();
+  const admin = createAdminClient();
+
+  const { data: ag } = await admin
+    .from("agencias")
+    .select("id, nome_fantasia")
+    .eq("id", agenciaId)
+    .maybeSingle();
+  if (!ag) return { ok: false, error: "Agência não encontrada." };
+
+  const convite = await gerarConviteAcessoAgencia(admin, agenciaId);
+  if (!convite.ok) return { ok: false, error: convite.error };
+
+  return {
+    ok: true,
+    link: convite.link,
+    expiraEm: convite.expiraEm,
+    email: convite.email,
+    agencia: ag.nome_fantasia,
   };
 }
 

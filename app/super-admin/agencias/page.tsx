@@ -13,6 +13,7 @@ import { Reveal } from "@/components/ui/motion/Reveal";
 import { AgenciaPlanoSelect } from "./AgenciaPlanoSelect";
 import { ForcarRenovacaoButton } from "./ForcarRenovacaoButton";
 import { DeletarAgenciaButton } from "./DeletarAgenciaButton";
+import { GerarLinkAcessoButton } from "./GerarLinkAcessoButton";
 import type { Agencia, AssinaturaAtiva } from "@/types/database";
 
 export const metadata = { title: "Agências" };
@@ -142,6 +143,7 @@ export default async function AgenciasPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
+                          <GerarLinkAcessoButton agenciaId={a.id} nome={a.nome_fantasia} />
                           <ForcarRenovacaoButton agenciaId={a.id} plano={a.plano ?? "pro"} />
                           <form
                             action={toggleAgenciaAtivaAction.bind(null, a.id, a.status !== "ativa")}
